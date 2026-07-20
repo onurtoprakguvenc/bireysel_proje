@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.Concept;
+import com.example.hadi_bakalm.noroplastite;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
     @Override
     public ConceptViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_kavram_karti, parent, false);
+                .inflate(R.layout.activity_main, parent, false);
         return new ConceptViewHolder(view);
     }
 
@@ -42,7 +43,7 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
         // Karta tıklanınca: tek KavramDetayActivity'yi aç, hangi kavram olduğunu Intent ile gönder
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
-            Intent intent = new Intent(context, KavramDetayActivity.class);
+            Intent intent = new Intent(context, noroplastite.class);
             intent.putExtra(EXTRA_CONCEPT_NAME, concept.getName());
             context.startActivity(intent);
         });

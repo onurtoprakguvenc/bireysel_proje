@@ -29,6 +29,12 @@ public class MainActivity extends AppCompatActivity {
             // ileride: tüm içeriği göster
         });
 
+
+        findViewById(R.id.cardKavramlar).setOnClickListener(v -> {
+            Intent intent = new Intent(this, kavramlar_sayfa.class);
+            startActivity(intent);
+        });
+
         findViewById(R.id.drawerItemKavramlar).setOnClickListener(v -> {
             drawerLayout.closeDrawer(GravityCompat.START);
             // ileride: kavramlar sayfasına git
@@ -46,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Ana ekrandaki bölüm kartları
         findViewById(R.id.cardKavramlar).setOnClickListener(v -> {
-            Intent intent = new Intent(this, KavramlarActivity.class);
+            Intent intent = new Intent(this, kavramlar_sayfa.class);
             startActivity(intent);
         });
 

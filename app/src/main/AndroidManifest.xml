@@ -11,9 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Hadi_bakalım">
-        <activity
-            android:name=".KavramDetayActivity"
+
+
+        <activity android:name=".kavramlar_sayfa"
             android:exported="false" />
+
+
         <activity
             android:name=".noroplastite"
             android:exported="false" />

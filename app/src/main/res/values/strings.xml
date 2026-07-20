@@ -1,16 +1,9 @@
 <resources>
     <string name="app_name">ProjeAdiniz</string>
-    <string name="kullanici_giris_ne_yapmak_ister">hoşgeldin kullanıcı!\nne yapmak istersin?</string>
-    <string name="sayfayi_yenile">Sayfayı Yenile</string>
-    <string name="en_son_bakilan_kavramlar">en son bakılan kavramlar</string>
-    <string name="ilgini_cekebilir">ilgini çekebilir</string>
     <string name="youtube_kanalim">youtube kanalım:</string>
     <string name="youtube">YouTube</string>
     <string name="instagram_hesabim">instagram hesabım:</string>
     <string name="instagram">Instagram</string>
-    <string name="yeni_gelen_kavramlar">yeni gelen kavramlar</string>
-    <string name="bunlarda_zorlanm_st_n_bi_tekrar_bak_istersen">bunlarda zorlanmıstın bi tekrar bak istersen</string>
-    <string name="yarida_biraktiklarin">yarıda bıraktıkların</string>
     <string name="noroplastite">nöroplastite</string>
     <string name="kavram_acklamasi_normal">kavram açıklaması normal</string>
     <string name="paylas">paylaş</string>
@@ -41,4 +34,8 @@
     <string name="ogrendigin_ve_kesfettigin_kavramlar_kesfet">öğrendiğin ve keşfettiğin kavramları keşfet</string>
     <string name="kisisel_metinlerim">kişisel metinlerim</string>
     <string name="kendi_yazdın_notlar_ve_denemeler">kendi yazdığın notlar ve denemeler</string>
+    <string name="Nörokimya_Fizyoloji">Nörokimya/Fizyoloji</string>
+    <string name="geri">geri</string>
+    <string name="Bilissel_Psikoloji">Bilişsel Psikoloji</string>
+    <string name="Norobiyoloji">nöroloji</string>
 </resources>
