@@ -10,7 +10,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.hadi_bakalm.KavramDetayActivity;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.Concept;
 

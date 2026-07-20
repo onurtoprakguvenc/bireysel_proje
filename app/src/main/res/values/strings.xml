@@ -35,4 +35,10 @@
     <string name="simge2">○</string>
     <string name="hersey">her şey</string>
     <string name="simge3">●</string>
+    <string name="menu">menü</string>
+    <string name="ara">ara</string>
+    <string name="eslesme_bulundu">eşleşme bulundu</string>
+    <string name="ogrendigin_ve_kesfettigin_kavramlar_kesfet">öğrendiğin ve keşfettiğin kavramları keşfet</string>
+    <string name="kisisel_metinlerim">kişisel metinlerim</string>
+    <string name="kendi_yazdın_notlar_ve_denemeler">kendi yazdığın notlar ve denemeler</string>
 </resources>

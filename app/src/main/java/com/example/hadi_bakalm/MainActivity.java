@@ -1,38 +1,70 @@
 package com.example.hadi_bakalm;
 
 import android.os.Bundle;
-import com.example.hadi_bakalm.data.ConceptRepository;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.hadi_bakalm.adapter.ConceptAdapter;
-import com.example.hadi_bakalm.model.Concept;
-
-import java.util.List;
+import androidx.core.view.GravityCompat;
+import android.content.Intent;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView rvYeniGelenKavramlar;
-    private ConceptAdapter conceptAdapter;
-    private List<Concept> conceptList;
+    private DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        rvYeniGelenKavramlar = findViewById(R.id.yeni_gelen_kavramlar_btn);
+        drawerLayout = findViewById(R.id.drawerLayout);
 
-        // Veri artık burada tutulmuyor, merkezi depodan (repository) okunuyor
-        conceptList = ConceptRepository.getAllConcepts();
+        // Hamburger menü butonu - drawer'ı aç
+        findViewById(R.id.btnAcDrawer).setOnClickListener(v ->
+                drawerLayout.openDrawer(GravityCompat.START));
 
-        conceptAdapter = new ConceptAdapter(conceptList);
-        rvYeniGelenKavramlar.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        rvYeniGelenKavramlar.setAdapter(conceptAdapter);
+        // Drawer içindeki kategori öğeleri
+        findViewById(R.id.drawerItemHerSey).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            // ileride: tüm içeriği göster
+        });
+
+        findViewById(R.id.drawerItemKavramlar).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            // ileride: kavramlar sayfasına git
+        });
+
+        findViewById(R.id.drawerItemKisiselMetinler).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            // ileride: kişisel metinler sayfasına git
+        });
+
+        findViewById(R.id.drawerItemAyarlar).setOnClickListener(v -> {
+            drawerLayout.closeDrawer(GravityCompat.START);
+            // ileride: ayarlar sayfasına git
+        });
+
+        // Ana ekrandaki bölüm kartları
+        findViewById(R.id.cardKavramlar).setOnClickListener(v -> {
+            Intent intent = new Intent(this, KavramlarActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.cardKisiselMetinler).setOnClickListener(v -> {
+            // ileride: kişisel metinler sayfasına git
+        });
+
+        // Geri tuşuna basınca drawer açıksa önce onu kapat (yeni API)
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 }
-
-
-//planlar değişti.arayüz değişti

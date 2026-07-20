@@ -34,11 +34,11 @@
                 <!--  -->
                 <ImageButton
                     android:id="@+id/btnAcDrawer"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="menü"
-                    android:padding="8dp"
+                    android:contentDescription="@string/menu"
+                    android:padding="10dp"
                     android:src="@drawable/ic_menu_hamburger"
                     app:tint="#000000" />
 
@@ -56,7 +56,7 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:contentDescription="ara"
+                        android:contentDescription="@string/ara"
                         android:src="@drawable/ic_search" />
 
                     <EditText
@@ -66,7 +66,7 @@
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:background="@android:color/transparent"
-                        android:hint="Ara"
+                        android:hint="@string/ara"
                         android:imeOptions="actionSearch"
                         android:inputType="text"
                         android:maxLines="1"
@@ -84,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="4dp"
-                android:text="eşleşme bulundu"
+                android:text="@string/eslesme_bulundu"
                 android:textColor="#666666"
                 android:textSize="14sp"
                 android:visibility="gone"
@@ -128,7 +128,7 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="kavramlar"
+                            android:text="@string/kavramlar"
                             android:textColor="#000000"
                             android:textSize="19sp"
                             android:textStyle="bold" />
@@ -137,7 +137,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="öğrendiğin ve keşfettiğin kavramları keşfet"
+                            android:text="@string/ogrendigin_ve_kesfettigin_kavramlar_kesfet"
                             android:textColor="#666666"
                             android:textSize="14sp" />
 
@@ -172,7 +172,7 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="kişisel metinlerim"
+                            android:text="@string/kisisel_metinlerim"
                             android:textColor="#000000"
                             android:textSize="19sp"
                             android:textStyle="bold" />
@@ -181,7 +181,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="kendi yazdığın notlar ve denemeler"
+                            android:text="@string/kendi_yazdın_notlar_ve_denemeler"
                             android:textColor="#666666"
                             android:textSize="14sp" />
 
@@ -196,7 +196,7 @@
     <!--  SOLDAN AÇILAN NAVIGATION DRAWER  -->
     <include
         android:id="@+id/navDrawerContent"
-        layout="@layout/nav_drawer_content"
+        layout="@layout/nav_drawer_contents"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start" />
