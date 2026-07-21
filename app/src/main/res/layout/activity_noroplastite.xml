@@ -1,345 +1,316 @@
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:id="@+id/main"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:fillViewport="true">
-    <LinearLayout
+    android:fitsSystemWindows="true"
+    android:background="#FFFFFF">
+
+    <!-- Üst Bar (Geri Ok ve Üç Nokta) -->
+    <RelativeLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="32dp">
-        <!--  KAVRAM İSMİ  -->
-        <TextView
-            android:id="@+id/tvKavramIsmi"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/noroplastite"
-            android:textColor="#000000"
-            android:textSize="34sp"
-            android:textStyle="normal"
-            />
-        <!--  KAVRAM AÇIKLAMASI NORMAL  -->
-        <TextView
-            android:id="@+id/tvKavramAciklama"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:gravity="center"
-            android:text="@string/kavram_acklamasi_normal"
-            android:textColor="#000000"
-            android:textSize="22sp"
-            tools:text="kavram açıklaması normal"/>
-        <!--  kavram açıklaması: paylaş / kopyala butonları  -->
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#0F172A" />
+
+        <ImageView
+            android:id="@+id/btnMenu"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/ic_more_vert"
+            app:tint="#0F172A" />
+    </RelativeLayout>
+
+    <!-- Kaydırılabilir İçerik Alanı -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/topBar"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-            <LinearLayout
-                android:id="@+id/btnPaylasAciklama"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp">
+
+            <!-- Kavram Ana Başlığı -->
+            <TextView
+                android:id="@+id/txtConceptTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="32dp"
-                android:background="?attr/selectableItemBackground"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@string/paylas"
-                    android:src="@drawable/ic_share"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/paylas"
-                    android:textColor="#000000"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/btnKopyalaAciklama"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@string/kopyala"
-                    android:src="@drawable/ic_copy"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/kopyala"
-                    android:textColor="#000000"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-        </LinearLayout>
-        <!--  BENİM KİŞİSEL GELİŞTİRİCİ NOTUM  -->
-        <TextView
-            android:id="@+id/tvKisiselNot"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:gravity="center"
-            android:text="@string/benim_ki_isel_geli_tirici_notum_ve_d_ncem_o_kavram_hakk_nda_e_er_varsa"
-            android:textColor="#000000"
-            android:textSize="22sp"
-            tools:text="benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)"/>
-        <!--  kişisel not: paylaş / kopyala butonları  -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-            <LinearLayout
-                android:id="@+id/btnPaylasNot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="32dp"
-                android:background="?attr/selectableItemBackground"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@string/paylas"
-                    android:src="@drawable/ic_share"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/paylas"
-                    android:textColor="#000000"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-            <LinearLayout
-                android:id="@+id/btnKopyalaNot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="8dp">
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:contentDescription="@string/paylas"
-                    android:src="@drawable/ic_copy"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="@string/kopyala"
-                    android:textColor="#000000"
-                    android:textSize="13sp"/>
-            </LinearLayout>
-        </LinearLayout>
-        <!--  NASIL DETAYLANDIRMAK İSTERSİN  -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="@string/nasil_detaylandirmak_istersin_aciklamayi"
-            android:textColor="#000000"
-            android:textSize="22sp"/>
-        <!--  ==================== EXPANDABLE KART 1: ÖRNEK DİYALOGLAR ====================  -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="#000000"
-            android:orientation="vertical">
-            <LinearLayout
-                android:id="@+id/cardOrnekDiyaloglar"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="24dp"
+                android:text="kavram temsili"
+                android:textColor="#0F172A"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <!-- 1. KART: Kavram Açıklaması -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp">
-                <TextView
-                    android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#F8FAFC"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#E2E8F0"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/ornek_diyaloglar"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:id="@+id/txtConceptDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="kavram açıklaması normal"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="#F1F5F9" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnShare1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:drawableStart="@drawable/ic_share"
+                            android:drawablePadding="8dp"
+                            android:text="paylaş"
+                            android:textColor="#475569"
+                            android:textSize="14sp"
+                            app:drawableTint="#475569" />
+
+                        <View
+                            android:layout_width="32dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/btnCopy1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:drawableStart="@drawable/ic_copy"
+                            android:drawablePadding="8dp"
+                            android:text="kopyala"
+                            android:textColor="#475569"
+                            android:textSize="14sp"
+                            app:drawableTint="#475569" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. KART: Kişisel Not -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#F8FAFC"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#E2E8F0"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:id="@+id/txtPersonalNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)"
+                        android:textColor="#334155"
+                        android:textSize="15sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="#F1F5F9" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnShare2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:drawableStart="@drawable/ic_share"
+                            android:drawablePadding="8dp"
+                            android:text="paylaş"
+                            android:textColor="#475569"
+                            android:textSize="14sp"
+                            app:drawableTint="#475569" />
+
+                        <View
+                            android:layout_width="32dp"
+                            android:layout_height="0dp" />
+
+                        <TextView
+                            android:id="@+id/btnCopy2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:drawableStart="@drawable/ic_copy"
+                            android:drawablePadding="8dp"
+                            android:text="kopyala"
+                            android:textColor="#475569"
+                            android:textSize="14sp"
+                            app:drawableTint="#475569" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Soru / Detaylandırma Başlığı -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="nasıl detaylandırmak istersin açıklamayı?"
+                android:textColor="#0F172A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Siyah Açılır Buton 1: Örnek Diyaloglar -->
+            <FrameLayout
+                android:id="@+id/btnDialogues"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_black_icon_box"
+                android:paddingHorizontal="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical|start"
+                    android:text="örnek diyaloglar"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp"/>
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
                 <ImageView
-                    android:id="@+id/ivOkOrnekDiyaloglar"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@string/genislet"
-                    android:src="@drawable/ic_expand_arrow"/>
-            </LinearLayout>
-            <!--  Genişleyince açılacak içerik alanı; kod tarafında visibility=GONE/VISIBLE yapılacak  -->
-            <TextView
-                android:id="@+id/contentOrnekDiyaloglar"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_vertical|end"
+                    android:src="@drawable/ic_expand_arrow"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
+
+            <!-- Siyah Açılır Buton 2: Pratik Hayattaki Önemi -->
+            <FrameLayout
+                android:id="@+id/btnImportance"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="@string/buraya_prnek_diyalog_icerigi_gelecek"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:visibility="gone"/>
-        </LinearLayout>
-        <!--  ==================== EXPANDABLE KART 2: PRATİK HAYATTAKİ ÖNEMİ ====================  -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="#000000"
-            android:orientation="vertical">
-            <LinearLayout
-                android:id="@+id/cardPratikOnemi"
-                android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/pratik_hayattaki_onemi"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"/>
-                <ImageView
-                    android:id="@+id/ivOkPratikOnemi"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@string/genislet"
-                    android:src="@drawable/ic_expand_arrow"/>
-            </LinearLayout>
-            <TextView
-                android:id="@+id/contentPratikOnemi"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="@string/buraya_pratik_hayattaki_onemi_gelecek"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:visibility="gone"/>
-        </LinearLayout>
-        <!--  ==================== EXPANDABLE KART 3: VÜCUT İÇİNDE YARATTIĞI ETKİ ====================  -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="#000000"
-            android:orientation="vertical">
-            <LinearLayout
-                android:id="@+id/cardVucutEtkisi"
-                android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/vucut_icinde_yarattigi_etki"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"/>
-                <ImageView
-                    android:id="@+id/ivOkVucutEtkisi"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:contentDescription="@string/genislet"
-                    android:src="@drawable/ic_expand_arrow"/>
-            </LinearLayout>
-            <TextView
-                android:id="@+id/contentVucutEtkisi"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="@string/buraya_v_cut_i_inde_yaratt_etki_i_eri_i_gelecek"
-                android:textColor="#FFFFFF"
-                android:textSize="15sp"
-                android:visibility="gone"/>
-        </LinearLayout>
-        <!--  BAĞLANTILI OLDUĞU DİĞER KAVRAMLAR + KAYDET BUTONU  -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp">
-            <TextView
-                android:id="@+id/tvBaglantiliKavramlarBaslik"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/baglantili_oldugu_diger_kavramlar"
-                android:textColor="#000000"
-                android:textSize="20sp"/>
-            <!--  kaydet butonu (uygulama içinde ama)  -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:gravity="center"
-                android:orientation="vertical">
+                android:layout_height="52dp"
+                android:layout_marginBottom="28dp"
+                android:background="@drawable/bg_black_icon_box"
+                android:paddingHorizontal="20dp">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/kaydet_butonu"
-                    android:textColor="#000000"
-                    android:textSize="10sp"
-                    tools:ignore="SmallSp" />
-                <ImageButton
-                    android:id="@+id/btnKaydet"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="6dp"
+                    android:layout_gravity="center_vertical|start"
+                    android:text="pratik hayattaki önemi"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_vertical|end"
+                    android:src="@drawable/ic_expand_arrow"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
+
+            <!-- Alt Başlık ve Kaydet Butonu Satırı -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@id/btnSave"
+                    android:text="bağlantılı olduğu diğer kavramlar"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/btnSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
                     android:background="@drawable/bg_kaydet_button"
-                    android:contentDescription="@string/kaydet_butonu"
-                    android:padding="10dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_bookmark_save"/>
-            </LinearLayout>
-        </RelativeLayout>
-        <!--  açıklama notu  -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/a_a_da_sa_a_do_ru_alakal_di_er_kavramlar_s_ralan_r_recycler_view_ile"
-            android:textColor="#000000"
-            android:textSize="16sp"/>
-        <!--  BAĞLANTILI KAVRAMLAR - YATAY RECYCLERVIEW  -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvBaglantiliKavramlar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingEnd="8dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_baglantili_kavram"
-            tools:ignore="RtlSymmetry" />
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+                    android:gravity="center"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_bookmark"
+                        app:tint="#0F172A" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="kaydet"
+                        android:textColor="#0F172A"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Yatay Kayan Bağlantılı Kavramlar Listesi -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRelatedConcepts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_kategori_card" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

@@ -18,7 +18,6 @@ import java.util.List;
 
 public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptViewHolder> {
 
-    // Intent ile detay ekranına kavram adını taşırken kullanılacak anahtar (key)
     public static final String EXTRA_CONCEPT_NAME = "concept_name";
 
     private final List<Concept> conceptList;
@@ -30,8 +29,9 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
     @NonNull
     @Override
     public ConceptViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // DÜZELTME: R.layout.activity_main YERİNE Kart Tasarımı (item_kategori_card) GELECEK
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.activity_main, parent, false);
+                .inflate(R.layout.item_kategori_card, parent, false);
         return new ConceptViewHolder(view);
     }
 
@@ -40,7 +40,6 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
         Concept concept = conceptList.get(position);
         holder.tvKavramAdi.setText(concept.getName());
 
-        // Karta tıklanınca: tek KavramDetayActivity'yi aç, hangi kavram olduğunu Intent ile gönder
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
             Intent intent = new Intent(context, noroplastite.class);
@@ -60,7 +59,8 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
 
         public ConceptViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvKavramAdi = itemView.findViewById(R.id.tvKavramAdi);
+            // DÜZELTME: item_kategori_card.xml içindeki başlık TextView ID'si (txtCardTitle)
+            tvKavramAdi = itemView.findViewById(R.id.txtCardTitle);
         }
     }
 }

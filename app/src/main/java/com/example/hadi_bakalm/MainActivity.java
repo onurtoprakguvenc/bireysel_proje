@@ -2,10 +2,14 @@ package com.example.hadi_bakalm;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,6 +26,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        View topContainer = findViewById(R.id.topContainer);
+
+        ViewCompat.setOnApplyWindowInsetsListener(topContainer, (v, insets) -> {
+            Insets statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    statusBarInsets.top + 16, // Status bar yüksekliği + üstten hafif esneme payı
+                    v.getPaddingRight(),
+                    v.getPaddingBottom()
+            );
+            return insets;
+        });
 
         // Yeni XML bileşenlerinin ID bağlantıları
         btnMenu = findViewById(R.id.btnMenu);
