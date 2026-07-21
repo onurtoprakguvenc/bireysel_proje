@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)

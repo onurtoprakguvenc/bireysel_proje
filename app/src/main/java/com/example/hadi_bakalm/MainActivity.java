@@ -1,76 +1,67 @@
 package com.example.hadi_bakalm;
 
-import android.os.Bundle;
-
-import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.GravityCompat;
 import android.content.Intent;
-import androidx.drawerlayout.widget.DrawerLayout;
+import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DrawerLayout drawerLayout;
+    private ImageView btnMenu;
+    private EditText searchBar;
+    private RecyclerView recyclerViewCategories;
+    private BottomNavigationView bottomNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        drawerLayout = findViewById(R.id.drawerLayout);
+        // Yeni XML bileşenlerinin ID bağlantıları
+        btnMenu = findViewById(R.id.btnMenu);
+        searchBar = findViewById(R.id.searchBar);
+        recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
 
-        // Hamburger menü butonu - drawer'ı aç
-        findViewById(R.id.btnAcDrawer).setOnClickListener(v ->
-                drawerLayout.openDrawer(GravityCompat.START));
+        // RecyclerView Düzeni
+        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
 
-        // Drawer içindeki kategori öğeleri
-        findViewById(R.id.drawerItemHerSey).setOnClickListener(v -> {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            // ileride: tüm içeriği göster
+        // Üst sağ 3 nokta menü butonu
+        btnMenu.setOnClickListener(v -> {
+            // İleride: Seçenekler menüsü veya pop-up açılacak
         });
 
+        // Alt Gezinme Çubuğu (BottomNavigationView) Tıklama Yönetimi
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
 
-        findViewById(R.id.cardKavramlar).setOnClickListener(v -> {
-            Intent intent = new Intent(this, kavramlar_sayfa.class);
-            startActivity(intent);
-        });
-
-        findViewById(R.id.drawerItemKavramlar).setOnClickListener(v -> {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            // ileride: kavramlar sayfasına git
-        });
-
-        findViewById(R.id.drawerItemKisiselMetinler).setOnClickListener(v -> {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            // ileride: kişisel metinler sayfasına git
-        });
-
-        findViewById(R.id.drawerItemAyarlar).setOnClickListener(v -> {
-            drawerLayout.closeDrawer(GravityCompat.START);
-            // ileride: ayarlar sayfasına git
-        });
-
-        // Ana ekrandaki bölüm kartları
-        findViewById(R.id.cardKavramlar).setOnClickListener(v -> {
-            Intent intent = new Intent(this, kavramlar_sayfa.class);
-            startActivity(intent);
-        });
-
-        findViewById(R.id.cardKisiselMetinler).setOnClickListener(v -> {
-            // ileride: kişisel metinler sayfasına git
-        });
-
-        // Geri tuşuna basınca drawer açıksa önce onu kapat (yeni API)
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START);
-                } else {
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
-                }
+            if (itemId == R.id.nav_categories) {
+                // Zaten kategoriler ekranındayız
+                return true;
+            } else if (itemId == R.id.nav_saved) {
+                // İleride: Kaydedilenler sayfasına git
+                return true;
+            } else if (itemId == R.id.nav_recent) {
+                // İleride: Son İnceleme sayfasına git
+                return true;
+            } else if (itemId == R.id.nav_settings) {
+                // İleride: Ayarlar sayfasına git
+                return true;
             }
+
+            return false;
         });
+
+        /*
+           NOT: "kavramlar_sayfa" Activity yönlendirmesi artık Adapter içinde yapılacaktır.
+           RecyclerView Adapter'ı bağlandığında, tıklanan öğenin başlığına göre
+           ("kavramlar" ise kavramlar_sayfa.class) Intent başlatılacaktır.
+        */
     }
 }

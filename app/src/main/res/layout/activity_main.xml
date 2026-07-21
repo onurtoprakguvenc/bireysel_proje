@@ -1,204 +1,97 @@
-<androidx.drawerlayout.widget.DrawerLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#F8FAFC">
 
-    <!--  ANA İÇERİK  -->
-    <androidx.core.widget.NestedScrollView
+    <!-- 1. KISIM: EN ALT MÜHÜRLÜ MENÜ (Ekranın en altına çakılır) -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
-        android:fillViewport="true">
+        app:elevation="8dp"
+        app:itemIconTint="@color/bottom_nav_color_selector"
+        app:itemTextColor="@color/bottom_nav_color_selector"
+        app:itemActiveIndicatorStyle="@null"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
 
-        <LinearLayout
+    <!-- 2. KISIM: ÜST BAŞLIK VE ARAMA ALANI (Ekranın en üstüne sabitlenir) -->
+    <LinearLayout
+        android:id="@+id/topContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical">
+
+        <!-- Başlık Satırı -->
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="24dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="20dp">
 
-            <!--  ÜST BAR: hamburger menü + arama çubuğu + arama ikonu  -->
-            <!-- yan yana dizilmeyi sağlama -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingTop="20dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="16dp">
+            <View
+                android:id="@+id/capsuleIndicator"
+                android:layout_width="8dp"
+                android:layout_height="28dp"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_black_icon_box" />
 
-                <!--  -->
-                <ImageButton
-                    android:id="@+id/btnAcDrawer"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/menu"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_menu_hamburger"
-                    app:tint="#000000" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_search_bar"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp">
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:contentDescription="@string/ara"
-                        android:src="@drawable/ic_search" />
-
-                    <EditText
-                        android:id="@+id/etArama"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:background="@android:color/transparent"
-                        android:hint="@string/ara"
-                        android:imeOptions="actionSearch"
-                        android:inputType="text"
-                        android:maxLines="1"
-                        android:textColor="#000000"
-                        android:textColorHint="#888888"
-                        android:textSize="16sp" />
-
-                </LinearLayout>
-            </LinearLayout>
-
-            <!--  ARAMA SONUÇ SAYISI (arama yapılınca görünür, aksi halde gone)  -->
             <TextView
-                android:id="@+id/tvSonucSayisi"
-                android:layout_width="match_parent"
+                android:id="@+id/txtHeaderTitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="4dp"
-                android:text="@string/eslesme_bulundu"
-                android:textColor="#666666"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:layout_toEndOf="@id/capsuleIndicator"
+                android:text="Kategoriler"
+                android:textColor="#0F172A"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
-            <!--  BÖLÜM KARTLARI (Kavramlar / Kişisel Metinlerim / ileride yenileri)  -->
-            <LinearLayout
-                android:id="@+id/containerBolumKartlari"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
+            <ImageView
+                android:id="@+id/btnMenu"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_more_vert"
+                app:tint="#0F172A" />
+        </RelativeLayout>
 
-                <!--  KART 1: KAVRAMLAR  -->
-                <LinearLayout
-                    android:id="@+id/cardKavramlar"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+        <!-- Arama Çubuğu -->
+        <EditText
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_search_bar"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="12dp"
+            android:hint="Ara..."
+            android:paddingHorizontal="16dp"
+            android:textColor="#0F172A"
+            android:textColorHint="#94A3B8"
+            android:textSize="15sp" />
+    </LinearLayout>
 
-                    <View
-                        android:id="@+id/thumbnailKavramlar"
-                        android:layout_width="90dp"
-                        android:layout_height="90dp"
-                        android:background="#000000" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/kavramlar"
-                            android:textColor="#000000"
-                            android:textSize="19sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="@string/ogrendigin_ve_kesfettigin_kavramlar_kesfet"
-                            android:textColor="#666666"
-                            android:textSize="14sp" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!--  KART 2: KİŞİSEL METİNLERİM  -->
-                <LinearLayout
-                    android:id="@+id/cardKisiselMetinler"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="28dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <View
-                        android:id="@+id/thumbnailKisiselMetinler"
-                        android:layout_width="90dp"
-                        android:layout_height="90dp"
-                        android:background="#000000" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/kisisel_metinlerim"
-                            android:textColor="#000000"
-                            android:textSize="19sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="@string/kendi_yazdın_notlar_ve_denemeler"
-                            android:textColor="#666666"
-                            android:textSize="14sp" />
-
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!--  İleride yeni bölümler eklenirse buraya, aynı desenle  -->
-            </LinearLayout>
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!--  SOLDAN AÇILAN NAVIGATION DRAWER  -->
-    <include
-        android:id="@+id/navDrawerContent"
-        layout="@layout/nav_drawer_contents"
-        android:layout_width="wrap_content"
+    <!-- 3. KISIM: ORTA LİSTE (Üst alanın ALTINDA, Alt menünün ÜSTÜNDE kalacak şekilde esner) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewCategories"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="start" />
+        android:layout_above="@id/bottomNavigation"
+        android:layout_below="@id/topContainer"
+        android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="16dp"
+        tools:listitem="@layout/item_kategori_card"/>
 
-</androidx.drawerlayout.widget.DrawerLayout>
+</RelativeLayout>
