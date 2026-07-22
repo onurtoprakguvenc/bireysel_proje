@@ -55,7 +55,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="12dp"
                 android:layout_marginBottom="24dp"
-                android:text="kavram temsili"
+                android:text="@string/kavram_temsili"
                 android:textColor="#0F172A"
                 android:textSize="28sp"
                 android:textStyle="bold" />
@@ -82,7 +82,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="kavram açıklaması normal"
+                        android:text="@string/kavram_a_klamas_normal"
                         android:textColor="#0F172A"
                         android:textSize="16sp" />
 
@@ -104,7 +104,7 @@
                             android:layout_height="wrap_content"
                             android:drawableStart="@drawable/ic_share"
                             android:drawablePadding="8dp"
-                            android:text="paylaş"
+                            android:text="@string/paylas"
                             android:textColor="#475569"
                             android:textSize="14sp"
                             app:drawableTint="#475569" />
@@ -119,7 +119,7 @@
                             android:layout_height="wrap_content"
                             android:drawableStart="@drawable/ic_copy"
                             android:drawablePadding="8dp"
-                            android:text="kopyala"
+                            android:text="@string/kopyala"
                             android:textColor="#475569"
                             android:textSize="14sp"
                             app:drawableTint="#475569" />
@@ -149,7 +149,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)"
+                        android:text="@string/kisisel_not_analiz"
                         android:textColor="#334155"
                         android:textSize="15sp" />
 
@@ -171,7 +171,7 @@
                             android:layout_height="wrap_content"
                             android:drawableStart="@drawable/ic_share"
                             android:drawablePadding="8dp"
-                            android:text="paylaş"
+                            android:text="@string/paylas"
                             android:textColor="#475569"
                             android:textSize="14sp"
                             app:drawableTint="#475569" />
@@ -186,7 +186,7 @@
                             android:layout_height="wrap_content"
                             android:drawableStart="@drawable/ic_copy"
                             android:drawablePadding="8dp"
-                            android:text="kopyala"
+                            android:text="@string/kopyala"
                             android:textColor="#475569"
                             android:textSize="14sp"
                             app:drawableTint="#475569" />
@@ -199,7 +199,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="nasıl detaylandırmak istersin açıklamayı?"
+                android:text="@string/nas_l_detayland_rmak_istersin_a_klamay"
                 android:textColor="#0F172A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -217,7 +217,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical|start"
-                    android:text="örnek diyaloglar"
+                    android:text="@string/ornek_diyaloglar"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -243,7 +243,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical|start"
-                    android:text="pratik hayattaki önemi"
+                    android:text="@string/pratik_hayattaki_onemi"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -268,7 +268,7 @@
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
                     android:layout_toStartOf="@id/btnSave"
-                    android:text="bağlantılı olduğu diğer kavramlar"
+                    android:text="@string/baglantili_oldugu_diger_kavramlar"
                     android:textColor="#0F172A"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -293,7 +293,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="kaydet"
+                        android:text="@string/kaydet_butonu"
                         android:textColor="#0F172A"
                         android:textSize="14sp"
                         android:textStyle="bold" />

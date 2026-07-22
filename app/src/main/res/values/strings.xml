@@ -38,4 +38,17 @@
     <string name="geri">geri</string>
     <string name="Bilissel_Psikoloji">Bilişsel Psikoloji</string>
     <string name="Norobiyoloji">nöroloji</string>
+    <string name="kategoriler">Kategoriler</string>
+    <string name="baslık_1">başlık 1</string>
+    <string name="birkac_kelimelik_acklama_1">birkaç kelimelik açıklama 1</string>
+    <string name="tumu">Tümü</string>
+    <string name="kategori_1">kategori 1</string>
+    <string name="kategori_2">kategori 2</string>
+    <string name="kategori_3">kategori 3</string>
+    <string name="rendi_in_ve_ke_fetti_in_kavramlar_ke_fet">Öğrendiğin ve keşfettiğin kavramları keşfet</string>
+    <string name="norokimya_fizyoloji">Nörokimya/Fizyoloji</string>
+    <string name="kavram_temsili">kavram temsili</string>
+    <string name="kavram_a_klamas_normal">kavram açıklaması normal</string>
+    <string name="kisisel_not_analiz">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
+    <string name="nas_l_detayland_rmak_istersin_a_klamay">nasıl detaylandırmak istersin açıklamayı?</string>
 </resources>

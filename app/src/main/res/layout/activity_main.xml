@@ -50,7 +50,7 @@
                 android:layout_centerVertical="true"
                 android:layout_marginStart="12dp"
                 android:layout_toEndOf="@id/capsuleIndicator"
-                android:text="Kategoriler"
+                android:text="@string/kategoriler"
                 android:textColor="#0F172A"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -75,7 +75,7 @@
             android:background="@drawable/bg_search_bar"
             android:drawableStart="@drawable/ic_search"
             android:drawablePadding="12dp"
-            android:hint="Ara..."
+            android:hint="@string/ara"
             android:paddingHorizontal="16dp"
             android:textColor="#0F172A"
             android:textColorHint="#94A3B8"

@@ -26,52 +26,52 @@
             android:background="@drawable/bg_black_icon_box">
 
             <ImageView
-                android:id="@+id/imgCardIcon"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_brain"
+                android:src="@drawable/ic_copy"
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <!-- Sağ Taraf Ok İşareti -->
+        <!-- Sağ Taraf İleri Ok İkonu -->
         <ImageView
-            android:id="@+id/imgChevron"
+            android:id="@+id/btnChevron"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_chevron_right"
+            android:src="@drawable/ic_expand_arrow"
+            android:rotation="-90"
             app:tint="#CBD5E1" />
 
-        <!-- Metin Alanı (Başlık ve Açıklama) -->
+        <!-- Metin Başlığı ve Açıklaması -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="12dp"
-            android:layout_toStartOf="@id/imgChevron"
             android:layout_toEndOf="@id/iconContainer"
+            android:layout_toStartOf="@id/btnChevron"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/txtCardTitle"
+                android:id="@+id/txtTextTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/kavramlar"
+                android:text="@string/baslık_1"
                 android:textColor="#0F172A"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/txtCardDescription"
+                android:id="@+id/txtTextDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="@string/rendi_in_ve_ke_fetti_in_kavramlar_ke_fet"
+                android:text="@string/birkac_kelimelik_acklama_1"
                 android:textColor="#64748B"
-                android:textSize="13sp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
     </RelativeLayout>
