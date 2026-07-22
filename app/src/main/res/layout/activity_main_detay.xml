@@ -40,6 +40,7 @@
 
         <!-- Kategori ve Süre Bilgisi (Merkezde) -->
         <LinearLayout
+
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
@@ -285,7 +286,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_my="16dp"
+                android:layout_marginVertical="16dp"
                 android:background="#1E293B" />
 
             <!-- Metin Boyutu Satırı -->
@@ -347,7 +348,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_my="16dp"
+                android:layout_marginVertical="16dp"
                 android:background="#1E293B" />
 
             <!-- Satır Aralığı Satırı -->
