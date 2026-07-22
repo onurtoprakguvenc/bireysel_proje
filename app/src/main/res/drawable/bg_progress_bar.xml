@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Arka Plan (Henüz dolmamış olan çizgi) -->
+    <item android:id="@android:id/background">
+        <shape>
+            <solid android:color="#F1F5F9" />
+        </shape>
+    </item>
+    <!-- İlerleme Çubuğu (Kaydırdıkça dolan mor alan) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <solid android:color="#4F46E5" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

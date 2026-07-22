@@ -51,4 +51,22 @@
     <string name="kavram_a_klamas_normal">kavram açıklaması normal</string>
     <string name="kisisel_not_analiz">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
     <string name="nas_l_detayland_rmak_istersin_a_klamay">nasıl detaylandırmak istersin açıklamayı?</string>
+    <string name="su_kadar_dk_okuma">şu kadar dk okuma</string>
+    <string name="sonraki">Sonraki</string>
+    <string name="sıra">x / y</string>
+    <string name="onceki">Önceki</string>
+    <string name="kısısel_notum">KİŞİSEL NOTUM</string>
+    <string name="bu_metin_hakk_ndaki_ki_isel_d_ncelerini_ve_notlar_n_buraya_yaz_otomatik_kaydedilir">Bu metin hakkındaki kişisel düşüncelerini ve notlarını buraya yaz (otomatik kaydedilir)...</string>
+    <string name="ayd_nl_k">Aydınlık</string>
+    <string name="sepya">Sepya</string>
+    <string name="amoled">AMOLED</string>
+    <string name="okuma_temas">Okuma Teması:</string>
+    <string name="a">A+</string>
+    <string name="_15sp">15sp</string>
+    <string name="a_">A-</string>
+    <string name="sat_r_aral">Satır Aralığı:</string>
+    <string name="dar">Dar</string>
+    <string name="normal">Normal</string>
+    <string name="metin_boyutu">Metin Boyutu:</string>
+    <string name="geni">Geniş</string>
 </resources>
