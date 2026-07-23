@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.concept_kavram_model;
+import com.example.hadi_bakalm.noroplastite;
 
 import java.util.List;
 
@@ -39,7 +40,11 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
 
         // Karta tıklama olayı
         holder.itemView.setOnClickListener(v -> {
-            // İleride kavram detay/okuma sayfasına geçiş Intent'i buraya eklenecek
+            // Tıklanan kart "Nöroplastisite" ise ilgili Activity'ye yönlendir
+            if (kavram.getKavramAdi().equalsIgnoreCase("Nöroplastisite")) {
+                Intent intent = new Intent(v.getContext(), noroplastite.class);
+                v.getContext().startActivity(intent);
+            }
         });
     }
 
