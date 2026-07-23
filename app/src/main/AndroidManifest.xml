@@ -16,6 +16,9 @@
         <activity android:name=".kavramlar_sayfa"
             android:exported="false" />
 
+        <activity
+            android:name=".model.KisiselMetinlerimActivity"
+            android:exported="false" />
 
         <activity
             android:name=".noroplastite"

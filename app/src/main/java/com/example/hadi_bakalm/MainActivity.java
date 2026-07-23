@@ -13,7 +13,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
+import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,10 +29,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         View topContainer = findViewById(R.id.topContainer);
+
 
         ViewCompat.setOnApplyWindowInsetsListener(topContainer, (v, insets) -> {
             Insets statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars());
@@ -40,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+
         // Yeni XML bileşenlerinin ID bağlantıları
         btnMenu = findViewById(R.id.btnMenu);
         searchBar = findViewById(R.id.searchBar);
@@ -47,7 +55,29 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // RecyclerView Düzeni
-        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));// 1. Kategori verilerini tutacak liste
+        List<String> kategoriListesi = new ArrayList<>();
+        kategoriListesi.add("Kavramlar");
+        kategoriListesi.add("Kişisel Metinlerim");
+
+// 2. Adapter'ı bağlama
+// (Eğer ana ekran için özel bir Adapter yazmadıysan basit bir Adapter bağlayabilirsin)
+        ana_sayfa_adapter adapter = new ana_sayfa_adapter(kategoriListesi, new ana_sayfa_adapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(String kategoriAdi) {
+                if (kategoriAdi.equals("Kavramlar")) {
+                    Intent intent = new Intent(MainActivity.this, kavramlar_sayfa.class);
+                    startActivity(intent);
+                } else if (kategoriAdi.equals("Kişisel Metinlerim")) {
+                    Intent intent = new Intent(MainActivity.this, KisiselMetinlerimActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
+
+        recyclerViewCategories.setAdapter(adapter);
+
+        recyclerViewCategories.setAdapter(adapter);
 
         // Üst sağ 3 nokta menü butonu
         btnMenu.setOnClickListener(v -> {
