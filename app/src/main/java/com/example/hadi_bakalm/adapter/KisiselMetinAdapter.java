@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.adapter;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.KisiselMetin;
+import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
 
 import java.util.List;
 
@@ -33,6 +35,15 @@ public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapte
         KisiselMetin metin = metinListesi.get(position);
         holder.txtTitle.setText(metin.getBaslik());
         holder.txtDesc.setText(metin.getAciklama());
+
+        // Kart tıklama olayı (Intent)
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), kisisel_metin_okuma_sayfa.class);
+            // Tıklanan metnin verilerini yeni sayfaya gönderiyoruz
+            intent.putExtra("baslik", metin.getBaslik());
+            intent.putExtra("aciklama", metin.getAciklama());
+            v.getContext().startActivity(intent);
+        });
     }
 
     @Override

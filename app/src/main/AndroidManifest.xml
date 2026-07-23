@@ -21,6 +21,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".kisisel_metin_okuma_sayfa"
+            android:exported="false" />
+
+        <activity
             android:name=".noroplastite"
             android:exported="false" />
         <activity

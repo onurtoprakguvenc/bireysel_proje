@@ -150,6 +150,13 @@
             android:orientation="vertical">
 
             <!-- Okuma Metni -->
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/baslık"
+                android:text="@string/baslık_1"
+                />
             <TextView
                 android:id="@+id/txtMainContent"
                 android:layout_width="match_parent"
