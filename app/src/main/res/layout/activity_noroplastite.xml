@@ -209,11 +209,12 @@
                 android:id="@+id/btnDialogues"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/bg_black_icon_box"
                 android:paddingHorizontal="20dp">
 
                 <TextView
+                    android:id="@+id/ornek_diyalog"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical|start"
@@ -230,16 +231,37 @@
                     app:tint="#FFFFFF" />
             </FrameLayout>
 
+            <!-- AÇILACAK İÇERİK 1 (Varsayılan: Gizli) -->
+            <LinearLayout
+                android:id="@+id/contentDialogues"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="#F8FAFC"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtDialoguesContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Buraya örnek diyaloglar gelecek."
+                    android:textColor="#334155"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
             <!-- Siyah Açılır Buton 2: Pratik Hayattaki Önemi -->
             <FrameLayout
                 android:id="@+id/btnImportance"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:layout_marginBottom="28dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/bg_black_icon_box"
                 android:paddingHorizontal="20dp">
 
                 <TextView
+                    android:id="@+id/bu_kavram_onem"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical|start"
@@ -255,6 +277,26 @@
                     android:src="@drawable/ic_expand_arrow"
                     app:tint="#FFFFFF" />
             </FrameLayout>
+
+            <!-- AÇILACAK İÇERİK 2 (Varsayılan: Gizli) -->
+            <LinearLayout
+                android:id="@+id/contentImportance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="28dp"
+                android:background="#F8FAFC"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtImportanceContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Buraya pratik hayattaki önemi ile ilgili metinler gelecek."
+                    android:textColor="#334155"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <!-- Alt Başlık ve Kaydet Butonu Satırı -->
             <RelativeLayout

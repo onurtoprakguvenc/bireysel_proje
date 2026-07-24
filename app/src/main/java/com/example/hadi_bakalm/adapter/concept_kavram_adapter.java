@@ -15,53 +15,84 @@ import com.example.hadi_bakalm.noroplastite;
 
 import java.util.List;
 
-public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_adapter.KavramViewHolder> {
+public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<concept_kavram_model> kavramListesi;
+    private List<concept_kavram_model> liste;
 
-    public concept_kavram_adapter(List<concept_kavram_model> kavramListesi) {
-        this.kavramListesi = kavramListesi;
+    public concept_kavram_adapter(List<concept_kavram_model> liste) {
+        this.liste = liste;
+    }
+
+    // 1. Verinin türünü (Başlık mı, Kart mı?) belirliyoruz
+    @Override
+    public int getItemViewType(int position) {
+        return liste.get(position).getItemType();
     }
 
     @NonNull
     @Override
-    public KavramViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Liste kart görünümü (XML adı kendi kart layout id'nize göre güncellenebilir)
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_kategori_card, parent, false);
-        return new KavramViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == concept_kavram_model.TYPE_CATEGORY) {
+            // Kategori başlığı görünümü
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_category_header, parent, false);
+            return new CategoryViewHolder(view);
+        } else {
+            // Normal kavram kartı görünümü
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_kategori_card, parent, false);
+            return new ConceptViewHolder(view);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull KavramViewHolder holder, int position) {
-        concept_kavram_model kavram = kavramListesi.get(position);
-        holder.txtKavramAdi.setText(kavram.getKavramAdi());
-        holder.txtAciklama.setText(kavram.getAciklama());
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        concept_kavram_model item = liste.get(position);
 
-        // Karta tıklama olayı
-        holder.itemView.setOnClickListener(v -> {
-            // Tıklanan kart "Nöroplastisite" ise ilgili Activity'ye yönlendir
-            if (kavram.getKavramAdi().equalsIgnoreCase("Nöroplastisite")) {
-                Intent intent = new Intent(v.getContext(), noroplastite.class);
-                v.getContext().startActivity(intent);
-            }
-        });
+        if (getItemViewType(position) == concept_kavram_model.TYPE_CATEGORY) {
+            // Kategori başlığı verisini bas
+            CategoryViewHolder catHolder = (CategoryViewHolder) holder;
+            catHolder.txtCategoryTitle.setText(item.getKategoriAdi());
+        } else {
+            // Kavram kartı verisini bas
+            ConceptViewHolder conceptHolder = (ConceptViewHolder) holder;
+            conceptHolder.txtKavramTitle.setText(item.getKavramAdi());
+            conceptHolder.txtKavramDesc.setText(item.getAciklama());
+
+            // Kart tıklama olayı
+            conceptHolder.itemView.setOnClickListener(v -> {
+                if (item.getKavramAdi() != null && item.getKavramAdi().equalsIgnoreCase("Nöroplastisite")) {
+                    Intent intent = new Intent(v.getContext(), noroplastite.class);
+                    v.getContext().startActivity(intent);
+                }
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return kavramListesi != null ? kavramListesi.size() : 0;
+        return liste != null ? liste.size() : 0;
     }
 
-    public static class KavramViewHolder extends RecyclerView.ViewHolder {
-        TextView txtKavramAdi;
-        TextView txtAciklama;
+    // ViewHolder 1: Kategori Başlığı İçin
+    public static class CategoryViewHolder extends RecyclerView.ViewHolder {
+        TextView txtCategoryTitle;
 
-        public KavramViewHolder(@NonNull View itemView) {
+        public CategoryViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Kart XML'indeki TextView ID'lerinize göre güncelleyebilirsiniz
-            txtKavramAdi = itemView.findViewById(R.id.txtCardTitle);
-            txtAciklama = itemView.findViewById(R.id.txtCardDescription);
+            txtCategoryTitle = itemView.findViewById(R.id.txtCategoryTitle);
+        }
+    }
+
+    // ViewHolder 2: Kavram Kartı İçin
+    public static class ConceptViewHolder extends RecyclerView.ViewHolder {
+        TextView txtKavramTitle;
+        TextView txtKavramDesc;
+
+        public ConceptViewHolder(@NonNull View itemView) {
+            super(itemView);
+            txtKavramTitle = itemView.findViewById(R.id.txtCardTitle);
+            txtKavramDesc = itemView.findViewById(R.id.txtCardDescription);
         }
     }
 }

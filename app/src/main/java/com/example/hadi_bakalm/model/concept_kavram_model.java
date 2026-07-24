@@ -1,29 +1,44 @@
 package com.example.hadi_bakalm.model;
 
 public class concept_kavram_model {
+
+    // Eleman türlerini ayırmak için sabitler
+    public static final int TYPE_CATEGORY = 0;
+    public static final int TYPE_CONCEPT = 1;
+
+    private int itemType;
+    private String kategoriAdi;
     private String kavramAdi;
     private String aciklama;
 
-    // Constructor (Kurucu Metot)
-    public concept_kavram_model(String kavramAdi, String aciklama) {
-        this.kavramAdi = kavramAdi;
-        this.aciklama = aciklama;
+    // 1. Kurucu Metot: Kategori Başlığı Oluşturmak İçin
+    public concept_kavram_model(String kategoriAdi) {
+        this.itemType = TYPE_CATEGORY;
+        this.kategoriAdi = kategoriAdi;
     }
 
-    // Getter ve Setter Metotları
+    // 2. Kurucu Metot: Kavram Kartı Oluşturmak İçin
+    public concept_kavram_model(String kavramAdi, String aciklama, String kategoriAdi) {
+        this.itemType = TYPE_CONCEPT;
+        this.kavramAdi = kavramAdi;
+        this.aciklama = aciklama;
+        this.kategoriAdi = kategoriAdi;
+    }
+
+    // Getter Metotları
+    public int getItemType() {
+        return itemType;
+    }
+
+    public String getKategoriAdi() {
+        return kategoriAdi;
+    }
+
     public String getKavramAdi() {
         return kavramAdi;
     }
 
-    public void setKavramAdi(String kavramAdi) {
-        this.kavramAdi = kavramAdi;
-    }
-
     public String getAciklama() {
         return aciklama;
-    }
-
-    public void setAciklama(String aciklama) {
-        this.aciklama = aciklama;
     }
 }

@@ -15,24 +15,29 @@ public class kavramlar_sayfa extends AppCompatActivity {
 
     private RecyclerView recyclerViewConcepts;
     private concept_kavram_adapter adapter;
-    private List<concept_kavram_model> kavramListesi;
+    private List<concept_kavram_model> liste;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.kavramlar_sayfa); // XML dosya adın
+        setContentView(R.layout.kavramlar_sayfa);
 
-        // 1. XML üzerindeki RecyclerView'ı bağla
-        recyclerViewConcepts = findViewById(R.id.recyclerViewMainCategories); // XML'deki RecyclerView ID'niz
+        recyclerViewConcepts = findViewById(R.id.recyclerViewMainCategories);
         recyclerViewConcepts.setLayoutManager(new LinearLayoutManager(this));
 
-        // 2. Örnek test verilerini doldur
-        kavramListesi = new ArrayList<>();
-        kavramListesi.add(new concept_kavram_model("Nöroplastisite", "Beynin deneyimlerle yeniden yapılanma yeteneği."));
-        kavramListesi.add(new concept_kavram_model("Bilişsel Yük", "Zihnin aynı anda işleyebileceği bilgi miktarı."));
+        liste = new ArrayList<>();
 
-        // 3. Adapter'ı oluştur ve RecyclerView'a bağla
-        adapter = new concept_kavram_adapter(kavramListesi);
+        // 1. Kategori Başlığı ve Altındaki Kavramlar
+        liste.add(new concept_kavram_model("Nörokimya / Fizyoloji"));
+        liste.add(new concept_kavram_model("Nöroplastisite", "Beynin deneyimlerle yeniden yapılanma yeteneği.", "Nörokimya / Fizyoloji"));
+        liste.add(new concept_kavram_model("Synaptic Pruning", "Kullanılmayan sinaptik bağlantıların budanması.", "Nörokimya / Fizyoloji"));
+
+        // 2. Kategori Başlığı ve Altındaki Kavramlar
+        liste.add(new concept_kavram_model("Bilişsel Psikoloji"));
+        liste.add(new concept_kavram_model("Bilişsel Yük", "Zihnin aynı anda işleyebileceği bilgi miktarı.", "Bilişsel Psikoloji"));
+
+        // Adapter'ı bağla
+        adapter = new concept_kavram_adapter(liste);
         recyclerViewConcepts.setAdapter(adapter);
     }
 }

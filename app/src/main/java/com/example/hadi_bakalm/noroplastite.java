@@ -1,45 +1,58 @@
 package com.example.hadi_bakalm;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class noroplastite extends AppCompatActivity {
 
     private ImageView btnBack;
-    private TextView txtConceptTitle;
-    private TextView txtConceptDesc;
-    private TextView txtDevNote;
-    // Diğer expandable (genişletilebilir) alanlar ve butonlar da buraya eklenecek...
+    private FrameLayout btnDialogues, btnImportance;
+    private View contentDialogues, contentImportance;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_noroplastite); // image_6.png'deki arayüz XML'iniz
+        setContentView(R.layout.activity_noroplastite);
 
-        // 1. XML Bileşenlerini Bağlama
         btnBack = findViewById(R.id.btnBack);
-        txtConceptTitle = findViewById(R.id.txtConceptTitle);
-        txtConceptDesc = findViewById(R.id.txtConceptDescription);
-        txtDevNote = findViewById(R.id.txtPersonalNote);
-        // ... diğerlerini de bağlayacaksın ...
 
-        // 2. Geri Butonu Mantığı
-        btnBack.setOnClickListener(v -> finish());
+        // Butonlar (Tıklanacak Siyah Kutular)
+        btnDialogues = findViewById(R.id.btnDialogues);
+        btnImportance = findViewById(R.id.btnImportance);
 
-        // 3. Veriyi Doldurma
-        // Adapter'dan "Nöroplastisite" ismiyle geliyoruz.
-        // Bu Activity kendi içinde veriyi şu şekilde set edebilir:
+        // İçerikler (Açılıp Kapanacak Paneller)
+        contentDialogues = findViewById(R.id.contentDialogues);
+        contentImportance = findViewById(R.id.contentImportance);
 
-        txtConceptTitle.setText("Nöroplastisite");
-        txtConceptDesc.setText("Beynin deneyimlerle yeniden yapılanma ve değişme yeteneği. Sinapsların güçlenmesi veya zayıflaması sürecidir.");
-        txtDevNote.setText("Bu kavram, 'Öğrenmeyi Öğrenme' konusunun temel taşıdır. Değişimin mümkün olduğunu bilimsel olarak kanıtlar.");
+        // Geri Butonu
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
-        // Örnek Diyaloglar ve Pratik Hayat alanları için de Expandable (genişletilebilir) mantığı buraya kuracağız.
-        // Paylaş/Kopyala/Kaydet buton mantıkları da burada olacak.
+        // Panel 1 Tıklama Mantığı
+        if (btnDialogues != null && contentDialogues != null) {
+            btnDialogues.setOnClickListener(v -> {
+                if (contentDialogues.getVisibility() == View.VISIBLE) {
+                    contentDialogues.setVisibility(View.GONE);
+                } else {
+                    contentDialogues.setVisibility(View.VISIBLE);
+                }
+            });
+        }
 
+        // Panel 2 Tıklama Mantığı
+        if (btnImportance != null && contentImportance != null) {
+            btnImportance.setOnClickListener(v -> {
+                if (contentImportance.getVisibility() == View.VISIBLE) {
+                    contentImportance.setVisibility(View.GONE);
+                } else {
+                    contentImportance.setVisibility(View.VISIBLE);
+                }
+            });
+        }
     }
 }
