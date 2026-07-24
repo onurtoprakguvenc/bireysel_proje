@@ -77,4 +77,8 @@
     <string name="emin_misin_bunu_yapmak_istedi_ine_bir_kez_daha_d_n_bence">Emin misin bunu yapmak istediğine? Bir kez daha düşün bence...</string>
     <string name="vazge_kals_n">Vazgeç, Kalsın</string>
     <string name="evet_kar">Evet, Çıkar</string>
+    <string name="son_nceleme">Son İnceleme</string>
+    <string name="dun_eklendi">Dün eklendi</string>
+    <string name="ki_isel_not">• Kişisel Not</string>
+    <string name="met_n">METİN</string>
 </resources>

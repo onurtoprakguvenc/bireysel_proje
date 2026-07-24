@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
+import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
@@ -35,33 +36,30 @@ public class MainActivity extends AppCompatActivity {
 
         View topContainer = findViewById(R.id.topContainer);
 
-
         ViewCompat.setOnApplyWindowInsetsListener(topContainer, (v, insets) -> {
             Insets statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             v.setPadding(
                     v.getPaddingLeft(),
-                    statusBarInsets.top + 16, // Status bar yüksekliği + üstten hafif esneme payı
+                    statusBarInsets.top + 16,
                     v.getPaddingRight(),
                     v.getPaddingBottom()
             );
             return insets;
         });
 
-
-        // Yeni XML bileşenlerinin ID bağlantıları
+        // XML bileşenlerinin ID bağlantıları
         btnMenu = findViewById(R.id.btnMenu);
         searchBar = findViewById(R.id.searchBar);
         recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
         bottomNavigation = findViewById(R.id.bottomNavigation);
 
         // RecyclerView Düzeni
-        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));// 1. Kategori verilerini tutacak liste
+        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
+
         List<String> kategoriListesi = new ArrayList<>();
         kategoriListesi.add("Kavramlar");
         kategoriListesi.add("Kişisel Metinlerim");
 
-// 2. Adapter'ı bağlama
-// (Eğer ana ekran için özel bir Adapter yazmadıysan basit bir Adapter bağlayabilirsin)
         ana_sayfa_adapter adapter = new ana_sayfa_adapter(kategoriListesi, new ana_sayfa_adapter.OnItemClickListener() {
             @Override
             public void onItemClick(String kategoriAdi) {
@@ -77,11 +75,9 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerViewCategories.setAdapter(adapter);
 
-        recyclerViewCategories.setAdapter(adapter);
-
         // Üst sağ 3 nokta menü butonu
         btnMenu.setOnClickListener(v -> {
-            // İleride: Seçenekler menüsü veya pop-up açılacak
+            // İleride: Seçenekler menüsü
         });
 
         // Alt Gezinme Çubuğu (BottomNavigationView) Tıklama Yönetimi
@@ -92,23 +88,19 @@ public class MainActivity extends AppCompatActivity {
                 // Zaten kategoriler ekranındayız
                 return true;
             } else if (itemId == R.id.nav_saved) {
-                // İleride: Kaydedilenler sayfasına git
+                // Kaydedilenler sayfasına geçiş
+                Intent intent = new Intent(MainActivity.this, kaydet_ana_sayfa.class);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_recent) {
-                // İleride: Son İnceleme sayfasına git
+                // İleride: Son İnceleme
                 return true;
             } else if (itemId == R.id.nav_settings) {
-                // İleride: Ayarlar sayfasına git
+                // İleride: Ayarlar
                 return true;
             }
 
             return false;
         });
-
-        /*
-           NOT: "kavramlar_sayfa" Activity yönlendirmesi artık Adapter içinde yapılacaktır.
-           RecyclerView Adapter'ı bağlandığında, tıklanan öğenin başlığına göre
-           ("kavramlar" ise kavramlar_sayfa.class) Intent başlatılacaktır.
-        */
     }
 }

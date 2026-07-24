@@ -3,20 +3,20 @@
     <item
         android:id="@+id/nav_categories"
         android:icon="@drawable/ic_categories"
-        android:title="Kategoriler" />
+        android:title="@string/kategoriler" />
 
     <item
         android:id="@+id/nav_saved"
         android:icon="@drawable/ic_bookmark"
-        android:title="Kaydedilenler" />
+        android:title="@string/kaydedilenler" />
 
     <item
         android:id="@+id/nav_recent"
         android:icon="@drawable/ic_history"
-        android:title="Son İnceleme" />
+        android:title="@string/son_nceleme" />
 
     <item
         android:id="@+id/nav_settings"
         android:icon="@drawable/ic_settings"
-        android:title="Ayarlar" />
+        android:title="@string/ayarlar" />
 </menu>
