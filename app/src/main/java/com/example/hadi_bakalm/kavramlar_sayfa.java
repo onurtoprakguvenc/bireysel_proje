@@ -1,6 +1,8 @@
 package com.example.hadi_bakalm;
 
 import android.os.Bundle;
+import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -26,6 +28,16 @@ public class kavramlar_sayfa extends AppCompatActivity {
         recyclerViewConcepts.setLayoutManager(new LinearLayoutManager(this));
 
         liste = new ArrayList<>();
+
+        // XML'deki geri butonunun ID'si (örn: btnBack veya btnGoBack)
+        ImageView btnBack = findViewById(R.id.btnBack);
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                // Mevcut sayfayı kapatıp bir önceki ekrana döner
+                finish();
+            });
+        }
 
         // 1. Kategori Başlığı ve Altındaki Kavramlar
         liste.add(new concept_kavram_model("Nörokimya / Fizyoloji"));

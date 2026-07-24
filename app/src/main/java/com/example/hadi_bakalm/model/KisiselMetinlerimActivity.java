@@ -1,6 +1,8 @@
 package com.example.hadi_bakalm.model;
 
 import android.os.Bundle;
+import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +25,14 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         List<KisiselMetin> liste = new ArrayList<>();
+
+        ImageView btnBack = findViewById(R.id.btnBack); // XML'deki id neyse o (örn: btnBack)
+
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                finish(); // Ekranı kapatır ve önceki ekrana döner
+            });
+        }
 
         liste.add(new KisiselMetin("Nöroplastisite Notları", "Beynin yapısının deneyimlerle değişimi."));
         liste.add(new KisiselMetin("Bilişsel Haritalar", "Mekansal hafıza ve öğrenme süreçleri."));
