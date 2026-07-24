@@ -87,7 +87,8 @@
                     android:text="@string/tumu"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:id="@+id/tumu"/>
 
                 <!-- Kategori 1 -->
                 <TextView
@@ -99,7 +100,8 @@
                     android:paddingVertical="10dp"
                     android:text="@string/kategori_1"
                     android:textColor="#475569"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    android:id="@+id/kategori_1"/>
 
                 <!-- Kategori 2 -->
                 <TextView
@@ -111,7 +113,8 @@
                     android:paddingVertical="10dp"
                     android:text="@string/kategori_2"
                     android:textColor="#475569"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    android:id="@+id/kategori_2" />
 
                 <!-- Kategori 3 -->
                 <TextView
@@ -123,7 +126,8 @@
                     android:paddingVertical="10dp"
                     android:text="@string/kategori_3"
                     android:textColor="#475569"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    android:id="@+id/kategori_3"/>
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>

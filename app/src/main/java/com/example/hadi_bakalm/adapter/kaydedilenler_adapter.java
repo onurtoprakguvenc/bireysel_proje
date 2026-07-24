@@ -2,6 +2,7 @@ package com.example.hadi_bakalm.adapter;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
@@ -15,14 +16,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
-import com.example.hadi_bakalm.model.kaydedilenler; // Seninki: kaydedilenler.java
+import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
+import com.example.hadi_bakalm.model.kaydedilenler;
 
 import java.util.List;
 
 public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_adapter.SavedViewHolder> {
 
     private Context context;
-    private List<kaydedilenler> itemList; // Model olarak kaydedilenler kullanıldı
+    private List<kaydedilenler> itemList;
 
     public kaydedilenler_adapter(Context context, List<kaydedilenler> itemList) {
         this.context = context;
@@ -40,13 +42,24 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
     public void onBindViewHolder(@NonNull SavedViewHolder holder, int position) {
         kaydedilenler item = itemList.get(position);
 
-        // Model sınıfındaki getter metodlarına göre bağlama
+        // Model sınıfındaki verileri görünümlere bağlama
         holder.txtTagType.setText(item.getType());
         holder.txtTagCategory.setText("• " + item.getCategory());
         holder.txtSavedTitle.setText(item.getTitle());
         holder.txtSavedDesc.setText(item.getDescription());
         holder.txtAddedTime.setText(item.getAddedTime());
 
+        // "İncele" butonuna tıklanınca Detay Sayfasına geçiş yapma
+        holder.btnInspect.setOnClickListener(v -> {
+            // "detay_sayfa" yerine projendeki detay activity sınıfının tam adını yazmalısın
+             Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
+             intent.putExtra("TITLE", item.getTitle());
+             intent.putExtra("DESCRIPTION", item.getDescription());
+             intent.putExtra("CATEGORY", item.getCategory());
+             context.startActivity(intent);
+        });
+
+        // Silme butonuna tıklama
         holder.btnRemoveSave.setOnClickListener(v -> {
             int currentPosition = holder.getAdapterPosition();
             if (currentPosition != RecyclerView.NO_POSITION) {

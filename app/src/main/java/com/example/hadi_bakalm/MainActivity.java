@@ -103,4 +103,13 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
     }
+
+    // Ekran her ön plana çıktığında alt menüyü Kategoriler'e geri çeker
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_categories);
+        }
+    }
 }
