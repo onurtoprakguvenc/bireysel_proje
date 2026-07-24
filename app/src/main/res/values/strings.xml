@@ -69,4 +69,12 @@
     <string name="normal">Normal</string>
     <string name="metin_boyutu">Metin Boyutu:</string>
     <string name="geni">Geniş</string>
+    <string name="kaydedilenler">kaydedilenler</string>
+    <string name="daha_sonra_okumak_i_in_kaydetti_in_i_erikler">Daha sonra okumak için kaydettiğin içerikler</string>
+    <string name="_x_erik">x İçerik</string>
+    <string name="kaydedilenlerde_ara">Kaydedilenlerde ara...</string>
+    <string name="metinler">Metinler</string>
+    <string name="emin_misin_bunu_yapmak_istedi_ine_bir_kez_daha_d_n_bence">Emin misin bunu yapmak istediğine? Bir kez daha düşün bence...</string>
+    <string name="vazge_kals_n">Vazgeç, Kalsın</string>
+    <string name="evet_kar">Evet, Çıkar</string>
 </resources>
