@@ -4,12 +4,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
+import com.example.hadi_bakalm.model.AyarlarActivity;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
 import com.example.hadi_bakalm.model.SonIncelemeActivity;
 import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
@@ -65,6 +67,23 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_settings) {
+                Intent intent = new Intent(MainActivity.this, AyarlarActivity.class);
+                startActivity(intent);
+                return true;
+            } else if (itemId == R.id.nav_categories) { // Veya ana sayfa ID'si
+                // Zaten MainActivity üzerindesin, tekrar startActivity YAPMA!
+                return true;
+            }
+            return false;
+        });
+
         // Alt Gezinme Çubuğu (BottomNavigationView) Tıklama Yönetimi
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
@@ -95,3 +114,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+

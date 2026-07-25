@@ -30,6 +30,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".model.AyarlarActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".kisisel_metin_okuma_sayfa"
             android:exported="false" />
 
