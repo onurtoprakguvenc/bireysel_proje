@@ -81,4 +81,17 @@
     <string name="dun_eklendi">Dün eklendi</string>
     <string name="ki_isel_not">• Kişisel Not</string>
     <string name="met_n">METİN</string>
+    <string name="tumunu_kopyala">Tümünü Kopyala</string>
+    <string name="t_m_metni_panoya_aktar_r">Tüm metni panoya aktarır</string>
+    <string name="sayfayı_paylas">Sayfayı Paylaş</string>
+    <string name="ba_lant_y_ba_kas_yla_payla">Bağlantıyı başkasıyla paylaş</string>
+    <string name="hatal_bilgi_neri">Hatalı Bilgi / Öneri</string>
+    <string name="g_r_veya_d_zeltme_bildir">Görüş veya düzeltme bildir</string>
+    <string name="yaz_boyutu_ayarlama">Yazı Boyutu Ayarlama</string>
+    <string name="font_punto_ve_aral_n_de_i_tir">Font punto ve aralığını değiştir</string>
+    <string name="g_r_n_veya_d_zeltmeni_buraya_yazabilirsin">Görüşünü veya düzeltmeni buraya yazabilirsin...</string>
+    <string name="bu_kavramla_ilgili_hatal_bir_bilgi_veya_g_r_n_a_a_ya_yazabilirsin">Bu kavramla ilgili hatalı bir bilgi veya görüşünü aşağıya yazabilirsin:</string>
+    <string name="g_r_d_zeltme_bildir">Görüş / Düzeltme Bildir</string>
+    <string name="ptal">İptal</string>
+    <string name="g_nder">Gönder</string>
 </resources>

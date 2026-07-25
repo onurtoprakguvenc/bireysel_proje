@@ -338,7 +338,8 @@
                         android:text="@string/kaydet_butonu"
                         android:textColor="#0F172A"
                         android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:id="@+id/kaydet_butonu"/>
                 </LinearLayout>
             </RelativeLayout>
 
