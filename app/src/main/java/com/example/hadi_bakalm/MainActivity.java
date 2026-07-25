@@ -2,19 +2,16 @@ package com.example.hadi_bakalm;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
+import com.example.hadi_bakalm.model.SonIncelemeActivity;
 import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -30,22 +27,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        View topContainer = findViewById(R.id.topContainer);
-
-        ViewCompat.setOnApplyWindowInsetsListener(topContainer, (v, insets) -> {
-            Insets statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars());
-            v.setPadding(
-                    v.getPaddingLeft(),
-                    statusBarInsets.top + 16,
-                    v.getPaddingRight(),
-                    v.getPaddingBottom()
-            );
-            return insets;
-        });
 
         // XML bileşenlerinin ID bağlantıları
         btnMenu = findViewById(R.id.btnMenu);
@@ -76,27 +59,27 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewCategories.setAdapter(adapter);
 
         // Üst sağ 3 nokta menü butonu
-        btnMenu.setOnClickListener(v -> {
-            // İleride: Seçenekler menüsü
-        });
+        if (btnMenu != null) {
+            btnMenu.setOnClickListener(v -> {
+                // İleride: Seçenekler menüsü
+            });
+        }
 
         // Alt Gezinme Çubuğu (BottomNavigationView) Tıklama Yönetimi
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
             if (itemId == R.id.nav_categories) {
-                // Zaten kategoriler ekranındayız
                 return true;
             } else if (itemId == R.id.nav_saved) {
-                // Kaydedilenler sayfasına geçiş
                 Intent intent = new Intent(MainActivity.this, kaydet_ana_sayfa.class);
                 startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_recent) {
-                // İleride: Son İnceleme
+                Intent intent = new Intent(MainActivity.this, SonIncelemeActivity.class);
+                startActivity(intent);
                 return true;
             } else if (itemId == R.id.nav_settings) {
-                // İleride: Ayarlar
                 return true;
             }
 
@@ -104,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Ekran her ön plana çıktığında alt menüyü Kategoriler'e geri çeker
     @Override
     protected void onResume() {
         super.onResume();

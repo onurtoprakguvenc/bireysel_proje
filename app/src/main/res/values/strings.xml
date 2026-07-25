@@ -116,4 +116,9 @@
     <string name="evet_cıkar">Evet, Çıkar</string>
     <string name="bu_icerigi_kaydedilenler_listenden_cikarmak_istedigine_emin_misin">Bu içeriği kaydedilenler listenden çıkarmak istediğine emin misin?</string>
     <string name="emin_misin">Emin misin?</string>
+    <string name="_x_dk_nce">45 dk önce</string>
+    <string name="gecmiste_ara">Geçmişte ara...</string>
+    <string name="temizle">Temizle</string>
+    <string name="_2">2</string>
+    <string name="_4">4</string>
 </resources>
