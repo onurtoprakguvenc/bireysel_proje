@@ -23,7 +23,8 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="20dp"
+                tools:ignore="RelativeOverlap">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -44,7 +45,7 @@
                         android:id="@+id/txtHeaderTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ayarlar"
+                        android:text="@string/ayarlar"
                         android:textColor="#0F172A"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -60,7 +61,7 @@
                     android:paddingTop="4dp"
                     android:paddingEnd="10dp"
                     android:paddingBottom="4dp"
-                    android:text="v1.0.0"
+                    android:text="@string/v1_0_0"
                     android:textColor="#94A3B8"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -71,7 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="GÖRÜNÜM VE TEMA"
+                android:text="@string/gorunum_ve_tema"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -88,7 +89,8 @@
                 <!-- Uygulama Teması -->
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    tools:ignore="RelativeOverlap">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -104,6 +106,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_purple"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_palette"
                             app:tint="#6366F1" />
@@ -116,7 +119,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Uygulama Teması"
+                                android:text="@string/uygulama_temasi"
                                 android:textColor="#0F172A"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -124,7 +127,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Aydınlık veya karanlık görünüm"
+                                android:text="@string/aydinlik_veya_karanlik_gorunum"
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -135,7 +138,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
+                        android:layout_centerVertical="true"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp"
+                        tools:ignore="TouchTargetSizeCheck" />
                 </RelativeLayout>
 
                 <!-- Çizgi -->
@@ -164,6 +170,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_purple_light"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_font_size"
                             app:tint="#A855F7" />
@@ -176,7 +183,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Yazı Boyutu"
+                                android:text="@string/yazi_boyutu_ayarlama"
                                 android:textColor="#0F172A"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -184,7 +191,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Okuma ekranı metin punto boyutu"
+                                android:text="@string/okuma_ekran_metin_punto_boyutu"
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -197,7 +204,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="BİLDİRİM VE HATIRLATICILAR"
+                android:text="@string/b_ld_r_m_ve_hatirlaticilar"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -214,7 +221,8 @@
                 <!-- Günlük Öğrenme Hatırlatıcısı -->
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    tools:ignore="RelativeOverlap">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -230,6 +238,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_orange"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_bell"
                             app:tint="#F59E0B" />
@@ -242,7 +251,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Günlük Öğrenme Hatırlatıcısı"
+                                android:text="@string/gunluk_ogrenme_hatirlaticisi"
                                 android:textColor="#0F172A"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -250,7 +259,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Her gün belirlenen saatte bildirim gönder"
+                                android:text="@string/her_gun_belirlenen_saatte_bildirim_gonder"
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -262,7 +271,10 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:checked="true" />
+                        android:checked="true"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp"
+                        tools:ignore="TouchTargetSizeCheck" />
                 </RelativeLayout>
             </LinearLayout>
 
@@ -271,7 +283,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:text="VERİ VE GİZLİLİK YÖNETİMİ"
+                android:text="@string/veri_ve_gizlilik_yonetimi"
                 android:textColor="#94A3B8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -288,7 +300,8 @@
                 <!-- Geçmişi Otomatik Temizle -->
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    tools:ignore="RelativeOverlap">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -304,6 +317,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_blue"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_history"
                             app:tint="#3B82F6" />
@@ -316,7 +330,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Geçmişi Otomatik Temizle"
+                                android:text="@string/gecmisi_otomatik_temizle"
                                 android:textColor="#0F172A"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -324,7 +338,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Arama ve inceleme geçmişi periyodu"
+                                android:text="@string/arama_ve_inceleme_gecmisi_periyodu"
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -335,7 +349,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
+                        android:layout_centerVertical="true"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp"
+                        tools:ignore="TouchTargetSizeCheck" />
                 </RelativeLayout>
 
                 <!-- Çizgi -->
@@ -352,7 +369,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:minHeight="48dp"
+                    tools:ignore="TouchTargetSizeCheck">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -367,6 +386,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_green"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_export"
                             app:tint="#10B981" />
@@ -379,7 +399,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Verileri Dışa Aktar"
+                                android:text="@string/verileri_dısarı_aktar"
                                 android:textColor="#0F172A"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -387,7 +407,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Kaydedilen kavram ve geçmişi JSON indir"
+                                android:text="@string/kaydedilen_kavram_ve_gecmisi_json_indir"
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -398,6 +418,7 @@
                         android:layout_height="20dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_download"
                         app:tint="#94A3B8" />
                 </RelativeLayout>
@@ -416,7 +437,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:minHeight="48dp"
+                    tools:ignore="TouchTargetSizeCheck">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -431,6 +454,7 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="12dp"
                             android:background="@drawable/bg_icon_red"
+                            android:contentDescription="@null"
                             android:padding="8dp"
                             android:src="@drawable/ic_trash"
                             app:tint="#EF4444" />
@@ -443,7 +467,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Tüm Verileri Sıfırla"
+                                android:text="@string/tum_verileri_sifirla"
                                 android:textColor="#EF4444"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -451,7 +475,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Kaydedilenleri ve geçmişi kalıcı olarak sil"
+                                android:text="@string/kaydedilenleri_ve_gecmisi_kalici_olarak_sil"
                                 android:textColor="#F87171"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -462,6 +486,7 @@
                         android:layout_height="20dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_chevron_right"
                         app:tint="#CBD5E1" />
                 </RelativeLayout>
@@ -474,7 +499,7 @@
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
-                android:text="Son İnceleme &amp; Kavramlar Uygulaması\nVersiyon 1.0.0 (Build 2026)"
+                android:text="@string/versiyon_ve_şey_yazısı_ayarlar"
                 android:textColor="#94A3B8"
                 android:textSize="12sp" />
 
@@ -488,6 +513,7 @@
         android:layout_height="64dp"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
+        android:baselineAligned="false"
         android:elevation="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -503,6 +529,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_categories"
                 app:tint="#94A3B8" />
 
@@ -510,7 +537,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Kategoriler"
+                android:text="@string/kategoriler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -526,6 +553,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_bookmark"
                 app:tint="#94A3B8" />
 
@@ -533,7 +561,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Kaydedilenler"
+                android:text="@string/kaydedilenler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -549,6 +577,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_history"
                 app:tint="#94A3B8" />
 
@@ -556,7 +585,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Son İnceleme"
+                android:text="@string/son_inceleme"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -572,6 +601,7 @@
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_settings"
                 app:tint="#0F172A" />
 
@@ -579,7 +609,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Ayarlar"
+                android:text="@string/ayarlar"
                 android:textColor="#0F172A"
                 android:textSize="11sp"
                 android:textStyle="bold" />

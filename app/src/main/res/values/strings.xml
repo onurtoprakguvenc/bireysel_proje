@@ -121,4 +121,20 @@
     <string name="temizle">Temizle</string>
     <string name="_2">2</string>
     <string name="_4">4</string>
+    <string name="v1_0_0">v1.0.0</string>
+    <string name="gorunum_ve_tema">GÖRÜNÜM VE TEMA</string>
+    <string name="uygulama_temasi">Uygulama Teması</string>
+    <string name="aydinlik_veya_karanlik_gorunum">Aydınlık veya karanlık görünüm</string>
+    <string name="okuma_ekran_metin_punto_boyutu">Okuma ekranı metin punto boyutu</string>
+    <string name="b_ld_r_m_ve_hatirlaticilar">BİLDİRİM VE HATIRLATICILAR</string>
+    <string name="gunluk_ogrenme_hatirlaticisi">Günlük Öğrenme Hatırlatıcısı</string>
+    <string name="her_gun_belirlenen_saatte_bildirim_gonder">Her gün belirlenen saatte bildirim gönder</string>
+    <string name="veri_ve_gizlilik_yonetimi">VERİ VE GİZLİLİK YÖNETİMİ</string>
+    <string name="gecmisi_otomatik_temizle">Geçmişi Otomatik Temizle</string>
+    <string name="arama_ve_inceleme_gecmisi_periyodu">Arama ve inceleme geçmişi periyodu</string>
+    <string name="verileri_dısarı_aktar">Verileri Dışa Aktar</string>
+    <string name="kaydedilen_kavram_ve_gecmisi_json_indir">Kaydedilen kavram ve geçmişi JSON indir</string>
+    <string name="tum_verileri_sifirla">Tüm Verileri Sıfırla</string>
+    <string name="kaydedilenleri_ve_gecmisi_kalici_olarak_sil">Kaydedilenleri ve geçmişi kalıcı olarak sil</string>
+    <string name="versiyon_ve_şey_yazısı_ayarlar"><![CDATA[Son İnceleme & Kavramlar Uygulaması\nVersiyon 1.0.0 (Build 2026)]]></string>
 </resources>
