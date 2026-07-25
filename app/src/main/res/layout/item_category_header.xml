@@ -11,7 +11,7 @@
         android:id="@+id/txtCategoryTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Kategori Başlığı"
+        android:text="@string/kategori_baslıgı"
         android:textColor="#1A1C1E"
         android:textSize="18sp"
         android:textStyle="bold" />

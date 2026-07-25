@@ -115,7 +115,7 @@
             android:id="@+id/txtPageIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/sıra"
+            android:text="@string/sira"
             android:textColor="#64748B"
             android:textSize="13sp" />
 
@@ -155,14 +155,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/baslık"
-                android:text="@string/baslık_1"
+                android:text="@string/baslik_1"
                 />
             <TextView
                 android:id="@+id/txtMainContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:lineSpacingExtra="8dp"
-                android:text="Zihinsel modeller, dünyayı anlama ve karmaşık durumları basitleştirme şeklimizi belirler. Her gün yüzlerce karar alırken, farkında olmadan bu soyut kalıplardan faydalanırız.\n\nİyi bir düşünür olmak, sadece daha fazla bilgi edinmekle değil, var olan bilgileri doğru çerçevelere yerleştirebilmekle ilgilidir. Kavramları derinlemesine incelediğimizde fark ederiz ki, en karmaşık fikirler bile basit temel ilkelere dayanır.\n\nSüreç içerisinde kişisel notlar tutmak ve bu düşünceleri düzenli olarak gözden geçirmek, zihinsel netliği artırmanın en etkili yoludur."
+                android:text="@string/gecici"
                 android:textColor="#0F172A"
                 android:textSize="16sp" />
 
@@ -190,7 +190,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="@string/kısısel_notum"
+                    android:text="@string/kisisel_notum"
                     android:textColor="#0F172A"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -204,7 +204,7 @@
                 android:layout_marginTop="12dp"
                 android:background="@drawable/bg_search_bar"
                 android:gravity="top|start"
-                android:hint="@string/bu_metin_hakk_ndaki_ki_isel_d_ncelerini_ve_notlar_n_buraya_yaz_otomatik_kaydedilir"
+                android:hint="@string/otomatik_kayit_not_hint"
                 android:padding="16dp"
                 android:textColor="#0F172A"
                 android:textColorHint="#94A3B8"
@@ -242,7 +242,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:text="@string/okuma_temas"
+                    android:text="@string/okuma_temasi"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -260,7 +260,7 @@
                         android:background="@drawable/bg_theme_option_white"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/ayd_nl_k"
+                        android:text="@string/aydinlik"
                         android:textColor="#0F172A"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -324,7 +324,7 @@
                         android:background="@drawable/bg_settings_chip"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/a_"
+                        android:text="@string/a_minus"
                         android:textColor="#FFFFFF"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -334,7 +334,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="12dp"
-                        android:text="@string/_15sp"
+                        android:text="@string/sp_15"
                         android:textColor="#94A3B8"
                         android:textSize="13sp" />
 
@@ -345,7 +345,7 @@
                         android:background="@drawable/bg_settings_chip"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/a"
+                        android:text="@string/a_plus"
                         android:textColor="#FFFFFF"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -367,7 +367,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:text="@string/sat_r_aral"
+                    android:text="@string/satir_araligi"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -407,7 +407,7 @@
                         android:background="@drawable/bg_settings_chip"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="6dp"
-                        android:text="@string/geni"
+                        android:text="@string/genis"
                         android:textColor="#FFFFFF"
                         android:textSize="13sp" />
                 </LinearLayout>

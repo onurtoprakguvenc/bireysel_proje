@@ -69,7 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="@string/rendi_in_ve_ke_fetti_in_kavramlar_ke_fet"
+                android:text="@string/ogrendigin_ve_kesfettigin_kavramlar_kesfet"
                 android:textColor="#64748B"
                 android:textSize="13sp" />
         </LinearLayout>

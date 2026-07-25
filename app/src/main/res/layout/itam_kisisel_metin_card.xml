@@ -59,7 +59,7 @@
                 android:id="@+id/txtTextTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/baslık_1"
+                android:text="@string/baslik_1"
                 android:textColor="#0F172A"
                 android:textSize="17sp"
                 android:textStyle="bold" />

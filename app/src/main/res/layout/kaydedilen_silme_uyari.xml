@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Emin misin?"
+            android:text="@string/emin_misin"
             android:textColor="#0F172A"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -47,7 +47,7 @@
             android:layout_marginBottom="24dp"
             android:gravity="center"
             android:lineSpacingExtra="3dp"
-            android:text="Bu içeriği kaydedilenler listenden çıkarmak istediğine emin misin?"
+            android:text="@string/bu_icerigi_kaydedilenler_listenden_cikarmak_istedigine_emin_misin"
             android:textColor="#64748B"
             android:textSize="14sp" />
 
@@ -65,7 +65,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_black_icon_box"
                 android:backgroundTint="#F1F5F9"
-                android:text="Vazgeç"
+                android:text="@string/vazgec"
                 android:textAllCaps="false"
                 android:textColor="#334155"
                 android:textSize="13sp"
@@ -79,7 +79,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_black_icon_box"
                 android:backgroundTint="#F43F5E"
-                android:text="Evet, Çıkar"
+                android:text="@string/evet_cıkar"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"

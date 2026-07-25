@@ -82,7 +82,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="@string/kavram_a_klamas_normal"
+                        android:text="@string/kavram_aciklamasi_normal"
                         android:textColor="#0F172A"
                         android:textSize="16sp" />
 
@@ -199,7 +199,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="@string/nas_l_detayland_rmak_istersin_a_klamay"
+                android:text="@string/nasil_detaylandirmak_istersin_aciklamayi"
                 android:textColor="#0F172A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -335,7 +335,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="@string/kaydet_butonu"
+                        android:text="@string/kaydet"
                         android:textColor="#0F172A"
                         android:textSize="14sp"
                         android:textStyle="bold"

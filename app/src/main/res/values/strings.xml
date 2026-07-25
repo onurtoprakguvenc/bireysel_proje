@@ -1,97 +1,119 @@
 <resources>
+    <!-- UYGULAMA BİLGİLERİ -->
     <string name="app_name">ProjeAdiniz</string>
+
+    <!-- SOSYAL MEDYA VE DIŞ BAĞLANTILAR -->
     <string name="youtube_kanalim">youtube kanalım:</string>
     <string name="youtube">YouTube</string>
     <string name="instagram_hesabim">instagram hesabım:</string>
     <string name="instagram">Instagram</string>
-    <string name="kavram_sembolik">kavram temsili</string>
-    <string name="kavram_acklamasi_normal">kavram açıklaması normal</string>
+
+    <!-- GENEL NAVİGASYON VE BUTONLAR -->
+    <string name="geri">geri</string>
+    <string name="menu">menü</string>
+    <string name="ara">ara</string>
     <string name="paylas">paylaş</string>
     <string name="kopyala">kopyala</string>
-    <string name="benim_ki_isel_geli_tirici_notum_ve_d_ncem_o_kavram_hakk_nda_e_er_varsa">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
+    <string name="genislet">genişlet</string>
+
+    <!-- KAVRAM DETAY ALANLARI VE METİNLERİ -->
+    <string name="kavram_sembolik">kavram temsili</string>
+    <string name="kavram_temsili">kavram temsili</string>
+    <string name="kavram_aciklamasi_normal">kavram açıklaması normal</string>
+    <string name="benim_kisisel_gelistirici_notum">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
+    <string name="kisisel_not_analiz">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
     <string name="nasil_detaylandirmak_istersin_aciklamayi">nasıl detaylandırmak istersin açıklamayı?</string>
     <string name="ornek_diyaloglar">örnek diyaloglar</string>
-    <string name="genislet">genişlet</string>
-    <string name="buraya_prnek_diyalog_icerigi_gelecek">Buraya örnek diyalog içeriği gelecek.</string>
+    <string name="buraya_ornek_diyalog_icerigi_gelecek">Buraya örnek diyalog içeriği gelecek.</string>
     <string name="pratik_hayattaki_onemi">pratik hayattaki önemi</string>
     <string name="buraya_pratik_hayattaki_onemi_gelecek">Buraya pratik hayattaki önemi içeriği gelecek.</string>
     <string name="vucut_icinde_yarattigi_etki">vücut içinde yarattığı etki</string>
-    <string name="buraya_v_cut_i_inde_yaratt_etki_i_eri_i_gelecek">Buraya vücut içinde yarattığı etki içeriği gelecek.</string>
+    <string name="buraya_vucut_icinde_yarattigi_etki_gelecek">Buraya vücut içinde yarattığı etki içeriği gelecek.</string>
     <string name="baglantili_oldugu_diger_kavramlar">bağlantılı olduğu diğer kavramlar</string>
     <string name="kaydet_butonu">kaydet\nbutonu\n(uygulama\niçinde ama)</string>
-    <string name="a_a_da_sa_a_do_ru_alakal_di_er_kavramlar_s_ralan_r_recycler_view_ile">(aşağıda sağa doğru alakalı diğer kavramlar sıralanır recycler view ile)</string>
+    <string name="recycler_view_placeholder">(aşağıda sağa doğru alakalı diğer kavramlar sıralanır recycler view ile)</string>
+
+    <!-- KATEGORİLER VE SAYFA BAŞLIKLARI -->
     <string name="ayarlar">ayarlar</string>
-    <string name="ayarlar2">ayarlar</string>
-    <string name="kısısel_metinlerim">kişisel metinlerim</string>
-    <string name="simge">○</string>
+    <string name="kisisel_metinlerim">kişisel metinlerim</string>
     <string name="kavramlar">kavramlar</string>
-    <string name="simge2">○</string>
     <string name="hersey">her şey</string>
-    <string name="simge3">●</string>
-    <string name="menu">menü</string>
-    <string name="ara">ara</string>
     <string name="eslesme_bulundu">eşleşme bulundu</string>
     <string name="ogrendigin_ve_kesfettigin_kavramlar_kesfet">öğrendiğin ve keşfettiğin kavramları keşfet</string>
-    <string name="kisisel_metinlerim">kişisel metinlerim</string>
-    <string name="kendi_yazdın_notlar_ve_denemeler">kendi yazdığın notlar ve denemeler</string>
-    <string name="Nörokimya_Fizyoloji">Nörokimya/Fizyoloji</string>
-    <string name="geri">geri</string>
-    <string name="Bilissel_Psikoloji">Bilişsel Psikoloji</string>
-    <string name="Norobiyoloji">nöroloji</string>
+    <string name="kendi_yazdin_notlar_ve_denemeler">kendi yazdığın notlar ve denemeler</string>
+    <string name="norokimya_fizyoloji">Nörokimya/Fizyoloji</string>
+    <string name="bilissel_psikoloji">Bilişsel Psikoloji</string>
+    <string name="noroloji">nöroloji</string>
     <string name="kategoriler">Kategoriler</string>
-    <string name="baslık_1">başlık 1</string>
-    <string name="birkac_kelimelik_acklama_1">birkaç kelimelik açıklama 1</string>
     <string name="tumu">Tümü</string>
+
+    <!-- GEÇİCİ / TASARIM İSKELE ELEMANLARI -->
+    <string name="baslik_1">başlık 1</string>
+    <string name="birkac_kelimelik_acklama_1">birkaç kelimelik açıklama 1</string>
     <string name="kategori_1">kategori 1</string>
     <string name="kategori_2">kategori 2</string>
     <string name="kategori_3">kategori 3</string>
-    <string name="rendi_in_ve_ke_fetti_in_kavramlar_ke_fet">Öğrendiğin ve keşfettiğin kavramları keşfet</string>
-    <string name="norokimya_fizyoloji">Nörokimya/Fizyoloji</string>
-    <string name="kavram_temsili">kavram temsili</string>
-    <string name="kavram_a_klamas_normal">kavram açıklaması normal</string>
-    <string name="kisisel_not_analiz">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
-    <string name="nas_l_detayland_rmak_istersin_a_klamay">nasıl detaylandırmak istersin açıklamayı?</string>
+
+    <!-- SİMGELER -->
+    <string name="simge">○</string>
+    <string name="simge2">○</string>
+    <string name="simge3">●</string>
+
+    <!-- OKUMA VE KART DETAYLARI -->
     <string name="su_kadar_dk_okuma">şu kadar dk okuma</string>
     <string name="sonraki">Sonraki</string>
-    <string name="sıra">x / y</string>
+    <string name="sira">x / y</string>
     <string name="onceki">Önceki</string>
-    <string name="kısısel_notum">KİŞİSEL NOTUM</string>
-    <string name="bu_metin_hakk_ndaki_ki_isel_d_ncelerini_ve_notlar_n_buraya_yaz_otomatik_kaydedilir">Bu metin hakkındaki kişisel düşüncelerini ve notlarını buraya yaz (otomatik kaydedilir)...</string>
-    <string name="ayd_nl_k">Aydınlık</string>
+    <string name="kisisel_notum">KİŞİSEL NOTUM</string>
+
+    <!-- DIALOG VE OKUMA AYARLARI -->
+    <string name="otomatik_kayit_not_hint">Bu metin hakkındaki kişisel düşüncelerini ve notlarını buraya yaz (otomatik kaydedilir)...</string>
+    <string name="aydinlik">Aydınlık</string>
     <string name="sepya">Sepya</string>
     <string name="amoled">AMOLED</string>
-    <string name="okuma_temas">Okuma Teması:</string>
-    <string name="a">A+</string>
-    <string name="_15sp">15sp</string>
-    <string name="a_">A-</string>
-    <string name="sat_r_aral">Satır Aralığı:</string>
+    <string name="okuma_temasi">Okuma Teması:</string>
+    <string name="a_plus">A+</string>
+    <string name="sp_15">15sp</string>
+    <string name="a_minus">A-</string>
+    <string name="satir_araligi">Satır Aralığı:</string>
     <string name="dar">Dar</string>
     <string name="normal">Normal</string>
     <string name="metin_boyutu">Metin Boyutu:</string>
-    <string name="geni">Geniş</string>
+    <string name="genis">Geniş</string>
+
+    <!-- KAYDEDİLENLER VE SİLME POPUP -->
     <string name="kaydedilenler">kaydedilenler</string>
-    <string name="daha_sonra_okumak_i_in_kaydetti_in_i_erikler">Daha sonra okumak için kaydettiğin içerikler</string>
-    <string name="_x_erik">x İçerik</string>
+    <string name="daha_sonra_okumak_icin_kaydettigin_icerikler">Daha sonra okumak için kaydettiğin içerikler</string>
+    <string name="x_icerik">x İçerik</string>
     <string name="kaydedilenlerde_ara">Kaydedilenlerde ara...</string>
     <string name="metinler">Metinler</string>
-    <string name="emin_misin_bunu_yapmak_istedi_ine_bir_kez_daha_d_n_bence">Emin misin bunu yapmak istediğine? Bir kez daha düşün bence...</string>
-    <string name="vazge_kals_n">Vazgeç, Kalsın</string>
-    <string name="evet_kar">Evet, Çıkar</string>
-    <string name="son_nceleme">Son İnceleme</string>
+    <string name="emin_misin_bunu_yapmak_istedigine">Emin misin bunu yapmak istediğine? Bir kez daha düşün bence...</string>
+    <string name="vazgec_kalsin">Vazgeç, Kalsın</string>
+    <string name="evet_cikar">Evet, Çıkar</string>
+
+    <!-- ÜÇ NOKTA MENÜSÜ VE GERİ BİLDİRİM DİALOGU -->
+    <string name="son_inceleme">Son İnceleme</string>
     <string name="dun_eklendi">Dün eklendi</string>
-    <string name="ki_isel_not">• Kişisel Not</string>
-    <string name="met_n">METİN</string>
+    <string name="kisisel_not_bullet">• Kişisel Not</string>
+    <string name="metin_etiket">METİN</string>
     <string name="tumunu_kopyala">Tümünü Kopyala</string>
-    <string name="t_m_metni_panoya_aktar_r">Tüm metni panoya aktarır</string>
-    <string name="sayfayı_paylas">Sayfayı Paylaş</string>
-    <string name="ba_lant_y_ba_kas_yla_payla">Bağlantıyı başkasıyla paylaş</string>
-    <string name="hatal_bilgi_neri">Hatalı Bilgi / Öneri</string>
-    <string name="g_r_veya_d_zeltme_bildir">Görüş veya düzeltme bildir</string>
-    <string name="yaz_boyutu_ayarlama">Yazı Boyutu Ayarlama</string>
-    <string name="font_punto_ve_aral_n_de_i_tir">Font punto ve aralığını değiştir</string>
-    <string name="g_r_n_veya_d_zeltmeni_buraya_yazabilirsin">Görüşünü veya düzeltmeni buraya yazabilirsin...</string>
-    <string name="bu_kavramla_ilgili_hatal_bir_bilgi_veya_g_r_n_a_a_ya_yazabilirsin">Bu kavramla ilgili hatalı bir bilgi veya görüşünü aşağıya yazabilirsin:</string>
-    <string name="g_r_d_zeltme_bildir">Görüş / Düzeltme Bildir</string>
-    <string name="ptal">İptal</string>
-    <string name="g_nder">Gönder</string>
+    <string name="tum_metni_panoya_aktarir">Tüm metni panoya aktarır</string>
+    <string name="sayfayi_paylas">Sayfayı Paylaş</string>
+    <string name="baglantiyi_baskasiyla_paylas">Bağlantıyı başkasıyla paylaş</string>
+    <string name="hatali_bilgi_oneri">Hatalı Bilgi / Öneri</string>
+    <string name="gorus_veya_duzeltme_bildir">Görüş veya düzeltme bildir</string>
+    <string name="yazi_boyutu_ayarlama">Yazı Boyutu Ayarlama</string>
+    <string name="font_punto_ve_araligini_degistir">Font punto ve aralığını değiştir</string>
+    <string name="gorusunu_veya_duzeltmeni_buraya_yazabilirsin">Görüşünü veya düzeltmeni buraya yazabilirsin...</string>
+    <string name="bu_kavramla_ilgili_hatali_bir_bilgi_veya_gorusunu_asagiya_yazabilirsin">Bu kavramla ilgili hatalı bir bilgi veya görüşünü aşağıya yazabilirsin:</string>
+    <string name="gorus_duzeltme_bildir">Görüş / Düzeltme Bildir</string>
+    <string name="iptal">İptal</string>
+    <string name="gonder">Gönder</string>
+    <string name="kategori_baslıgı">Kategori Başlığı</string>
+    <string name="gecici">Zihinsel modeller, dünyayı anlama ve karmaşık durumları basitleştirme şeklimizi belirler.</string>
+    <string name="incele"><![CDATA[İncele >]]></string>
+    <string name="vazgec">Vazgeç</string>
+    <string name="evet_cıkar">Evet, Çıkar</string>
+    <string name="bu_icerigi_kaydedilenler_listenden_cikarmak_istedigine_emin_misin">Bu içeriği kaydedilenler listenden çıkarmak istediğine emin misin?</string>
+    <string name="emin_misin">Emin misin?</string>
 </resources>

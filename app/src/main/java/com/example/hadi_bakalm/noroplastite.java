@@ -7,10 +7,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,8 +57,9 @@ public class noroplastite extends AppCompatActivity {
 
         // --- 1. Görünüm Bağlantıları (XML ID'leri) ---
         btnBack = findViewById(R.id.btnBack);
-        btnMoreMenu = findViewById(R.id.btnMenu); // XML'de 3 nokta ikonu ID'si
-        btnKaydet = findViewById(R.id.btnSave);     // Kaydet Butonu (LinearLayout veya FrameLayout)
+        btnMoreMenu = findViewById(R.id.btnMenu);      // XML'de 3 nokta ikonu ID'si
+        btnKaydet = findViewById(R.id.btnSave);          // Kaydet Butonu (LinearLayout)
+        txtKaydet = findViewById(R.id.kaydet_butonu);    // Kaydet Butonu Yazısı (TextView)
 
         // 1. Kart (Kavram Açıklaması)
         TextView btnCopy1 = findViewById(R.id.btnCopy1);
@@ -150,29 +152,77 @@ public class noroplastite extends AppCompatActivity {
         }
     }
 
+    // Geri Bildirim Pop-up Diyalogu
+    private void showFeedbackDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.hatali_bilgi_oneri_gonder, null);
+
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setView(dialogView);
+
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        ImageView btnCloseDialog = dialogView.findViewById(R.id.btnCloseDialog);
+        EditText etFeedbackText = dialogView.findViewById(R.id.etFeedbackText);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancel);
+        Button btnSendFeedback = dialogView.findViewById(R.id.btnSendFeedback);
+
+        if (btnCloseDialog != null) {
+            btnCloseDialog.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnSendFeedback != null) {
+            btnSendFeedback.setOnClickListener(v -> {
+                String feedbackMessage = etFeedbackText.getText().toString().trim();
+
+                if (feedbackMessage.isEmpty()) {
+                    Toast.makeText(this, "Lütfen bir mesaj yazın", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Intent emailIntent = new Intent(Intent.ACTION_SENDTO);
+                emailIntent.setData(android.net.Uri.parse("mailto:"));
+                emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{"destek@emailadresin.com"});
+                emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Geri Bildirim - Nöroplastisite");
+                emailIntent.putExtra(Intent.EXTRA_TEXT, feedbackMessage);
+
+                try {
+                    startActivity(Intent.createChooser(emailIntent, "E-posta uygulamasını seçin:"));
+                    dialog.dismiss();
+                } catch (android.content.ActivityNotFoundException ex) {
+                    Toast.makeText(this, "Cihazda e-posta uygulaması bulunamadı.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        dialog.show();
+    }
+
     // 3 Nokta Pop-up Menüsü
     private void showPopupMenu(View anchorView) {
-        // 1. Özel layout'u inflate et
         View popupView = getLayoutInflater().inflate(R.layout.kavram_sayfa_uc_nokta_menu, null);
 
-        // 2. PopupWindow oluştur
         PopupWindow popupWindow = new PopupWindow(
                 popupView,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                true // Dışarıya tıklanınca kapanması için
+                true
         );
 
-        // Gölge görünürlüğü ve arka plan ayarı
         popupWindow.setElevation(16f);
 
-        // 3. Menü içi tıklamaları bağla
         LinearLayout menuCopyAll = popupView.findViewById(R.id.menuCopyAll);
         LinearLayout menuSharePage = popupView.findViewById(R.id.menuSharePage);
         LinearLayout menuReportError = popupView.findViewById(R.id.menuReportError);
         LinearLayout menuFontSize = popupView.findViewById(R.id.menuFontSize);
 
-        // Tümünü Kopyala
         if (menuCopyAll != null) {
             menuCopyAll.setOnClickListener(v -> {
                 copyToClipboard("Tüm Sayfa", "Nöroplastisite kavram metni ve notları...");
@@ -180,7 +230,6 @@ public class noroplastite extends AppCompatActivity {
             });
         }
 
-        // Sayfayı Paylaş
         if (menuSharePage != null) {
             menuSharePage.setOnClickListener(v -> {
                 shareText("Nöroplastisite", "Nöroplastisite kavram detayları...");
@@ -188,15 +237,13 @@ public class noroplastite extends AppCompatActivity {
             });
         }
 
-        // Hatalı Bilgi / Öneri
         if (menuReportError != null) {
             menuReportError.setOnClickListener(v -> {
-                Toast.makeText(this, "Geri bildirim ekranı açılacak", Toast.LENGTH_SHORT).show();
                 popupWindow.dismiss();
+                showFeedbackDialog();
             });
         }
 
-        // Yazı Boyutu Ayarlama
         if (menuFontSize != null) {
             menuFontSize.setOnClickListener(v -> {
                 Toast.makeText(this, "Yazı boyutu ayarı açılacak", Toast.LENGTH_SHORT).show();
@@ -204,7 +251,6 @@ public class noroplastite extends AppCompatActivity {
             });
         }
 
-        // 4. Pop-up'ı 3 noktanın hemen altında göster
         popupWindow.showAsDropDown(anchorView, -100, 10);
     }
 }

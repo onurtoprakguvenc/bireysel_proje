@@ -38,7 +38,7 @@
                     android:background="@drawable/bg_black_icon_box"
                     android:paddingHorizontal="10dp"
                     android:paddingVertical="4dp"
-                    android:text="@string/met_n"
+                    android:text="@string/metin_etiket"
                     android:textColor="#FFFFFF"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -49,7 +49,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="@string/ki_isel_not"
+                    android:text="@string/kisisel_notum"
                     android:textColor="#64748B"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -85,7 +85,7 @@
             android:layout_marginBottom="12dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:text="Zihinsel modeller, dünyayı anlama ve karmaşık durumları basitleştirme şeklimizi belirler."
+            android:text="@string/gecici"
             android:textColor="#475569"
             android:textSize="13sp" />
 
@@ -113,7 +113,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:text="İncele >"
+                android:text="@string/incele"
                 android:textColor="#0F172A"
                 android:textSize="13sp"
                 android:textStyle="bold" />
