@@ -335,12 +335,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="@string/kaydet"
+                        android:text="@string/kaydet_butonu"
                         android:textColor="#0F172A"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:id="@+id/kaydet_butonu"/>
-                </LinearLayout>
+                </LinearLayout>s
             </RelativeLayout>
 
             <!-- Yatay Kayan Bağlantılı Kavramlar Listesi -->
