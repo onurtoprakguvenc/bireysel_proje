@@ -340,7 +340,7 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:id="@+id/kaydet_butonu"/>
-                </LinearLayout>s
+                </LinearLayout>
             </RelativeLayout>
 
             <!-- Yatay Kayan Bağlantılı Kavramlar Listesi -->
