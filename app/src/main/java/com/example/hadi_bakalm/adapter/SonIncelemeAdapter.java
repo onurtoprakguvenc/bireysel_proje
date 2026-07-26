@@ -74,6 +74,11 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
         });
     }
 
+    public void filterList(List<SonIncelemeModel> filteredList) {
+        this.incelemeListesi = filteredList; // Sınıftaki liste değişken adın neyse onunla eşleştir
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getItemCount() {
         return incelemeListesi != null ? incelemeListesi.size() : 0;

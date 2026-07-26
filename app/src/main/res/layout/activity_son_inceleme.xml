@@ -17,25 +17,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingStart="20dp"
+            android:paddingTop="36dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="20dp">
 
             <!-- 1. Üst Başlık ve Temizle Butonu -->
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                tools:ignore="RelativeOverlap">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
+                <!-- Sol Taraf: Başlık -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_toStartOf="@id/btnClearHistory"
-                    android:layout_centerVertical="true"
+                    android:layout_weight="1"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- Siyah Vurgu Çizgisi -->
                     <View
                         android:layout_width="6dp"
                         android:layout_height="24dp"
@@ -52,38 +54,42 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <!-- Sağ Taraf: Temizle Butonu -->
                 <LinearLayout
                     android:id="@+id/btnClearHistory"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
+                    android:layout_height="wrap_content"
                     android:background="@drawable/bg_clear_button"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
                     android:paddingStart="12dp"
+                    android:paddingTop="8dp"
                     android:paddingEnd="12dp"
-                    android:minWidth="48dp"
-                    android:minHeight="48dp"
+                    android:paddingBottom="8dp"
                     tools:ignore="TouchTargetSizeCheck">
 
                     <ImageView
                         android:layout_width="14dp"
                         android:layout_height="14dp"
                         android:layout_marginEnd="4dp"
+                        android:clickable="false"
+                        android:focusable="false"
                         android:src="@drawable/ic_trash"
                         app:tint="#EF4444" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:focusable="false"
                         android:text="@string/temizle"
                         android:textColor="#EF4444"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-            </RelativeLayout>
+
+            </LinearLayout>
 
             <!-- 2. Arama Çubuğu -->
             <RelativeLayout
@@ -119,7 +125,7 @@
                     android:textSize="14sp" />
             </RelativeLayout>
 
-            <!-- 3. Filtre Çipleri (Filtre Butonları) -->
+            <!-- 3. Filtre Çipleri -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -131,7 +137,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <!-- Tümü Filtresi (Aktif) -->
+                    <!-- Tümü Filtresi -->
                     <LinearLayout
                         android:id="@+id/chipAll"
                         android:layout_width="wrap_content"
@@ -230,7 +236,7 @@
                 </LinearLayout>
             </HorizontalScrollView>
 
-            <!-- 4. Son İnceleme Listesi (RecyclerView) -->
+            <!-- 4. Son İnceleme Listesi -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvHistoryList"
                 android:layout_width="match_parent"
@@ -242,11 +248,11 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- ALT NAVİGASYON BARI -->
+    <!-- ALT NAVİGASYON BARI (KATEGORİLER SAYFASIYLA BİREBİR EŞİTLENDİ - 60dp) -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
         android:elevation="8dp"
@@ -274,7 +280,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/kategoriler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
@@ -301,7 +307,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/kaydedilenler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
@@ -328,7 +334,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/son_inceleme"
                 android:textColor="#0F172A"
                 android:textSize="11sp"
@@ -356,7 +362,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/ayarlar"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />

@@ -2,11 +2,17 @@ package com.example.hadi_bakalm.model;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,10 +23,11 @@ import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SonIncelemeActivity extends AppCompatActivity {
 
-    private LinearLayout btnClearHistory;
+    private LinearLayout btnClearHistory; // Tür düzeltildi
     private EditText etSearchHistory;
     private RecyclerView rvHistoryList;
     private SonIncelemeAdapter adapter;
@@ -44,15 +51,15 @@ public class SonIncelemeActivity extends AppCompatActivity {
         chipConcepts = findViewById(R.id.chipConcepts);
         chipTexts = findViewById(R.id.chipTexts);
 
+        // 1. Verileri Yükle
+        tumListe = new ArrayList<>();
+        tumListe.add(new SonIncelemeModel("Derin Çalışma Disiplini", "Dikkat dağıtıcı unsurlar olmadan odaklanmış çalı...", "45 dk önce", "Metin"));
+        tumListe.add(new SonIncelemeModel("Batık Maliyet Yanılsaması", "Geçmişte harcanan zaman veya para yüzünden ...", "2 saat önce", "Kavram"));
+        tumListe.add(new SonIncelemeModel("Stoacı Kabul İlkeleri", "Kontrol edemediğimiz olaylara karşı zihinsel ding...", "Dün", "Metin"));
+        tumListe.add(new SonIncelemeModel("Pareto İlkesi (80/20 Rule)", "Sonuçların %80'inin çabaların %20'sinden kayn...", "2 gün önce", "Kavram"));
+
         if (rvHistoryList != null) {
             rvHistoryList.setLayoutManager(new LinearLayoutManager(this));
-
-            // Verileri Yükle
-            tumListe = new ArrayList<>();
-            tumListe.add(new SonIncelemeModel("Derin Çalışma Disiplini", "Dikkat dağıtıcı unsurlar olmadan odaklanmış çalı...", "45 dk önce", "Metin"));
-            tumListe.add(new SonIncelemeModel("Batık Maliyet Yanılsaması", "Geçmişte harcanan zaman veya para yüzünden ...", "2 saat önce", "Kavram"));
-            tumListe.add(new SonIncelemeModel("Stoacı Kabul İlkeleri", "Kontrol edemediğimiz olaylara karşı zihinsel ding...", "Dün", "Metin"));
-            tumListe.add(new SonIncelemeModel("Pareto İlkesi (80/20 Rule)", "Sonuçların %80'inin çabaların %20'sinden kayn...", "2 gün önce", "Kavram"));
 
             adapter = new SonIncelemeAdapter(new ArrayList<>(tumListe), new SonIncelemeAdapter.OnItemClickListener() {
                 @Override
@@ -62,60 +69,155 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
                 @Override
                 public void onDeleteClick(int position) {
-                    tumListe.remove(position);
-                    filterListCurrentState(); // Mevcut filtreye göre listeyi yenile
+                    if (position >= 0 && position < tumListe.size()) {
+                        tumListe.remove(position);
+                        applyFilterAndSearch();
+                    }
                 }
             });
 
             rvHistoryList.setAdapter(adapter);
         }
 
-        // Tıklama Dinleyicileri
+        // 2. Çip Tıklama Dinleyicileri
         if (chipAll != null) chipAll.setOnClickListener(v -> filterList("Tümü"));
         if (chipConcepts != null) chipConcepts.setOnClickListener(v -> filterList("Kavram"));
         if (chipTexts != null) chipTexts.setOnClickListener(v -> filterList("Metin"));
 
-        // Tümünü Temizle Butonu
-        btnClearHistory = findViewById(R.id.btnClearHistory);
+        // 3. Arama Entegrasyonu
+        setupSearch();
 
-        if (btnClearHistory != null) {
-            // ScrollView engelini aşmak için katmanı öne çekiyoruz
-            btnClearHistory.bringToFront();
+        // 4. Temizle Butonu Entegrasyonu
+        setupClearButton();
+    }
 
-            btnClearHistory.setOnClickListener(v -> {
-                if (tumListe == null || tumListe.isEmpty()) {
-                    return;
-                }
-
-                new androidx.appcompat.app.AlertDialog.Builder(SonIncelemeActivity.this)
-                        .setTitle("Geçmişi Temizle")
-                        .setMessage("Tüm inceleme geçmişiniz silinecektir. Onaylıyor musunuz?")
-                        .setPositiveButton("Temizle", (dialog, which) -> {
-                            tumListe.clear();
-                            if (adapter != null) {
-                                adapter.updateList(new ArrayList<>());
-                            }
-                            updateChipCounts(0, 0, 0);
-                        })
-                        .setNegativeButton("Vazgeç", null)
-                        .show();
-            });
+    private void setupClearButton() {
+        if (btnClearHistory == null) {
+            Log.e("SonIncelemeActivity", "btnClearHistory XML içerisinde bulunamadı!");
+            return;
         }
-    } // onCreate Metodunun Kapanışı
 
-    private void filterListCurrentState() {
-        filterList(currentFilter);
+        btnClearHistory.setOnClickListener(v -> {
+            Log.d("SonIncelemeActivity", "Temizle butonuna basıldı.");
+
+            if (tumListe == null || tumListe.isEmpty()) {
+                Toast.makeText(SonIncelemeActivity.this, "Temizlenecek geçmiş bulunmuyor.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            new AlertDialog.Builder(SonIncelemeActivity.this)
+                    .setTitle("Geçmişi Temizle")
+                    .setMessage("Tüm inceleme geçmişiniz silinecektir. Onaylıyor musunuz?")
+                    .setPositiveButton("Temizle", (dialog, which) -> {
+                        tumListe.clear();
+                        applyFilterAndSearch();
+                        updateChipCounts(0, 0, 0);
+                        Toast.makeText(SonIncelemeActivity.this, "Geçmiş temizlendi.", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Vazgeç", null)
+                    .show();
+        });
+    }
+
+    private void setupSearch() {
+        if (etSearchHistory == null) return;
+
+        etSearchHistory.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                applyFilterAndSearch();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void filterList(String type) {
+        currentFilter = type;
+        applyFilterAndSearch();
+    }
+
+    private void applyFilterAndSearch() {
+        Locale trLocale = new Locale("tr", "TR");
+        String query = etSearchHistory != null ? etSearchHistory.getText().toString().toLowerCase(trLocale).trim() : "";
+
+        List<SonIncelemeModel> filteredList = new ArrayList<>();
+
+        int conceptsCount = 0;
+        int textsCount = 0;
+
+        for (SonIncelemeModel item : tumListe) {
+            if ("Kavram".equalsIgnoreCase(item.getTur())) conceptsCount++;
+            if ("Metin".equalsIgnoreCase(item.getTur())) textsCount++;
+
+            boolean matchesType = "Tümü".equalsIgnoreCase(currentFilter) || item.getTur().equalsIgnoreCase(currentFilter);
+
+            String baslik = item.getBaslik() != null ? item.getBaslik().toLowerCase(trLocale) : "";
+            String aciklama = item.getAciklama() != null ? item.getAciklama().toLowerCase(trLocale) : "";
+
+            boolean matchesQuery = baslik.contains(query) || aciklama.contains(query);
+
+            if (matchesType && matchesQuery) {
+                filteredList.add(item);
+            }
+        }
+
+        updateChipCounts(tumListe.size(), conceptsCount, textsCount);
+
+        if ("Tümü".equalsIgnoreCase(currentFilter)) {
+            updateChipUI(chipAll, true);
+            updateChipUI(chipConcepts, false);
+            updateChipUI(chipTexts, false);
+        } else if ("Kavram".equalsIgnoreCase(currentFilter)) {
+            updateChipUI(chipAll, false);
+            updateChipUI(chipConcepts, true);
+            updateChipUI(chipTexts, false);
+        } else if ("Metin".equalsIgnoreCase(currentFilter)) {
+            updateChipUI(chipAll, false);
+            updateChipUI(chipConcepts, false);
+            updateChipUI(chipTexts, true);
+        }
+
+        if (adapter != null) {
+            adapter.updateList(filteredList);
+        }
     }
 
     private void updateChipCounts(int total, int concepts, int texts) {
-        if (chipAll != null && chipAll.getChildCount() > 1) {
-            ((TextView) chipAll.getChildAt(1)).setText(String.valueOf(total));
+        // chipAll içerisinde tek TextView olduğu için getChildAt(0) kontrol ediliyor
+        if (chipAll != null && chipAll.getChildCount() > 0) {
+            View v = chipAll.getChildAt(0);
+            if (v instanceof TextView) {
+                ((TextView) v).setText("Tümü (" + total + ")");
+            }
         }
-        if (chipConcepts != null && chipConcepts.getChildCount() > 2) {
-            ((TextView) chipConcepts.getChildAt(2)).setText(String.valueOf(concepts));
+
+        if (chipConcepts != null) {
+            for (int i = 0; i < chipConcepts.getChildCount(); i++) {
+                View v = chipConcepts.getChildAt(i);
+                if (v instanceof TextView) {
+                    TextView tv = (TextView) v;
+                    if (!tv.getText().toString().equals(getString(R.string.kavramlar))) {
+                        tv.setText(String.valueOf(concepts));
+                    }
+                }
+            }
         }
-        if (chipTexts != null && chipTexts.getChildCount() > 2) {
-            ((TextView) chipTexts.getChildAt(2)).setText(String.valueOf(texts));
+
+        if (chipTexts != null) {
+            for (int i = 0; i < chipTexts.getChildCount(); i++) {
+                View v = chipTexts.getChildAt(i);
+                if (v instanceof TextView) {
+                    TextView tv = (TextView) v;
+                    if (!tv.getText().toString().equals(getString(R.string.metinler))) {
+                        tv.setText(String.valueOf(texts));
+                    }
+                }
+            }
         }
     }
 
@@ -151,36 +253,4 @@ public class SonIncelemeActivity extends AppCompatActivity {
             if (imgIcon != null) imgIcon.setColorFilter(Color.parseColor("#64748B"));
         }
     }
-
-    private void filterList(String type) {
-        currentFilter = type;
-        List<SonIncelemeModel> filteredList = new ArrayList<>();
-
-        if ("Tümü".equalsIgnoreCase(type)) {
-            filteredList.addAll(tumListe);
-            updateChipUI(chipAll, true);
-            updateChipUI(chipConcepts, false);
-            updateChipUI(chipTexts, false);
-        } else {
-            for (SonIncelemeModel item : tumListe) {
-                if (item.getTur().equalsIgnoreCase(type)) {
-                    filteredList.add(item);
-                }
-            }
-
-            if ("Kavram".equalsIgnoreCase(type)) {
-                updateChipUI(chipAll, false);
-                updateChipUI(chipConcepts, true);
-                updateChipUI(chipTexts, false);
-            } else if ("Metin".equalsIgnoreCase(type)) {
-                updateChipUI(chipAll, false);
-                updateChipUI(chipConcepts, false);
-                updateChipUI(chipTexts, true);
-            }
-        }
-
-        if (adapter != null) {
-            adapter.updateList(filteredList);
-        }
-    }
-} // Class Kapanışı
+}

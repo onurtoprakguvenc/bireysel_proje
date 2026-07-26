@@ -96,6 +96,11 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
         dialog.show();
     }
 
+    public void filterList(List<kaydedilenler> filteredList) {
+        this.itemList= filteredList; // Eğer sınıftaki liste değişken adın farklıysa (örn: list) onunla değiştir
+        notifyDataSetChanged();
+    }
+
     public static class SavedViewHolder extends RecyclerView.ViewHolder {
         TextView txtTagType, txtTagCategory, txtSavedTitle, txtSavedDesc, txtAddedTime, btnInspect;
         ImageView btnRemoveSave;

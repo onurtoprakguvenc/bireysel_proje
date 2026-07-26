@@ -17,7 +17,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingStart="20dp"
+            android:paddingTop="36dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="20dp">
 
             <!-- 1. Üst Başlık ve Sürüm Bilgisi -->
             <RelativeLayout
@@ -507,11 +510,11 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- ALT NAVİGASYON BARI -->
+    <!-- ALT NAVİGASYON BARI (STANDARTLAŞTIRILDI - 60dp) -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
         android:baselineAligned="false"
@@ -540,7 +543,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/kategoriler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
@@ -567,7 +570,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/kaydedilenler"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
@@ -594,7 +597,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/son_inceleme"
                 android:textColor="#94A3B8"
                 android:textSize="11sp" />
@@ -619,7 +622,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="@string/ayarlar"
                 android:textColor="#0F172A"
                 android:textSize="11sp"

@@ -2,6 +2,8 @@ package com.example.hadi_bakalm;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.ImageView;
 
@@ -21,26 +23,41 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnMenu;
     private EditText searchBar;
     private RecyclerView recyclerViewCategories;
+    private ana_sayfa_adapter adapter;
+    private List<String> kategoriListesi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Alt menü geçişlerini tek merkezden çalıştıran satır
         NavigationHelper.setupBottomNavigation(this);
 
+        initViews();
+        setupRecyclerView();
+        setupSearch();
+
+        if (btnMenu != null) {
+            btnMenu.setOnClickListener(v -> {
+                // İleride: Seçenekler menüsü
+            });
+        }
+    }
+
+    private void initViews() {
         btnMenu = findViewById(R.id.btnMenu);
         searchBar = findViewById(R.id.searchBar);
         recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
+    }
 
+    private void setupRecyclerView() {
         recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
 
-        List<String> kategoriListesi = new ArrayList<>();
+        kategoriListesi = new ArrayList<>();
         kategoriListesi.add("Kavramlar");
         kategoriListesi.add("Kişisel Metinlerim");
 
-        ana_sayfa_adapter adapter = new ana_sayfa_adapter(kategoriListesi, new ana_sayfa_adapter.OnItemClickListener() {
+        adapter = new ana_sayfa_adapter(kategoriListesi, new ana_sayfa_adapter.OnItemClickListener() {
             @Override
             public void onItemClick(String kategoriAdi) {
                 if (kategoriAdi.equals("Kavramlar")) {
@@ -54,11 +71,41 @@ public class MainActivity extends AppCompatActivity {
         });
 
         recyclerViewCategories.setAdapter(adapter);
+    }
 
-        if (btnMenu != null) {
-            btnMenu.setOnClickListener(v -> {
-                // İleride: Seçenekler menüsü
-            });
+    private void setupSearch() {
+        if (searchBar == null) return;
+
+        searchBar.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filter(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+    }
+
+    private void filter(String text) {
+        java.util.Locale trLocale = new java.util.Locale("tr", "TR");
+
+        String query = text != null ? text.toLowerCase(trLocale).trim() : "";
+        List<String> filteredList = new ArrayList<>();
+
+        for (String item : kategoriListesi) {
+            if (item.toLowerCase(trLocale).contains(query)) {
+                filteredList.add(item);
+            }
+        }
+
+        if (adapter != null) {
+            adapter.filterList(filteredList);
         }
     }
 }

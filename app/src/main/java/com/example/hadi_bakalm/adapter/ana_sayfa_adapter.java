@@ -38,6 +38,11 @@ public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.Vi
         holder.itemView.setOnClickListener(v -> listener.onItemClick(category));
     }
 
+    public void filterList(List<String> filteredList) {
+        this.categories = filteredList; // Liste değişken adın farklıysa onunla değiştir
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getItemCount() {
         return categories.size();
