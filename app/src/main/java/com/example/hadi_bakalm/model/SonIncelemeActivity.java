@@ -34,6 +34,7 @@ public class SonIncelemeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_son_inceleme);
+        NavigationHelper.setupBottomNavigation(this);
 
         btnClearHistory = findViewById(R.id.btnClearHistory);
         etSearchHistory = findViewById(R.id.etSearchHistory);

@@ -255,15 +255,19 @@
 
         <!-- Kategoriler -->
         <LinearLayout
+            android:id="@+id/navCategories"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_categories"
                 app:tint="#94A3B8" />
 
@@ -278,15 +282,19 @@
 
         <!-- Kaydedilenler -->
         <LinearLayout
+            android:id="@+id/navSaved"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_bookmark"
                 app:tint="#94A3B8" />
 
@@ -301,15 +309,19 @@
 
         <!-- Son İnceleme (Aktif) -->
         <LinearLayout
+            android:id="@+id/navRecent"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_history"
                 app:tint="#0F172A" />
 
@@ -325,15 +337,19 @@
 
         <!-- Ayarlar -->
         <LinearLayout
+            android:id="@+id/navSettings"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
                 android:layout_width="20dp"
                 android:layout_height="20dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_settings"
                 app:tint="#94A3B8" />
 

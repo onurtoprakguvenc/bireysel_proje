@@ -1,15 +1,17 @@
 package com.example.hadi_bakalm.model;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.hadi_bakalm.model.NavigationHelper;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
-import com.example.hadi_bakalm.model.kaydedilenler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,15 +22,40 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private kaydedilenler_adapter adapter;
     private List<kaydedilenler> savedList;
     private TextView txtItemCount;
+    private ImageView btnBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.kaydet_sayfa_gorme);
+        setContentView(R.layout.kaydet_sayfa_gorme); // XML dosya adınla eşleştirildi
 
+        // Alt navigasyon bağlantısı
+        NavigationHelper.setupBottomNavigation(this);
+
+        initViews();
+        setupClickListeners();
+        setupRecyclerView();
+    }
+
+    private void initViews() {
         recyclerViewSaved = findViewById(R.id.recyclerViewSaved);
         txtItemCount = findViewById(R.id.txtItemCount);
+        btnBack = findViewById(R.id.btnBack);
+    }
 
+    private void setupClickListeners() {
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                Intent intent = new Intent(kaydet_ana_sayfa.this, com.example.hadi_bakalm.MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+                overridePendingTransition(0, 0);
+            });
+        }
+    }
+
+    private void setupRecyclerView() {
         recyclerViewSaved.setLayoutManager(new LinearLayoutManager(this));
 
         // Test Verileri
