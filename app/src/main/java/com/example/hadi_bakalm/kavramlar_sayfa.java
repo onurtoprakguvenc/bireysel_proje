@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.concept_kavram_adapter;
 import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.model.CategoryGroupModel;
 import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import com.example.hadi_bakalm.model.concept_kavram_model;
 
@@ -38,9 +39,10 @@ public class kavramlar_sayfa extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // 3. RecyclerView Ayarları
+        // 3. RecyclerView Ayarları (Yatay Yönlendirme Eklendi)
         if (recyclerView != null) {
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+            recyclerView.setLayoutManager(layoutManager);
         }
 
         // 4. Verileri Yükle
@@ -55,29 +57,26 @@ public class kavramlar_sayfa extends AppCompatActivity {
     }
 
     private void loadConceptList() {
-        List<concept_kavram_model> liste = new ArrayList<>();
+        List<CategoryGroupModel> anaListe = new ArrayList<>();
 
-        // Kategori Başlığı
-        liste.add(new concept_kavram_model("Nörobilim ve Beyin"));
+        // 1. Kategori: Nörobilim ve Beyin
+        List<concept_kavram_model> norobilimKavramlari = new ArrayList<>();
+        norobilimKavramlari.add(new concept_kavram_model("amigdala", "geçici"));
+        norobilimKavramlari.add(new concept_kavram_model("pfc", "geçici"));
+        norobilimKavramlari.add(new concept_kavram_model("Dopamin ve Dopamin Bazal Seviyesi", "geçici"));
 
-        // Kavram Kartları
-        liste.add(new concept_kavram_model(
-                "amigdala",
-                "geçici"
-        ));
 
-        liste.add(new concept_kavram_model(
-                "pfc",
-                "geçici"
-        ));
+        anaListe.add(new CategoryGroupModel("Nörobilim ve Beyin", norobilimKavramlari));
 
-        liste.add(new concept_kavram_model(
-                "Dopamin ve Dopamin Bazal Seviyesi",
-                "geçici"
-        ));
+        // 2. Kategori örneği (isteğe bağlı yeni başlıklar eklenebilir)
+    /*
+    List<concept_kavram_model> psikolojiKavramlari = new ArrayList<>();
+    psikolojiKavramlari.add(new concept_kavram_model("Bilişsel Çelişki", "geçici"));
+    anaListe.add(new CategoryGroupModel("Bilişsel Psikoloji", psikolojiKavramlari));
+    */
 
         if (recyclerView != null) {
-            adapter = new concept_kavram_adapter(liste);
+            adapter = new concept_kavram_adapter(anaListe);
             recyclerView.setAdapter(adapter);
         }
     }

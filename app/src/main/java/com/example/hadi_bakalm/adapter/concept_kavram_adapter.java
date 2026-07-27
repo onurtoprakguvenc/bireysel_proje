@@ -2,89 +2,137 @@ package com.example.hadi_bakalm.adapter;
 
 import android.content.Intent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
+import com.example.hadi_bakalm.model.CategoryGroupModel;
 import com.example.hadi_bakalm.model.concept_kavram_model;
 import com.example.hadi_bakalm.noroplastite;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_adapter.RowViewHolder> {
 
-    private List<concept_kavram_model> liste;
+    private List<CategoryGroupModel> kategoriListesi;
+    private final RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
 
-    public concept_kavram_adapter(List<concept_kavram_model> liste) {
-        this.liste = liste;
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return liste.get(position).getItemType();
+    public concept_kavram_adapter(List<CategoryGroupModel> kategoriListesi) {
+        this.kategoriListesi = kategoriListesi;
     }
 
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == concept_kavram_model.TYPE_CATEGORY) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_category_header, parent, false);
-            return new CategoryViewHolder(view);
-        } else {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_kategori_card, parent, false);
-            return new ConceptViewHolder(view);
-        }
+    public RowViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_kategori_row, parent, false);
+
+        RowViewHolder holder = new RowViewHolder(view);
+        holder.recyclerViewHorizontal.setRecycledViewPool(viewPool);
+        return holder;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        concept_kavram_model item = liste.get(position);
+    public void onBindViewHolder(@NonNull RowViewHolder holder, int position) {
+        CategoryGroupModel group = kategoriListesi.get(position);
+        holder.txtCategoryTitle.setText(group.getKategoriBasligi());
 
-        if (getItemViewType(position) == concept_kavram_model.TYPE_CATEGORY) {
-            CategoryViewHolder catHolder = (CategoryViewHolder) holder;
-            catHolder.txtCategoryTitle.setText(item.getKategoriAdi());
-        } else {
-            ConceptViewHolder conceptHolder = (ConceptViewHolder) holder;
-            conceptHolder.txtKavramTitle.setText(item.getKavramAdi());
-            conceptHolder.txtKavramDesc.setText(item.getAciklama());
-
-            conceptHolder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(v.getContext(), noroplastite.class);
-                // Tıklanan kavramın adını detay sayfasına taşıyoruz:
-                intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
-                v.getContext().startActivity(intent);
-            });
-        }
+        holder.innerAdapter.updateData(group.getKavramlar());
     }
 
     @Override
     public int getItemCount() {
-        return liste != null ? liste.size() : 0;
+        return kategoriListesi != null ? kategoriListesi.size() : 0;
     }
 
-    public static class CategoryViewHolder extends RecyclerView.ViewHolder {
+    public static class RowViewHolder extends RecyclerView.ViewHolder {
         TextView txtCategoryTitle;
+        RecyclerView recyclerViewHorizontal;
+        InnerCardAdapter innerAdapter;
 
-        public CategoryViewHolder(@NonNull View itemView) {
+        public RowViewHolder(@NonNull View itemView) {
             super(itemView);
             txtCategoryTitle = itemView.findViewById(R.id.txtCategoryTitle);
+            recyclerViewHorizontal = itemView.findViewById(R.id.recyclerViewHorizontalButtons);
+
+            LinearLayoutManager layoutManager = new LinearLayoutManager(
+                    itemView.getContext(),
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+            );
+            recyclerViewHorizontal.setLayoutManager(layoutManager);
+
+            innerAdapter = new InnerCardAdapter(new ArrayList<>());
+            recyclerViewHorizontal.setAdapter(innerAdapter);
+
+            // DİKEY RECYCLERVIEW'IN DOKUNMAYI GASP ETMESİNİ ENGELLEYEN KOD:
+            recyclerViewHorizontal.setOnTouchListener((v, event) -> {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            });
         }
     }
 
-    public static class ConceptViewHolder extends RecyclerView.ViewHolder {
-        TextView txtKavramTitle;
-        TextView txtKavramDesc;
+    private static class InnerCardAdapter extends RecyclerView.Adapter<InnerCardAdapter.CardViewHolder> {
+        private List<concept_kavram_model> kavramlar;
 
-        public ConceptViewHolder(@NonNull View itemView) {
-            super(itemView);
-            txtKavramTitle = itemView.findViewById(R.id.txtCardTitle);
-            txtKavramDesc = itemView.findViewById(R.id.txtCardDescription);
+        public InnerCardAdapter(List<concept_kavram_model> kavramlar) {
+            this.kavramlar = kavramlar;
+        }
+
+        public void updateData(List<concept_kavram_model> newKavramlar) {
+            this.kavramlar = newKavramlar;
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public CardViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_kavram_card_horizontal, parent, false);
+            return new CardViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull CardViewHolder holder, int position) {
+            concept_kavram_model item = kavramlar.get(position);
+            holder.txtTitle.setText(item.getKavramAdi());
+            holder.txtDesc.setText(item.getAciklama());
+
+            holder.itemView.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                return false;
+            });
+
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(v.getContext(), noroplastite.class);
+                intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
+                v.getContext().startActivity(intent);
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return kavramlar != null ? kavramlar.size() : 0;
+        }
+
+        static class CardViewHolder extends RecyclerView.ViewHolder {
+            TextView txtTitle, txtDesc;
+
+            public CardViewHolder(@NonNull View itemView) {
+                super(itemView);
+                txtTitle = itemView.findViewById(R.id.txtCardTitle);
+                txtDesc = itemView.findViewById(R.id.txtCardDescription);
+            }
         }
     }
 }
