@@ -2,7 +2,6 @@ package com.example.hadi_bakalm.adapter;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
@@ -16,7 +15,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
-import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
+import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.model.ConceptItem_kavram;
+import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
 import com.example.hadi_bakalm.model.kaydedilenler;
 
 import java.util.List;
@@ -42,35 +43,25 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
     public void onBindViewHolder(@NonNull SavedViewHolder holder, int position) {
         kaydedilenler item = itemList.get(position);
 
-        // Model sınıfındaki verileri görünümlere bağlama
-        holder.txtTagType.setText(item.getType());
-        holder.txtTagCategory.setText("• " + item.getCategory());
-        holder.txtSavedTitle.setText(item.getTitle());
-        holder.txtSavedDesc.setText(item.getDescription());
-        holder.txtAddedTime.setText(item.getAddedTime());
+        if (holder.txtSavedTitle != null) holder.txtSavedTitle.setText(item.getTitle());
+        if (holder.txtSavedDesc != null) holder.txtSavedDesc.setText(item.getDescription());
+        if (holder.txtTagType != null) holder.txtTagType.setText(item.getType());
+        if (holder.txtTagCategory != null) holder.txtTagCategory.setText(item.getCategory());
 
-        // "İncele" butonuna tıklanınca Detay Sayfasına geçiş yapma
-        holder.btnInspect.setOnClickListener(v -> {
-            // "detay_sayfa" yerine projendeki detay activity sınıfının tam adını yazmalısın
-             Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
-             intent.putExtra("TITLE", item.getTitle());
-             intent.putExtra("DESCRIPTION", item.getDescription());
-             intent.putExtra("CATEGORY", item.getCategory());
-             context.startActivity(intent);
-        });
+        // Kaydedilenlerden Çıkar Butonu Tıklama Olayı
+        if (holder.btnRemoveSave != null) {
+            holder.btnRemoveSave.setOnClickListener(v -> {
+                int currentPosition = holder.getAdapterPosition();
+                if (currentPosition == RecyclerView.NO_POSITION) return;
 
-        // Silme butonuna tıklama
-        holder.btnRemoveSave.setOnClickListener(v -> {
-            int currentPosition = holder.getAdapterPosition();
-            if (currentPosition != RecyclerView.NO_POSITION) {
                 showDeleteDialog(currentPosition);
-            }
-        });
+            });
+        }
     }
 
     @Override
     public int getItemCount() {
-        return itemList.size();
+        return itemList != null ? itemList.size() : 0;
     }
 
     private void showDeleteDialog(int position) {
@@ -84,20 +75,48 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
         Button btnCancel = dialog.findViewById(R.id.btnCancel);
         Button btnConfirmDelete = dialog.findViewById(R.id.btnConfirmDelete);
 
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
 
-        btnConfirmDelete.setOnClickListener(v -> {
-            itemList.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, itemList.size());
-            dialog.dismiss();
-        });
+        if (btnConfirmDelete != null) {
+            btnConfirmDelete.setOnClickListener(v -> {
+                if (position >= 0 && position < itemList.size()) {
+                    kaydedilenler itemToDelete = itemList.get(position);
+
+                    // 1. ROOM VERİ TABANINDA İLGİLİ KAYDIN isSaved DURUMUNU FALSE YAPMA
+                    AppDatabase db = AppDatabase.getInstance(context);
+                    new Thread(() -> {
+                        List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                        if (allConcepts != null) {
+                            for (ConceptItem_kavram concept : allConcepts) {
+                                boolean isSameId = String.valueOf(concept.getId()).equals(itemToDelete.getId());
+                                boolean isSameTitle = concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(itemToDelete.getTitle());
+
+                                if (isSameId || isSameTitle) {
+                                    concept.setSaved(false);
+                                    db.conceptDao_kavram().update(concept);
+                                    break;
+                                }
+                            }
+                        }
+                    }).start();
+
+                    // 2. LİSTEDEN VE ARAYÜZDEN KALDIRMA
+                    itemList.remove(position);
+                    notifyItemRemoved(position);
+                    notifyItemRangeChanged(position, itemList.size());
+                }
+
+                dialog.dismiss();
+            });
+        }
 
         dialog.show();
     }
 
     public void filterList(List<kaydedilenler> filteredList) {
-        this.itemList= filteredList; // Eğer sınıftaki liste değişken adın farklıysa (örn: list) onunla değiştir
+        this.itemList = filteredList;
         notifyDataSetChanged();
     }
 
