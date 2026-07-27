@@ -12,9 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.hadi_bakalm.model.NavigationHelper;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
+import com.example.hadi_bakalm.data.AppDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,18 +24,23 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private RecyclerView recyclerViewSaved;
     private kaydedilenler_adapter adapter;
     private List<kaydedilenler> savedList;
-    private List<kaydedilenler> currentFilteredList; // Aktif filtrelenmiş liste
+    private List<kaydedilenler> currentFilteredList;
     private TextView txtItemCount;
     private ImageView btnBack;
     private EditText etSearch;
 
     private TextView btnFilterAll, btnFilterConcepts, btnFilterTexts;
-    private String selectedType = "ALL"; // "ALL", "KAVRAM", "METİN"
+    private String selectedType = "ALL";
+
+    // Room Veri Tabanı Bağlantısı
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kaydet_sayfa_gorme);
+
+        db = AppDatabase.getInstance(this);
 
         NavigationHelper.setupBottomNavigation(this);
 
@@ -43,6 +48,13 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         setupClickListeners();
         setupRecyclerView();
         setupSearchAndFilters();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Detay sayfasından kaydedildi/çıkarıldı yapılıp dönüldüğünde verileri tazeler
+        loadSavedDataFromDb();
     }
 
     private void initViews() {
@@ -95,18 +107,44 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private void setupRecyclerView() {
         recyclerViewSaved.setLayoutManager(new LinearLayoutManager(this));
 
-        // Test Verileri
         savedList = new ArrayList<>();
-        savedList.add(new kaydedilenler("1", "başlık 1 – düşünce mimarisi", "Zihinsel modeller, dünyayı anlama ve karmaşık durumları basitleştirme şeklimizi belirler.", "METİN", "Kişisel Not", "Dün eklendi"));
-        savedList.add(new kaydedilenler("2", "batık maliyet yanılsaması", "Geçmişte harcanan zaman veya para yüzünden zararlı bir karara devam etme eğilimi.", "KAVRAM", "Karar Teorisi", "3 gün önce eklendi"));
-        savedList.add(new kaydedilenler("3", "başlık 3 – dijital sadeleşme", "Gürültüden uzaklaşmak ve zihinsel sakinlik sağlamak için sadeleşme rehberi.", "METİN", "Minimalizm", "1 ay önce eklendi"));
-
-        currentFilteredList = new ArrayList<>(savedList);
+        currentFilteredList = new ArrayList<>();
 
         adapter = new kaydedilenler_adapter(this, currentFilteredList);
         recyclerViewSaved.setAdapter(adapter);
 
-        updateCount(currentFilteredList.size());
+        // Verileri ilk kez yüklüyoruz
+        loadSavedDataFromDb();
+    }
+
+    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
+    private void loadSavedDataFromDb() {
+        if (db == null) return;
+
+        // Veri tabanından tüm verileri çekiyoruz
+        List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+
+        savedList.clear();
+
+        if (allConcepts != null) {
+            for (ConceptItem_kavram item : allConcepts) {
+                // Sadece "isSaved == true" olan yani kaydedilmiş verileri süzüyoruz
+                if (item.isSaved()) {
+                    kaydedilenler savedItem = new kaydedilenler(
+                            String.valueOf(item.getId()),
+                            item.getTitle(),
+                            item.getDescription(),
+                            "KAVRAM", // Tür olarak KAVRAM atanıyor
+                            "Kaydedilen Kavram",
+                            "Kayıtlı"
+                    );
+                    savedList.add(savedItem);
+                }
+            }
+        }
+
+        // Arama ve filtreleme durumuna göre listeyi ekrana yansıtıyoruz
+        applyFilterAndSearch();
     }
 
     private void setupSearchAndFilters() {
@@ -135,7 +173,6 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         for (kaydedilenler item : savedList) {
             boolean matchesType = selectedType.equals("ALL") || item.getType().equalsIgnoreCase(selectedType);
 
-            // Türkçe Locale ile dönüştürerek arama yapıyoruz
             String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
             String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
 
@@ -154,7 +191,6 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void updateFilterUI() {
-        // Buton arka planlarını seçilen tipe göre görsel olarak günceller
         if (btnFilterAll != null) {
             btnFilterAll.setBackgroundResource(selectedType.equals("ALL") ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
             btnFilterAll.setTextColor(selectedType.equals("ALL") ? 0xFFFFFFFF : 0xFF475569);

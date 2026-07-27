@@ -23,7 +23,6 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.Vi
         this.liste = liste;
     }
 
-    // 1. Verinin türünü (Başlık mı, Kart mı?) belirliyoruz
     @Override
     public int getItemViewType(int position) {
         return liste.get(position).getItemType();
@@ -33,12 +32,10 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.Vi
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == concept_kavram_model.TYPE_CATEGORY) {
-            // Kategori başlığı görünümü
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_category_header, parent, false);
             return new CategoryViewHolder(view);
         } else {
-            // Normal kavram kartı görünümü
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_kategori_card, parent, false);
             return new ConceptViewHolder(view);
@@ -50,21 +47,18 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.Vi
         concept_kavram_model item = liste.get(position);
 
         if (getItemViewType(position) == concept_kavram_model.TYPE_CATEGORY) {
-            // Kategori başlığı verisini bas
             CategoryViewHolder catHolder = (CategoryViewHolder) holder;
             catHolder.txtCategoryTitle.setText(item.getKategoriAdi());
         } else {
-            // Kavram kartı verisini bas
             ConceptViewHolder conceptHolder = (ConceptViewHolder) holder;
             conceptHolder.txtKavramTitle.setText(item.getKavramAdi());
             conceptHolder.txtKavramDesc.setText(item.getAciklama());
 
-            // Kart tıklama olayı
             conceptHolder.itemView.setOnClickListener(v -> {
-                if (item.getKavramAdi() != null && item.getKavramAdi().equalsIgnoreCase("Nöroplastisite")) {
-                    Intent intent = new Intent(v.getContext(), noroplastite.class);
-                    v.getContext().startActivity(intent);
-                }
+                Intent intent = new Intent(v.getContext(), noroplastite.class);
+                // Tıklanan kavramın adını detay sayfasına taşıyoruz:
+                intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
+                v.getContext().startActivity(intent);
             });
         }
     }
@@ -74,7 +68,6 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.Vi
         return liste != null ? liste.size() : 0;
     }
 
-    // ViewHolder 1: Kategori Başlığı İçin
     public static class CategoryViewHolder extends RecyclerView.ViewHolder {
         TextView txtCategoryTitle;
 
@@ -84,7 +77,6 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    // ViewHolder 2: Kavram Kartı İçin
     public static class ConceptViewHolder extends RecyclerView.ViewHolder {
         TextView txtKavramTitle;
         TextView txtKavramDesc;
