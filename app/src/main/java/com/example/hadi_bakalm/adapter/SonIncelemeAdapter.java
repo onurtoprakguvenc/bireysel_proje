@@ -22,7 +22,7 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     public interface OnItemClickListener {
         void onItemClick(SonIncelemeModel item);
-        void onDeleteClick(int position);
+        void onDeleteClick(SonIncelemeModel item); // Doğrudan modeli gönderiyoruz
     }
 
     public SonIncelemeAdapter(List<SonIncelemeModel> incelemeListesi, OnItemClickListener listener) {
@@ -48,18 +48,18 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SonIncelemeModel item = incelemeListesi.get(position);
 
-        holder.txtTitle.setText(item.getBaslik());
-        holder.txtDescription.setText(item.getAciklama());
-        holder.txtTime.setText(item.getZaman());
-        holder.txtBadge.setText(item.getTur());
+        if (holder.txtTitle != null) holder.txtTitle.setText(item.getBaslik());
+        if (holder.txtDescription != null) holder.txtDescription.setText(item.getAciklama());
+        if (holder.txtTime != null) holder.txtTime.setText(item.getZaman());
+        if (holder.txtBadge != null) holder.txtBadge.setText(item.getTur());
 
         // Türüne göre ikon ve renk ayrımı
         if ("Kavram".equalsIgnoreCase(item.getTur())) {
-            holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
-            holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple); // İstenirse turuncu badge eklenebilir
+            if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
+            if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         } else {
-            holder.imgIcon.setImageResource(R.drawable.ic_document);
-            holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
+            if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_document);
+            if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         }
 
         // Kart tıklaması
@@ -67,15 +67,17 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
             if (listener != null) listener.onItemClick(item);
         });
 
-
         // Tekli silme (X) tıklaması
-        holder.btnRemove.setOnClickListener(v -> {
-            if (listener != null) listener.onDeleteClick(position);
-        });
+        if (holder.btnRemove != null) {
+            holder.btnRemove.setOnClickListener(v -> {
+                if (listener != null) listener.onDeleteClick(item);
+            });
+        }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void filterList(List<SonIncelemeModel> filteredList) {
-        this.incelemeListesi = filteredList; // Sınıftaki liste değişken adın neyse onunla eşleştir
+        this.incelemeListesi = filteredList;
         notifyDataSetChanged();
     }
 

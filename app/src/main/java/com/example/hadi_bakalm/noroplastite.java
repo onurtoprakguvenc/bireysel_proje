@@ -94,7 +94,10 @@ public class noroplastite extends AppCompatActivity {
                     boolean newSavedState = !currentConcept.isSaved();
                     currentConcept.setSaved(newSavedState);
 
-                    db.conceptDao_kavram().update(currentConcept);
+                    new Thread(() -> {
+                        db.conceptDao_kavram().update(currentConcept);
+                    }).start();
+
                     updateSaveButtonUI();
 
                     if (newSavedState) {
@@ -255,7 +258,7 @@ public class noroplastite extends AppCompatActivity {
         if (txtDialogues != null) txtDialogues.setText(dialogues);
         if (txtImportance != null) txtImportance.setText(importance);
 
-        // --- VERİ TABANI KONTROLÜ VE EŞLEŞTİRME ---
+        // --- VERİ TABANI KONTROLÜ VE SON İNCELEME ZAMANINI İŞLEME ---
         List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
         ConceptItem_kavram foundConcept = null;
 
@@ -272,20 +275,16 @@ public class noroplastite extends AppCompatActivity {
             currentConcept = foundConcept;
         } else {
             currentConcept = new ConceptItem_kavram(title, desc, note, dialogues, importance, false);
+            long newId = db.conceptDao_kavram().insert(currentConcept);
+            currentConcept.setId((int) newId);
+        }
 
-            // long newId = ... Satırını kaldırıp direkt çağırıyoruz:
-            db.conceptDao_kavram().insert(currentConcept);
-
-            // Eklendikten sonra veri tabanından ID'si oluşmuş halini çekiyoruz
-            List<ConceptItem_kavram> reCheck = db.conceptDao_kavram().getAllConceptler();
-            if (reCheck != null) {
-                for (ConceptItem_kavram item : reCheck) {
-                    if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
-                        currentConcept = item;
-                        break;
-                    }
-                }
-            }
+        // KULLANICI SAYFAYA GİRDİĞİ AN İNCELEME ZAMANINI GÜNCELLİYORUZ
+        if (currentConcept != null) {
+            currentConcept.setLastViewedTime(System.currentTimeMillis());
+            new Thread(() -> {
+                db.conceptDao_kavram().update(currentConcept);
+            }).start();
         }
 
         updateSaveButtonUI();

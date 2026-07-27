@@ -19,7 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.SonIncelemeAdapter;
-import com.google.android.material.button.MaterialButton;
+import com.example.hadi_bakalm.data.AppDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Locale;
 
 public class SonIncelemeActivity extends AppCompatActivity {
 
-    private LinearLayout btnClearHistory; // Tür düzeltildi
+    private LinearLayout btnClearHistory;
     private EditText etSearchHistory;
     private RecyclerView rvHistoryList;
     private SonIncelemeAdapter adapter;
@@ -37,11 +37,16 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private LinearLayout chipAll, chipConcepts, chipTexts;
     private String currentFilter = "Tümü";
 
+    // Room Veri Tabanı Bağlantısı
+    private AppDatabase db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_son_inceleme);
         NavigationHelper.setupBottomNavigation(this);
+
+        db = AppDatabase.getInstance(this);
 
         btnClearHistory = findViewById(R.id.btnClearHistory);
         etSearchHistory = findViewById(R.id.etSearchHistory);
@@ -51,26 +56,21 @@ public class SonIncelemeActivity extends AppCompatActivity {
         chipConcepts = findViewById(R.id.chipConcepts);
         chipTexts = findViewById(R.id.chipTexts);
 
-        // 1. Verileri Yükle
         tumListe = new ArrayList<>();
-        tumListe.add(new SonIncelemeModel("Derin Çalışma Disiplini", "Dikkat dağıtıcı unsurlar olmadan odaklanmış çalı...", "45 dk önce", "Metin"));
-        tumListe.add(new SonIncelemeModel("Batık Maliyet Yanılsaması", "Geçmişte harcanan zaman veya para yüzünden ...", "2 saat önce", "Kavram"));
-        tumListe.add(new SonIncelemeModel("Stoacı Kabul İlkeleri", "Kontrol edemediğimiz olaylara karşı zihinsel ding...", "Dün", "Metin"));
-        tumListe.add(new SonIncelemeModel("Pareto İlkesi (80/20 Rule)", "Sonuçların %80'inin çabaların %20'sinden kayn...", "2 gün önce", "Kavram"));
 
         if (rvHistoryList != null) {
             rvHistoryList.setLayoutManager(new LinearLayoutManager(this));
 
-            adapter = new SonIncelemeAdapter(new ArrayList<>(tumListe), new SonIncelemeAdapter.OnItemClickListener() {
+            adapter = new SonIncelemeAdapter(new ArrayList<>(), new SonIncelemeAdapter.OnItemClickListener() {
                 @Override
                 public void onItemClick(SonIncelemeModel item) {
-                    // Detay sayfasına geçiş
+                    // Detay sayfasına geçiş tıklama mantığı
                 }
 
                 @Override
-                public void onDeleteClick(int position) {
-                    if (position >= 0 && position < tumListe.size()) {
-                        tumListe.remove(position);
+                public void onDeleteClick(SonIncelemeModel item) {
+                    if (item != null && tumListe != null) {
+                        tumListe.remove(item);
                         applyFilterAndSearch();
                     }
                 }
@@ -79,27 +79,61 @@ public class SonIncelemeActivity extends AppCompatActivity {
             rvHistoryList.setAdapter(adapter);
         }
 
-        // 2. Çip Tıklama Dinleyicileri
+        // Çip Tıklama Dinleyicileri
         if (chipAll != null) chipAll.setOnClickListener(v -> filterList("Tümü"));
         if (chipConcepts != null) chipConcepts.setOnClickListener(v -> filterList("Kavram"));
         if (chipTexts != null) chipTexts.setOnClickListener(v -> filterList("Metin"));
 
-        // 3. Arama Entegrasyonu
+        // Arama ve Temizle Entegrasyonları
         setupSearch();
-
-        // 4. Temizle Butonu Entegrasyonu
         setupClearButton();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadHistoryDataFromDb();
+    }
+
+    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
+    private void loadHistoryDataFromDb() {
+        if (db == null) return;
+
+        new Thread(() -> {
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+            List<SonIncelemeModel> gecmisListesi = new ArrayList<>();
+
+            if (allConcepts != null) {
+                for (ConceptItem_kavram item : allConcepts) {
+                    // SADECE GİRİLİP İNCELENMİŞ OLANLARI ALIYORUZ (lastViewedTime > 0)
+                    if (item.getLastViewedTime() > 0) {
+
+                        // Zamanı okunabilir formata çevirebiliriz (Örn: "Son incelendi")
+                        SonIncelemeModel modelItem = new SonIncelemeModel(
+                                item.getId(),
+                                item.getTitle(),
+                                item.getDescription(),
+                                "Son incelendi",
+                                "Kavram"
+                        );
+                        gecmisListesi.add(modelItem);
+                    }
+                }
+            }
+
+            // Arayüzü ana izde güncelliyoruz
+            runOnUiThread(() -> {
+                tumListe.clear();
+                tumListe.addAll(gecmisListesi);
+                applyFilterAndSearch();
+            });
+        }).start();
+    }
+
     private void setupClearButton() {
-        if (btnClearHistory == null) {
-            Log.e("SonIncelemeActivity", "btnClearHistory XML içerisinde bulunamadı!");
-            return;
-        }
+        if (btnClearHistory == null) return;
 
         btnClearHistory.setOnClickListener(v -> {
-            Log.d("SonIncelemeActivity", "Temizle butonuna basıldı.");
-
             if (tumListe == null || tumListe.isEmpty()) {
                 Toast.makeText(SonIncelemeActivity.this, "Temizlenecek geçmiş bulunmuyor.", Toast.LENGTH_SHORT).show();
                 return;
@@ -109,10 +143,21 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     .setTitle("Geçmişi Temizle")
                     .setMessage("Tüm inceleme geçmişiniz silinecektir. Onaylıyor musunuz?")
                     .setPositiveButton("Temizle", (dialog, which) -> {
-                        tumListe.clear();
-                        applyFilterAndSearch();
-                        updateChipCounts(0, 0, 0);
-                        Toast.makeText(SonIncelemeActivity.this, "Geçmiş temizlendi.", Toast.LENGTH_SHORT).show();
+
+                        new Thread(() -> {
+                            if (db != null) {
+                                // Doğrudan DAO'daki deleteAll çalışacak
+                                db.conceptDao_kavram().deleteAll();
+                            }
+
+                            runOnUiThread(() -> {
+                                tumListe.clear();
+                                applyFilterAndSearch();
+                                updateChipCounts(0, 0, 0);
+                                Toast.makeText(SonIncelemeActivity.this, "Geçmiş temizlendi.", Toast.LENGTH_SHORT).show();
+                            });
+                        }).start();
+
                     })
                     .setNegativeButton("Vazgeç", null)
                     .show();
@@ -188,7 +233,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
     }
 
     private void updateChipCounts(int total, int concepts, int texts) {
-        // chipAll içerisinde tek TextView olduğu için getChildAt(0) kontrol ediliyor
         if (chipAll != null && chipAll.getChildCount() > 0) {
             View v = chipAll.getChildAt(0);
             if (v instanceof TextView) {

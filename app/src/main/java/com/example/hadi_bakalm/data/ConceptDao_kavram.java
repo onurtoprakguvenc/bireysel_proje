@@ -1,6 +1,7 @@
 package com.example.hadi_bakalm.data;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -14,8 +15,17 @@ public interface ConceptDao_kavram {
 
     @Insert
     long insert(ConceptItem_kavram conceptItem);
+
     @Update
     void update(ConceptItem_kavram conceptItem);
+
+    // --- SİLME METOTLARI (EKLENDİ) ---
+    @Delete
+    void delete(ConceptItem_kavram conceptItem); // Tek bir ögeyi silmek için
+
+    @Query("DELETE FROM kavramlar")
+    void deleteAll(); // Tüm geçmişi/kayıtları tek hamlede silmek için
+    // ---------------------------------
 
     @Query("SELECT * FROM kavramlar")
     List<ConceptItem_kavram> getAllConceptler();

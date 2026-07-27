@@ -40,6 +40,18 @@ public class ConceptItem_kavram {
     public String getDeveloperNote() { return developerNote; }
     public void setDeveloperNote(String developerNote) { this.developerNote = developerNote; }
 
+    // Sınıfın içine değişken olarak ekle:
+    private long lastViewedTime = 0; // 0 = Henüz incelenmedi
+
+    // Getter ve Setter metotları:
+    public long getLastViewedTime() {
+        return lastViewedTime;
+    }
+
+    public void setLastViewedTime(long lastViewedTime) {
+        this.lastViewedTime = lastViewedTime;
+    }
+
     public String getExampleDialogues() { return exampleDialogues; }
     public void setExampleDialogues(String exampleDialogues) { this.exampleDialogues = exampleDialogues; }
 
