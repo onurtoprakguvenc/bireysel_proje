@@ -2,6 +2,7 @@ package com.example.hadi_bakalm.adapter;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
@@ -16,8 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
 import com.example.hadi_bakalm.model.ConceptItem_kavram;
-import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
 import com.example.hadi_bakalm.model.kaydedilenler;
 
 import java.util.List;
@@ -43,19 +44,26 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
     public void onBindViewHolder(@NonNull SavedViewHolder holder, int position) {
         kaydedilenler item = itemList.get(position);
 
+        // Arayüz Elemanlarını Dolduruyoruz
         if (holder.txtSavedTitle != null) holder.txtSavedTitle.setText(item.getTitle());
         if (holder.txtSavedDesc != null) holder.txtSavedDesc.setText(item.getDescription());
         if (holder.txtTagType != null) holder.txtTagType.setText(item.getType());
         if (holder.txtTagCategory != null) holder.txtTagCategory.setText(item.getCategory());
+        if (holder.txtAddedTime != null) holder.txtAddedTime.setText(item.getAddedTime());
 
-        // Kaydedilenlerden Çıkar Butonu Tıklama Olayı
-        if (holder.btnRemoveSave != null) {
-            holder.btnRemoveSave.setOnClickListener(v -> {
-                int currentPosition = holder.getAdapterPosition();
-                if (currentPosition == RecyclerView.NO_POSITION) return;
-
-                showDeleteDialog(currentPosition);
+        // 1. İNCELE BUTONUNA TIKLAMA OLAYI (Kişisel Metin Okuma Sayfasına Aktarır)
+        if (holder.btnInspect != null) {
+            holder.btnInspect.setOnClickListener(v -> {
+                Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
+                intent.putExtra("TITLE", item.getTitle());
+                intent.putExtra("DESCRIPTION", item.getDescription());
+                context.startActivity(intent);
             });
+        }
+
+        // 2. KAYDETTEN ÇIKAR / SİL BUTONUNA TIKLAMA OLAYI
+        if (holder.btnRemoveSave != null) {
+            holder.btnRemoveSave.setOnClickListener(v -> showDeleteDialog(holder.getAdapterPosition()));
         }
     }
 

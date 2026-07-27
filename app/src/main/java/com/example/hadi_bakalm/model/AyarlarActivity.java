@@ -16,12 +16,17 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.example.hadi_bakalm.MainActivity;
 import com.example.hadi_bakalm.R;
+import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.model.ConceptItem_kavram;
+
+import java.util.List;
 
 public class AyarlarActivity extends AppCompatActivity {
 
     private Spinner spinnerTheme;
     private Spinner spinnerAutoClear;
     private SharedPreferences sharedPreferences;
+    private AppDatabase db;
 
     private static final String PREFS_NAME = "AyarlarPrefs";
     private static final String KEY_THEME = "secilen_tema_pozisyon";
@@ -30,9 +35,10 @@ public class AyarlarActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.ayarlar_sayfa);
+        setContentView(R.layout.ayarlar_sayfa); // Layout ismin activity_ayarlar ise burayı kontrol et
         NavigationHelper.setupBottomNavigation(this);
 
+        db = AppDatabase.getInstance(this);
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
         initViews();
@@ -40,7 +46,6 @@ public class AyarlarActivity extends AppCompatActivity {
         setupSpinners();
         setupClickListeners();
     }
-
 
     private void initViews() {
         spinnerTheme = findViewById(R.id.spinnerTheme);
@@ -123,8 +128,6 @@ public class AyarlarActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-
-
         String[] clearOptions = {"Asla", "Haftalık", "Aylık"};
         ArrayAdapter<String> clearAdapter = new ArrayAdapter<>(
                 this,
@@ -147,28 +150,44 @@ public class AyarlarActivity extends AppCompatActivity {
         });
     }
 
-
-
     private void setupClickListeners() {
-        findViewById(R.id.btnExportData).setOnClickListener(v -> {
-            Toast.makeText(this, "Veriler dışa aktarma dosyası hazırlanıyor...", Toast.LENGTH_SHORT).show();
-        });
+        // btnExportData kaldırıldığı için dinleyicisi temizlendi.
 
-        findViewById(R.id.btnResetAll).setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Tüm Verileri Sıfırla")
-                    .setMessage("Kaydedilen tüm içerikler ve inceleme geçmişi kalıcı olarak silinecektir. Onaylıyor musunuz?")
-                    .setPositiveButton("Sıfırla", (dialog, which) -> {
-                        sharedPreferences.edit().clear().apply();
-                        spinnerTheme.setSelection(0);
-                        spinnerAutoClear.setSelection(0);
+        View btnReset = findViewById(R.id.btnResetAll);
+        if (btnReset != null) {
+            btnReset.setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Tüm Verileri Sıfırla")
+                        .setMessage("Kaydedilen tüm içerikler ve inceleme geçmişi kalıcı olarak silinecektir. Onaylıyor musunuz?")
+                        .setPositiveButton("Sıfırla", (dialog, which) -> {
 
-                        Toast.makeText(this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
-                    })
-                    .setNegativeButton("Vazgeç", null)
-                    .show();
-        });
+                            // 1. Veri Tabanını Arka Planda Temizle (Kaydedilenler ve İnceleme Geçmişi Sıfırlanır)
+                            new Thread(() -> {
+                                if (db != null) {
+                                    List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                                    if (allConcepts != null) {
+                                        for (ConceptItem_kavram concept : allConcepts) {
+                                            concept.setSaved(false);
+                                            concept.setLastViewedTime(0);
+                                            db.conceptDao_kavram().update(concept);
+                                        }
+                                    }
+                                }
+
+                                // 2. SharedPreferences ve UI Güncellemesi
+                                runOnUiThread(() -> {
+                                    sharedPreferences.edit().clear().apply();
+                                    spinnerTheme.setSelection(0);
+                                    spinnerAutoClear.setSelection(0);
+
+                                    Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
+                                });
+                            }).start();
+
+                        })
+                        .setNegativeButton("Vazgeç", null)
+                        .show();
+            });
+        }
     }
-
 }
-

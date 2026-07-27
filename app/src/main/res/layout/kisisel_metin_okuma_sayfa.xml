@@ -27,7 +27,8 @@
         android:layout_below="@id/readingProgressBar"
         android:paddingHorizontal="20dp"
         android:paddingTop="12dp"
-        android:paddingBottom="12dp">
+        android:paddingBottom="12dp"
+        tools:ignore="RelativeOverlap">
 
         <ImageView
             android:id="@+id/btnBack"
@@ -35,6 +36,7 @@
             android:layout_height="24dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
+            android:contentDescription="@null"
             android:src="@drawable/ic_arrow_back"
             app:tint="#0F172A" />
 
@@ -61,6 +63,7 @@
                 android:layout_width="14dp"
                 android:layout_height="14dp"
                 android:layout_marginStart="8dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_time"
                 app:tint="#64748B" />
 
@@ -80,6 +83,7 @@
             android:layout_height="24dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
+            android:contentDescription="@null"
             android:src="@drawable/ic_tune"
             app:tint="#0F172A" />
     </RelativeLayout>
@@ -134,6 +138,7 @@
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_note_sticky"
                         app:tint="#D97706" />
 
@@ -147,6 +152,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <!-- 1. Kişisel Not Kutusu -->
                 <EditText
                     android:id="@+id/etPersonalNote"
                     android:layout_width="match_parent"
@@ -155,10 +161,49 @@
                     android:background="@drawable/bg_search_bar"
                     android:gravity="top|start"
                     android:hint="@string/otomatik_kayit_not_hint"
+                    android:inputType="textMultiLine"
                     android:padding="16dp"
                     android:textColor="#0F172A"
                     android:textColorHint="#94A3B8"
                     android:textSize="14sp" />
+
+                <!-- 2. Not Kutusunun Altına Bağımsız Yerleştirilen Kaydet Butonu -->
+                <LinearLayout
+                    android:id="@+id/btnBookmarkSave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_black_pill"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minWidth="48dp"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="10dp"
+                    tools:ignore="TouchTargetSizeCheck">
+
+                    <ImageView
+                        android:id="@+id/imgBookmarkIcon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_bookmark"
+                        app:tint="#FFFFFF" />
+
+                    <TextView
+                        android:id="@+id/txtBookmarkStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/kaydedilenler"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

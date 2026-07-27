@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Genel Arka Plan ve Kartlar -->
+    <color name="bg_main">#F8FAFC</color>
+    <color name="bg_card">#FFFFFF</color>
+
+    <!-- Yazı Renkleri -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#94A3B8</color>
+
+    <!-- Navigasyon ve Çizgiler -->
+    <color name="nav_bg">#FFFFFF</color>
+    <color name="divider_color">#F1F5F9</color>
 </resources>
