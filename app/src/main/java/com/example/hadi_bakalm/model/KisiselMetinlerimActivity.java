@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
+import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import com.example.hadi_bakalm.model.kaydedilenler;
 
 import java.util.ArrayList;
@@ -39,27 +41,53 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        setupDummyData();
-
-        filterCategory("TÜMÜ", btnAll);
+        displayList = new ArrayList<>();
 
         if (btnAll != null) {
             btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
         }
     }
 
-    private void setupDummyData() {
-        masterList = new ArrayList<>();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Sayfaya her girildiğinde Room veritabanından güncel kayıt durumlarını yükle
+        loadDataFromRoomDatabase();
+    }
 
-        // Son parametre isSaved (true = kaydedilmiş/koyu ikon, false = kaydedilmemiş/açık ikon)
-        masterList.add(new kaydedilenler("1", "Nöroplastisite Notları", "Beynin yapısının deneyimlerle değişimi.", "METİN", "", "Dün eklendi", false));
-        masterList.add(new kaydedilenler("2", "Sinaptik Budanma", "Kullanılmayan bağlantıların temizlenmesi.", "METİN", "", "2 gün önce", false));
-        masterList.add(new kaydedilenler("3", "Miyelinleşme Süreci", "Hızlı bilgi iletimi ve derinleşme.", "METİN", "", "Geçen hafta", false));
-        masterList.add(new kaydedilenler("4", "Bilişsel Haritalar", "Mekansal hafıza ve öğrenme süreçleri.", "METİN", "", "3 gün önce", false));
-        masterList.add(new kaydedilenler("5", "Zihinsel Modeller", "Karmaşık durumları basitleştirme sanatı.", "METİN", "", "5 gün önce", false));
-        masterList.add(new kaydedilenler("6", "Çerçeveleme Etkisi", "Bilginin sunuluş biçiminin kararlara etkisi.", "METİN", "", "1 hafta önce", false));
+    private void loadDataFromRoomDatabase() {
+        // Geçici liste şablonumuzu oluşturuyoruz
+        List<kaydedilenler> rawList = new ArrayList<>();
+        rawList.add(new kaydedilenler("1", "Nöroplastisite Notları", "Beynin yapısının deneyimlerle değişimi.", "METİN", "", "Dün eklendi", false));
+        rawList.add(new kaydedilenler("2", "Sinaptik Budanma", "Kullanılmayan bağlantıların temizlenmesi.", "METİN", "", "2 gün önce", false));
+        rawList.add(new kaydedilenler("3", "Miyelinleşme Süreci", "Hızlı bilgi iletimi ve derinleşme.", "METİN", "", "Geçen hafta", false));
+        rawList.add(new kaydedilenler("4", "Bilişsel Haritalar", "Mekansal hafıza ve öğrenme süreçleri.", "METİN", "", "3 gün önce", false));
+        rawList.add(new kaydedilenler("5", "Zihinsel Modeller", "Karmaşık durumları basitleştirme sanatı.", "METİN", "", "5 gün önce", false));
+        rawList.add(new kaydedilenler("6", "Çerçeveleme Etkisi", "Bilginin sunuluş biçiminin kararlara etkisi.", "METİN", "", "1 hafta önce", false));
 
-        displayList = new ArrayList<>();
+        AppDatabase db = AppDatabase.getInstance(this);
+
+        new Thread(() -> {
+            List<ConceptItem_kavram> dbConcepts = db.conceptDao_kavram().getAllConceptler();
+
+            if (dbConcepts != null && !dbConcepts.isEmpty()) {
+                for (kaydedilenler item : rawList) {
+                    for (ConceptItem_kavram concept : dbConcepts) {
+                        if (concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(item.getTitle())) {
+                            // Veritabanındaki isSaved durumunu modele aktar
+                            item.setSaved(concept.isSaved());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Arayüzü ana iş parçacığında (Main Thread) güncelle
+            runOnUiThread(() -> {
+                masterList = rawList;
+                filterCategory("TÜMÜ", btnAll);
+            });
+        }).start();
     }
 
     private void filterCategory(String categoryName, TextView selectedButton) {
@@ -68,10 +96,12 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
             selectedButton.setTextColor(Color.WHITE);
         }
 
-        displayList.clear();
-        displayList.addAll(masterList);
+        if (masterList != null) {
+            displayList.clear();
+            displayList.addAll(masterList);
 
-        adapter = new kaydedilenler_adapter(this, displayList);
-        recyclerView.setAdapter(adapter);
+            adapter = new kaydedilenler_adapter(this, displayList);
+            recyclerView.setAdapter(adapter);
+        }
     }
 }

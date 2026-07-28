@@ -4,9 +4,9 @@
     <color name="bg_main">#0F172A</color>
     <color name="bg_card">#1E293B</color>
 
-    <!-- Yazı Renkleri (Karanlıkta Açık Renk) -->
+    <!-- Yazı Renkleri (Karanlık) -->
     <color name="text_primary">#F8FAFC</color>
-    <color name="text_secondary">#64748B</color>
+    <color name="text_secondary">#94A3B8</color> <!-- Açık gri/mavi ton, okunabilirliği yüksek -->
 
     <!-- Navigasyon ve Çizgiler (Karanlık) -->
     <color name="nav_bg">#1E293B</color>

@@ -27,14 +27,13 @@ public class AyarlarActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private AppDatabase db;
 
-    private static final String PREFS_NAME = "AyarlarPrefs";
-    private static final String KEY_THEME = "secilen_tema_pozisyon";
+    public static final String PREFS_NAME = "AyarlarPrefs";
+    public static final String KEY_THEME = "secilen_tema_pozisyon";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ayarlar_sayfa);
-        NavigationHelper.setupBottomNavigation(this);
 
         db = AppDatabase.getInstance(this);
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -117,6 +116,7 @@ public class AyarlarActivity extends AppCompatActivity {
                             break;
                     }
 
+                    // Sayfanın yeni temayla anında çizilmesi için gerekli
                     recreate();
                 }
             }
@@ -150,6 +150,7 @@ public class AyarlarActivity extends AppCompatActivity {
                                 runOnUiThread(() -> {
                                     sharedPreferences.edit().clear().apply();
                                     spinnerTheme.setSelection(0);
+                                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
 
                                     Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
                                 });

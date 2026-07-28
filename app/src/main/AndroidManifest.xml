@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,14 +13,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Hadi_bakalım">
 
-
-        <activity android:name=".kavramlar_sayfa"
+        <activity
+            android:name=".kavramlar_sayfa"
             android:exported="false" />
 
         <activity
             android:name=".model.KisiselMetinlerimActivity"
             android:exported="false" />
-
 
         <activity
             android:name=".model.kaydet_ana_sayfa"
@@ -40,15 +40,16 @@
         <activity
             android:name=".noroplastite"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

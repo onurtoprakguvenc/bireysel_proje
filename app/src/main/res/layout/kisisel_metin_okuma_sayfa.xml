@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/bg_main"
     android:fitsSystemWindows="true">
 
     <!-- Üst Bar -->
@@ -14,20 +14,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         tools:ignore="RelativeOverlap">
 
         <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:contentDescription="@null"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/kategoriler"
+            android:focusable="true"
+            android:padding="12dp"
             android:src="@drawable/ic_arrow_back"
-            app:tint="#0F172A" />
+            app:tint="@color/text_primary" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -41,7 +45,7 @@
                 android:layout_height="14dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_time"
-                app:tint="#64748B" />
+                app:tint="@color/text_secondary" />
 
             <TextView
                 android:id="@+id/txtReadTime"
@@ -49,22 +53,26 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:text="@string/su_kadar_dk_okuma"
-                android:textColor="#64748B"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
         </LinearLayout>
 
         <ImageView
             android:id="@+id/btnSettings"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:contentDescription="@null"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/ayarlar"
+            android:focusable="true"
+            android:padding="12dp"
             android:src="@drawable/ic_tune"
-            app:tint="#0F172A" />
+            app:tint="@color/text_primary" />
     </RelativeLayout>
 
-    <!-- İçerik Katmanı: ScrollView ve Paneli üst üste bindiren FrameLayout -->
+    <!-- İçerik Katmanı -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -87,7 +95,10 @@
                     android:id="@+id/baslık"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/baslik_1" />
+                    android:text="@string/baslik_1"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/txtMainContent"
@@ -96,7 +107,7 @@
                     android:layout_marginTop="12dp"
                     android:lineSpacingExtra="8dp"
                     android:text="@string/gecici"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <!-- ASIL METİN İÇİN KOPYALA / PAYLAŞ BUTON SATIRI -->
@@ -113,7 +124,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_copy"
                         android:drawablePadding="6dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -121,9 +131,11 @@
                         android:minHeight="48dp"
                         android:paddingHorizontal="8dp"
                         android:text="@string/kopyala"
-                        android:textColor="#475569"
+                        android:textColor="@color/text_secondary"
                         android:textSize="13sp"
-                        app:drawableTint="#475569" />
+                        app:drawableStartCompat="@drawable/ic_copy"
+                        app:drawableTint="@color/text_secondary"
+                        tools:ignore="UseCompatTextViewDrawableXml,DuplicateSpeakableTextCheck,TextContrastCheck" />
 
                     <TextView
                         android:id="@+id/btnShareMainText"
@@ -132,7 +144,6 @@
                         android:layout_marginStart="12dp"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_share"
                         android:drawablePadding="6dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -140,16 +151,18 @@
                         android:minHeight="48dp"
                         android:paddingHorizontal="8dp"
                         android:text="@string/paylas"
-                        android:textColor="#475569"
+                        android:textColor="@color/text_secondary"
                         android:textSize="13sp"
-                        app:drawableTint="#475569" />
+                        app:drawableStartCompat="@drawable/ic_share"
+                        app:drawableTint="@color/text_secondary"
+                        tools:ignore="UseCompatTextViewDrawableXml,TextContrastCheck" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginVertical="20dp"
-                    android:background="#F1F5F9" />
+                    android:background="@color/divider_color" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -169,7 +182,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:text="@string/kisisel_notum"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -183,11 +196,13 @@
                     android:background="@drawable/bg_search_bar"
                     android:gravity="top|start"
                     android:hint="@string/otomatik_kayit_not_hint"
+                    android:importantForAutofill="no"
                     android:inputType="textMultiLine"
                     android:padding="16dp"
-                    android:textColor="#0F172A"
-                    android:textColorHint="#94A3B8"
-                    android:textSize="14sp" />
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="14sp"
+                    tools:ignore="TextContrastCheck" />
 
                 <!-- 2. Not Kutusunun Altına Bağımsız Yerleştirilen Butonlar -->
                 <LinearLayout
@@ -205,7 +220,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_copy"
                         android:drawablePadding="6dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -213,9 +227,11 @@
                         android:minHeight="48dp"
                         android:paddingHorizontal="8dp"
                         android:text="@string/kopyala"
-                        android:textColor="#475569"
+                        android:textColor="@color/text_secondary"
                         android:textSize="13sp"
-                        app:drawableTint="#475569" />
+                        app:drawableStartCompat="@drawable/ic_copy"
+                        app:drawableTint="@color/text_secondary"
+                        tools:ignore="UseCompatTextViewDrawableXml,DuplicateSpeakableTextCheck,TextContrastCheck" />
 
                     <View
                         android:layout_width="0dp"
@@ -235,8 +251,7 @@
                         android:minHeight="48dp"
                         android:orientation="horizontal"
                         android:paddingHorizontal="16dp"
-                        android:paddingVertical="10dp"
-                        tools:ignore="TouchTargetSizeCheck">
+                        android:paddingVertical="10dp">
 
                         <ImageView
                             android:id="@+id/imgBookmarkIcon"
@@ -261,7 +276,6 @@
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
-        <!-- Panel FrameLayout içinde ScrollView'un üstüne biner -->
         <include
             android:id="@+id/cardSettingsPanel"
             layout="@layout/layout_okuma_ayarlari_paneli"

@@ -1,6 +1,8 @@
 package com.example.hadi_bakalm;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,6 +10,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Ekran çizilmeden (setContentView) ÖNCE temayı yükle
+        applySavedTheme();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -41,6 +47,23 @@ public class MainActivity extends AppCompatActivity {
             btnMenu.setOnClickListener(v -> {
                 // İleride: Seçenekler menüsü
             });
+        }
+    }
+
+    private void applySavedTheme() {
+        SharedPreferences prefs = getSharedPreferences("AyarlarPrefs", Context.MODE_PRIVATE);
+        int position = prefs.getInt("secilen_tema_pozisyon", 0);
+
+        switch (position) {
+            case 0:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                break;
+            case 1:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                break;
+            case 2:
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                break;
         }
     }
 

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8FAFC">
+    android:background="@color/bg_main">
 
     <!-- ÜST İÇERİK ALANI (Scroll Olabilir Yapı) -->
     <ScrollView
@@ -49,7 +49,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/son_inceleme"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/text_primary"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -74,6 +74,7 @@
                         android:layout_height="14dp"
                         android:layout_marginEnd="4dp"
                         android:clickable="false"
+                        android:contentDescription="@null"
                         android:focusable="false"
                         android:src="@drawable/ic_trash"
                         app:tint="#EF4444" />
@@ -96,7 +97,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/bg_search_input"
+                android:background="@drawable/bg_search_bar"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp">
 
@@ -106,8 +107,9 @@
                     android:layout_height="20dp"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_search"
-                    app:tint="#94A3B8" />
+                    app:tint="@color/text_secondary" />
 
                 <EditText
                     android:id="@+id/etSearchHistory"
@@ -120,8 +122,8 @@
                     android:inputType="text"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
-                    android:textColor="#0F172A"
-                    android:textColorHint="#94A3B8"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
                     android:textSize="14sp" />
             </RelativeLayout>
 
@@ -143,7 +145,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_chip_active"
+                        android:background="@drawable/bg_black_icon_box"
                         android:gravity="center"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp">
@@ -161,7 +163,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:text="6"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -171,7 +173,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_chip_inactive"
+                        android:background="@drawable/bg_search_bar"
                         android:gravity="center"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp">
@@ -180,14 +182,15 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:layout_marginEnd="6dp"
+                            android:contentDescription="@null"
                             android:src="@drawable/ic_lightbulb"
-                            app:tint="#64748B" />
+                            app:tint="@color/text_secondary" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/kavramlar"
-                            android:textColor="#334155"
+                            android:textColor="@color/text_secondary"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
@@ -196,7 +199,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:text="@string/_4"
-                            android:textColor="#64748B"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -205,7 +208,7 @@
                         android:id="@+id/chipTexts"
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
-                        android:background="@drawable/bg_chip_inactive"
+                        android:background="@drawable/bg_search_bar"
                         android:gravity="center"
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp">
@@ -214,14 +217,15 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:layout_marginEnd="6dp"
+                            android:contentDescription="@null"
                             android:src="@drawable/ic_document"
-                            app:tint="#64748B" />
+                            app:tint="@color/text_secondary" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/metinler"
-                            android:textColor="#334155"
+                            android:textColor="@color/text_secondary"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
@@ -230,7 +234,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:text="@string/_2"
-                            android:textColor="#64748B"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -248,13 +252,13 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- ALT NAVİGASYON BARI (KATEGORİLER SAYFASIYLA BİREBİR EŞİTLENDİ - 60dp) -->
+    <!-- ALT NAVİGASYON BARI -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
-        android:background="#FFFFFF"
+        android:background="@color/nav_bg"
         android:elevation="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -275,14 +279,14 @@
                 android:layout_height="20dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_categories"
-                app:tint="#94A3B8" />
+                app:tint="@color/text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:text="@string/kategoriler"
-                android:textColor="#94A3B8"
+                android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -302,14 +306,14 @@
                 android:layout_height="20dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_bookmark"
-                app:tint="#94A3B8" />
+                app:tint="@color/text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:text="@string/kaydedilenler"
-                android:textColor="#94A3B8"
+                android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -329,14 +333,14 @@
                 android:layout_height="20dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_history"
-                app:tint="#0F172A" />
+                app:tint="@color/text_primary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:text="@string/son_inceleme"
-                android:textColor="#0F172A"
+                android:textColor="@color/text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -357,14 +361,14 @@
                 android:layout_height="20dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_settings"
-                app:tint="#94A3B8" />
+                app:tint="@color/text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:text="@string/ayarlar"
-                android:textColor="#94A3B8"
+                android:textColor="@color/text_secondary"
                 android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
