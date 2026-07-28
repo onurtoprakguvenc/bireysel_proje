@@ -1,10 +1,10 @@
 package com.example.hadi_bakalm.model;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.SonIncelemeAdapter;
 import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
+import com.example.hadi_bakalm.noroplastite;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +66,18 @@ public class SonIncelemeActivity extends AppCompatActivity {
             adapter = new SonIncelemeAdapter(new ArrayList<>(), new SonIncelemeAdapter.OnItemClickListener() {
                 @Override
                 public void onItemClick(SonIncelemeModel item) {
-                    // Detay sayfasına geçiş tıklama mantığı
+                    if (item == null) return;
+
+                    Intent intent;
+                    if ("Metin".equalsIgnoreCase(item.getTur())) {
+                        intent = new Intent(SonIncelemeActivity.this, kisisel_metin_okuma_sayfa.class);
+                    } else {
+                        intent = new Intent(SonIncelemeActivity.this, noroplastite.class);
+                    }
+
+                    intent.putExtra("TITLE", item.getBaslik());
+                    intent.putExtra("DESCRIPTION", item.getAciklama());
+                    startActivity(intent);
                 }
 
                 @Override
@@ -108,7 +121,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     // SADECE GİRİLİP İNCELENMİŞ OLANLARI ALIYORUZ (lastViewedTime > 0)
                     if (item.getLastViewedTime() > 0) {
 
-                        // Zamanı okunabilir formata çevirebiliriz (Örn: "Son incelendi")
                         SonIncelemeModel modelItem = new SonIncelemeModel(
                                 item.getId(),
                                 item.getTitle(),
@@ -121,7 +133,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
                 }
             }
 
-            // Arayüzü ana izde güncelliyoruz
             runOnUiThread(() -> {
                 tumListe.clear();
                 tumListe.addAll(gecmisListesi);
@@ -146,7 +157,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
                         new Thread(() -> {
                             if (db != null) {
-                                // Doğrudan DAO'daki deleteAll çalışacak
                                 db.conceptDao_kavram().deleteAll();
                             }
 
