@@ -4,10 +4,16 @@ public class kaydedilenler {
     private String id;
     private String title;
     private String description;
-    private String type; // "METİN" veya "KAVRAM"
-    private String category; // "Kişisel Not", "Karar Teorisi" vb.
-    private String addedTime; // "Dün eklendi", "3 gün önce eklendi" vb.
+    private String type;
+    private String category;
+    private String addedTime;
+    private boolean isSaved; // Eklenen değişken
 
+    // Boş Constructor
+    public kaydedilenler() {
+    }
+
+    // Parametreli Constructor (isSaved olmadan kullanım için varsayılan false)
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime) {
         this.id = id;
         this.title = title;
@@ -15,12 +21,75 @@ public class kaydedilenler {
         this.type = type;
         this.category = category;
         this.addedTime = addedTime;
+        this.isSaved = false;
     }
 
-    public String getId() { return id; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getType() { return type; }
-    public String getCategory() { return category; }
-    public String getAddedTime() { return addedTime; }
+    // Tam Parametreli Constructor
+    public kaydedilenler(String id, String title, String description, String type, String category, String addedTime, boolean isSaved) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.type = type;
+        this.category = category;
+        this.addedTime = addedTime;
+        this.isSaved = isSaved;
+    }
+
+    // Getter ve Setter Metodları
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getAddedTime() {
+        return addedTime;
+    }
+
+    public void setAddedTime(String addedTime) {
+        this.addedTime = addedTime;
+    }
+
+    // Hatanın çözümü için gerekli metod:
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean saved) {
+        isSaved = saved;
+    }
 }

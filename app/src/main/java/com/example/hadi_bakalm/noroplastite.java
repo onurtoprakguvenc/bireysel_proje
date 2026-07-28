@@ -36,6 +36,10 @@ public class noroplastite extends AppCompatActivity {
 
     // Panoya Kopyalama Yardımcı Metodu
     private void copyToClipboard(String label, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, "Kopyalanacak metin bulunamadı", Toast.LENGTH_SHORT).show();
+            return;
+        }
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText(label, text);
         if (clipboard != null) {
@@ -46,6 +50,10 @@ public class noroplastite extends AppCompatActivity {
 
     // Metin Paylaşma Yardımcı Metodu
     private void shareText(String title, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, "Paylaşılacak metin bulunamadı", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
@@ -77,6 +85,12 @@ public class noroplastite extends AppCompatActivity {
         TextView btnShare1 = findViewById(R.id.btnShare1);
         TextView btnCopy2 = findViewById(R.id.btnCopy2);
         TextView btnShare2 = findViewById(R.id.btnShare2);
+
+        // Yeni Eklenen Buton Bağlantıları (Açılır Paneller)
+        TextView btnCopyDialogues = findViewById(R.id.btnCopyDialogues);
+        TextView btnShareDialogues = findViewById(R.id.btnShareDialogues);
+        TextView btnCopyImportance = findViewById(R.id.btnCopyImportance);
+        TextView btnShareImportance = findViewById(R.id.btnShareImportance);
 
         btnDialogues = findViewById(R.id.btnDialogues);
         btnImportance = findViewById(R.id.btnImportance);
@@ -129,6 +143,24 @@ public class noroplastite extends AppCompatActivity {
 
         if (btnShare2 != null && txtPersonalNote != null) {
             btnShare2.setOnClickListener(v -> shareText("Kişisel Not", txtPersonalNote.getText().toString()));
+        }
+
+        // Örnek Diyaloglar için Kopyala / Paylaş
+        if (btnCopyDialogues != null && txtDialoguesContent != null) {
+            btnCopyDialogues.setOnClickListener(v -> copyToClipboard("Örnek Diyaloglar", txtDialoguesContent.getText().toString()));
+        }
+
+        if (btnShareDialogues != null && txtDialoguesContent != null) {
+            btnShareDialogues.setOnClickListener(v -> shareText("Örnek Diyaloglar", txtDialoguesContent.getText().toString()));
+        }
+
+        // Pratik Hayattaki Önemi için Kopyala / Paylaş
+        if (btnCopyImportance != null && txtImportanceContent != null) {
+            btnCopyImportance.setOnClickListener(v -> copyToClipboard("Pratik Hayattaki Önemi", txtImportanceContent.getText().toString()));
+        }
+
+        if (btnShareImportance != null && txtImportanceContent != null) {
+            btnShareImportance.setOnClickListener(v -> shareText("Pratik Hayattaki Önemi", txtImportanceContent.getText().toString()));
         }
 
         // --- 7. Geri Butonu ve Açılır/Kapanır Panel Mantıkları ---
@@ -240,7 +272,7 @@ public class noroplastite extends AppCompatActivity {
                     "B: Kesin bir yargıda bulunamam ama net bir tahmin yürütebilirim. Bence senin dopamin havuzunun tabanı (baseline) şu an dibi görmüş durumda. Ya son günlerde beynini çok fazla bedava ve hızlı hazla (sosyal medya, abur cubur, aşırı oyun) yorup sistemi tükettin; ya da kafanı arkada çok büyük bir problem kurcalıyor ve beynin o sorunu çözmek için tüm enerjiyi (glikozu) harcarken, bu koltuktan kalkmanı sağlayacak o ödül/motivasyon kimyasalını sana lojistik olarak ateşlemiyor. Yani olay tembellik değil, dopamin lojistiğinin kesilmesi.\n\n" +
                     "A: Doğru gibi yani... Ben bunu bir düşüneyim.";
 
-            importance = ""; // Dopamin için ayrı bir önem metni verilmediği için boş bırakıldı.
+            importance = "";
 
         } else {
             // Varsayılan Nöroplastisite Verisi
@@ -362,14 +394,46 @@ public class noroplastite extends AppCompatActivity {
 
         if (menuCopyAll != null) {
             menuCopyAll.setOnClickListener(v -> {
-                copyToClipboard("Tüm Sayfa", "Kavram detayları ve kişisel notlar...");
+                TextView txtTitle = findViewById(R.id.txtConceptTitle);
+                TextView txtDesc = findViewById(R.id.txtConceptDescription);
+                TextView txtNote = findViewById(R.id.txtPersonalNote);
+                TextView txtDialogues = findViewById(R.id.txtDialoguesContent);
+                TextView txtImportance = findViewById(R.id.txtImportanceContent);
+
+                StringBuilder fullText = new StringBuilder();
+
+                if (txtTitle != null && txtTitle.getText() != null) {
+                    fullText.append("KAVRAM: ").append(txtTitle.getText().toString()).append("\n\n");
+                }
+                if (txtDesc != null && txtDesc.getText() != null) {
+                    fullText.append("AÇIKLAMA:\n").append(txtDesc.getText().toString()).append("\n\n");
+                }
+                if (txtNote != null && txtNote.getText() != null) {
+                    fullText.append("KİŞİSEL NOT / ANALİZ:\n").append(txtNote.getText().toString()).append("\n\n");
+                }
+                if (txtDialogues != null && txtDialogues.getText() != null && !txtDialogues.getText().toString().isEmpty()) {
+                    fullText.append("ÖRNEK DİYALOGLAR:\n").append(txtDialogues.getText().toString()).append("\n\n");
+                }
+                if (txtImportance != null && txtImportance.getText() != null && !txtImportance.getText().toString().isEmpty()) {
+                    fullText.append("PRATİK HAYATTAKİ ÖNEMİ:\n").append(txtImportance.getText().toString());
+                }
+
+                copyToClipboard("Tüm Sayfa", fullText.toString().trim());
                 popupWindow.dismiss();
             });
         }
 
         if (menuSharePage != null) {
             menuSharePage.setOnClickListener(v -> {
-                shareText("Kavram Detayı", "Kavram detayları...");
+                TextView txtTitle = findViewById(R.id.txtConceptTitle);
+                TextView txtDesc = findViewById(R.id.txtConceptDescription);
+
+                String shareBody = "";
+                if (txtTitle != null && txtDesc != null) {
+                    shareBody = txtTitle.getText().toString() + "\n\n" + txtDesc.getText().toString();
+                }
+
+                shareText("Kavram Detayı", shareBody);
                 popupWindow.dismiss();
             });
         }

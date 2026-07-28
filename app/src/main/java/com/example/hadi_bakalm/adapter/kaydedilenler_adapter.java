@@ -1,16 +1,14 @@
 package com.example.hadi_bakalm.adapter;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -44,14 +42,14 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
     public void onBindViewHolder(@NonNull SavedViewHolder holder, int position) {
         kaydedilenler item = itemList.get(position);
 
-        // Arayüz Elemanlarını Dolduruyoruz
         if (holder.txtSavedTitle != null) holder.txtSavedTitle.setText(item.getTitle());
         if (holder.txtSavedDesc != null) holder.txtSavedDesc.setText(item.getDescription());
-        if (holder.txtTagType != null) holder.txtTagType.setText(item.getType());
-        if (holder.txtTagCategory != null) holder.txtTagCategory.setText(item.getCategory());
         if (holder.txtAddedTime != null) holder.txtAddedTime.setText(item.getAddedTime());
 
-        // 1. İNCELE BUTONUNA TIKLAMA OLAYI (Kişisel Metin Okuma Sayfasına Aktarır)
+        // Duruma göre ikon rengi ayarla
+        updateBookmarkIconUI(holder.btnRemoveSave, item.isSaved());
+
+        // 1. İNCELE BUTONUNA TIKLAMA OLAYI
         if (holder.btnInspect != null) {
             holder.btnInspect.setOnClickListener(v -> {
                 Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
@@ -61,9 +59,58 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
             });
         }
 
-        // 2. KAYDETTEN ÇIKAR / SİL BUTONUNA TIKLAMA OLAYI
+        // 2. KAYDET / KAYDEDİLENDEN ÇIKAR (KART SAYFADAN SİLİNMEZ, DURUM GÜNCELLENİR)
+        // 2. KAYDET / KAYDEDİLENDEN ÇIKAR
         if (holder.btnRemoveSave != null) {
-            holder.btnRemoveSave.setOnClickListener(v -> showDeleteDialog(holder.getAdapterPosition()));
+            holder.btnRemoveSave.setOnClickListener(v -> {
+                boolean newSaveState = !item.isSaved();
+                item.setSaved(newSaveState);
+
+                // İkon rengini anında güncelle
+                updateBookmarkIconUI(holder.btnRemoveSave, newSaveState);
+
+                AppDatabase db = AppDatabase.getInstance(context);
+                new Thread(() -> {
+                    List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                    ConceptItem_kavram matchedConcept = null;
+
+                    if (allConcepts != null) {
+                        for (ConceptItem_kavram concept : allConcepts) {
+                            if (concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(item.getTitle())) {
+                                matchedConcept = concept;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchedConcept != null) {
+                        // Kayıt zaten varsa durumunu güncelle
+                        matchedConcept.setSaved(newSaveState);
+                        db.conceptDao_kavram().update(matchedConcept);
+                    } else {
+                        // Kayıt veritabanında yoksa yeni olarak ekle
+                        ConceptItem_kavram newConcept = new ConceptItem_kavram(
+                                item.getTitle(),
+                                item.getDescription(),
+                                "",
+                                "",
+                                "",
+                                newSaveState
+                        );
+                        db.conceptDao_kavram().insert(newConcept);
+                    }
+                }).start();
+
+                String msg = newSaveState ? "Kaydedilenlere eklendi" : "Kaydedilenlerden çıkarıldı";
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+
+    private void updateBookmarkIconUI(ImageView imageView, boolean isSaved) {
+        if (imageView != null) {
+            int iconColor = isSaved ? Color.parseColor("#0F172A") : Color.parseColor("#CBD5E1");
+            imageView.setColorFilter(iconColor);
         }
     }
 
@@ -72,70 +119,17 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
         return itemList != null ? itemList.size() : 0;
     }
 
-    private void showDeleteDialog(int position) {
-        Dialog dialog = new Dialog(context);
-        dialog.setContentView(R.layout.kaydedilen_silme_uyari);
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        }
-
-        Button btnCancel = dialog.findViewById(R.id.btnCancel);
-        Button btnConfirmDelete = dialog.findViewById(R.id.btnConfirmDelete);
-
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-        }
-
-        if (btnConfirmDelete != null) {
-            btnConfirmDelete.setOnClickListener(v -> {
-                if (position >= 0 && position < itemList.size()) {
-                    kaydedilenler itemToDelete = itemList.get(position);
-
-                    // 1. ROOM VERİ TABANINDA İLGİLİ KAYDIN isSaved DURUMUNU FALSE YAPMA
-                    AppDatabase db = AppDatabase.getInstance(context);
-                    new Thread(() -> {
-                        List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-                        if (allConcepts != null) {
-                            for (ConceptItem_kavram concept : allConcepts) {
-                                boolean isSameId = String.valueOf(concept.getId()).equals(itemToDelete.getId());
-                                boolean isSameTitle = concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(itemToDelete.getTitle());
-
-                                if (isSameId || isSameTitle) {
-                                    concept.setSaved(false);
-                                    db.conceptDao_kavram().update(concept);
-                                    break;
-                                }
-                            }
-                        }
-                    }).start();
-
-                    // 2. LİSTEDEN VE ARAYÜZDEN KALDIRMA
-                    itemList.remove(position);
-                    notifyItemRemoved(position);
-                    notifyItemRangeChanged(position, itemList.size());
-                }
-
-                dialog.dismiss();
-            });
-        }
-
-        dialog.show();
-    }
-
     public void filterList(List<kaydedilenler> filteredList) {
         this.itemList = filteredList;
         notifyDataSetChanged();
     }
 
     public static class SavedViewHolder extends RecyclerView.ViewHolder {
-        TextView txtTagType, txtTagCategory, txtSavedTitle, txtSavedDesc, txtAddedTime, btnInspect;
+        TextView txtSavedTitle, txtSavedDesc, txtAddedTime, btnInspect;
         ImageView btnRemoveSave;
 
         public SavedViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtTagType = itemView.findViewById(R.id.txtTagType);
-            txtTagCategory = itemView.findViewById(R.id.txtTagCategory);
             txtSavedTitle = itemView.findViewById(R.id.txtSavedTitle);
             txtSavedDesc = itemView.findViewById(R.id.txtSavedDesc);
             txtAddedTime = itemView.findViewById(R.id.txtAddedTime);

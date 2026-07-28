@@ -16,46 +16,25 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Üst Etiketler ve Kaydet Butonu -->
+        <!-- Üst Bar: Başlık ve Kaydet Butonu -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="8dp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/txtSavedTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_toStartOf="@id/btnRemoveSave"
+                android:layout_marginEnd="8dp"
+                android:text="başlık 1 – düşünce mimarisi"
+                android:textColor="#0F172A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-                <!-- Tür Etiketi (METİN veya KAVRAM) -->
-                <TextView
-                    android:id="@+id/txtTagType"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_black_icon_box"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="4dp"
-                    android:text="@string/metin_etiket"
-                    android:textColor="#FFFFFF"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <!-- Nokta ve Kategori -->
-                <TextView
-                    android:id="@+id/txtTagCategory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/kisisel_notum"
-                    android:textColor="#64748B"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Kaydedildi / Sil Butonu (Dolu İkon) -->
             <ImageView
                 android:id="@+id/btnRemoveSave"
                 android:layout_width="24dp"
@@ -63,19 +42,8 @@
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:src="@drawable/ic_bookmark"
-                app:tint="#0F172A" />
+                app:tint="#CBD5E1" />
         </RelativeLayout>
-
-        <!-- İçerik Başlığı -->
-        <TextView
-            android:id="@+id/txtSavedTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:text="başlık 1 – düşünce mimarisi"
-            android:textColor="#0F172A"
-            android:textSize="16sp"
-            android:textStyle="bold" />
 
         <!-- İçerik Özeti -->
         <TextView

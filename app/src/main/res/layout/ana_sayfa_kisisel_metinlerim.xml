@@ -45,7 +45,7 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Arama Arama Çubuğu -->
+        <!-- Arama Çubuğu -->
         <EditText
             android:id="@+id/searchBar"
             android:layout_width="match_parent"
@@ -61,7 +61,7 @@
             android:textColorHint="#94A3B8"
             android:textSize="15sp" />
 
-        <!-- Yatay Filtre Çipleri / Kategori Listesi -->
+        <!-- Yatay Filtre Çipleri -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,12 +72,13 @@
             android:paddingHorizontal="20dp">
 
             <LinearLayout
+                android:id="@+id/categoryContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <!-- Seçili Filtre (Tümü) -->
                 <TextView
+                    android:id="@+id/tumu"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
@@ -87,47 +88,47 @@
                     android:text="@string/tumu"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:id="@+id/tumu"/>
+                    android:textStyle="bold" />
 
-                <!-- Kategori 1 -->
                 <TextView
+                    android:id="@+id/kategori_1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_kaydet_button"
-                    android:paddingHorizontal="16dp"
+                    android:background="@drawable/bg_search_bar"
+                    android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
-                    android:text="@string/kategori_1"
-                    android:textColor="#475569"
+                    android:text="Kategori 1"
+                    android:textColor="#64748B"
                     android:textSize="14sp"
-                    android:id="@+id/kategori_1"/>
+                    android:textStyle="bold" />
 
-                <!-- Kategori 2 -->
                 <TextView
+                    android:id="@+id/kategori_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_kaydet_button"
-                    android:paddingHorizontal="16dp"
+                    android:background="@drawable/bg_search_bar"
+                    android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
-                    android:text="@string/kategori_2"
-                    android:textColor="#475569"
+                    android:text="Kategori 2"
+                    android:textColor="#64748B"
                     android:textSize="14sp"
-                    android:id="@+id/kategori_2" />
+                    android:textStyle="bold" />
 
-                <!-- Kategori 3 -->
                 <TextView
+                    android:id="@+id/kategori_3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_kaydet_button"
-                    android:paddingHorizontal="16dp"
+                    android:background="@drawable/bg_search_bar"
+                    android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
-                    android:text="@string/kategori_3"
-                    android:textColor="#475569"
+                    android:text="Kategori 3"
+                    android:textColor="#64748B"
                     android:textSize="14sp"
-                    android:id="@+id/kategori_3"/>
+                    android:textStyle="bold" />
+
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>
@@ -143,6 +144,6 @@
         android:paddingTop="8dp"
         android:paddingBottom="24dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/itam_kisisel_metin_card" />
+        tools:listitem="@layout/kaydedilen_sey_buton_iste" />
 
 </RelativeLayout>

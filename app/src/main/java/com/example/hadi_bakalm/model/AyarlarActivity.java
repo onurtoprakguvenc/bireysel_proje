@@ -24,18 +24,16 @@ import java.util.List;
 public class AyarlarActivity extends AppCompatActivity {
 
     private Spinner spinnerTheme;
-    private Spinner spinnerAutoClear;
     private SharedPreferences sharedPreferences;
     private AppDatabase db;
 
     private static final String PREFS_NAME = "AyarlarPrefs";
     private static final String KEY_THEME = "secilen_tema_pozisyon";
-    private static final String KEY_AUTO_CLEAR = "secilen_otomatik_temizle_pozisyon";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.ayarlar_sayfa); // Layout ismin activity_ayarlar ise burayı kontrol et
+        setContentView(R.layout.ayarlar_sayfa);
         NavigationHelper.setupBottomNavigation(this);
 
         db = AppDatabase.getInstance(this);
@@ -49,7 +47,6 @@ public class AyarlarActivity extends AppCompatActivity {
 
     private void initViews() {
         spinnerTheme = findViewById(R.id.spinnerTheme);
-        spinnerAutoClear = findViewById(R.id.spinnerAutoClear);
     }
 
     private void setupBottomNavigation() {
@@ -127,32 +124,9 @@ public class AyarlarActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
-
-        String[] clearOptions = {"Asla", "Haftalık", "Aylık"};
-        ArrayAdapter<String> clearAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                clearOptions
-        );
-        spinnerAutoClear.setAdapter(clearAdapter);
-
-        int savedClearPos = sharedPreferences.getInt(KEY_AUTO_CLEAR, 0);
-        spinnerAutoClear.setSelection(savedClearPos);
-
-        spinnerAutoClear.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                sharedPreferences.edit().putInt(KEY_AUTO_CLEAR, position).apply();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
     }
 
     private void setupClickListeners() {
-        // btnExportData kaldırıldığı için dinleyicisi temizlendi.
-
         View btnReset = findViewById(R.id.btnResetAll);
         if (btnReset != null) {
             btnReset.setOnClickListener(v -> {
@@ -161,7 +135,6 @@ public class AyarlarActivity extends AppCompatActivity {
                         .setMessage("Kaydedilen tüm içerikler ve inceleme geçmişi kalıcı olarak silinecektir. Onaylıyor musunuz?")
                         .setPositiveButton("Sıfırla", (dialog, which) -> {
 
-                            // 1. Veri Tabanını Arka Planda Temizle (Kaydedilenler ve İnceleme Geçmişi Sıfırlanır)
                             new Thread(() -> {
                                 if (db != null) {
                                     List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
@@ -174,11 +147,9 @@ public class AyarlarActivity extends AppCompatActivity {
                                     }
                                 }
 
-                                // 2. SharedPreferences ve UI Güncellemesi
                                 runOnUiThread(() -> {
                                     sharedPreferences.edit().clear().apply();
                                     spinnerTheme.setSelection(0);
-                                    spinnerAutoClear.setSelection(0);
 
                                     Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
                                 });

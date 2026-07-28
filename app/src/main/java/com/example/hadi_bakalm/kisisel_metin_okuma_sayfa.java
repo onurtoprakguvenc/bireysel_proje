@@ -1,5 +1,8 @@
 package com.example.hadi_bakalm;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -25,6 +28,33 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
     private ImageView imgBookmarkIcon;
     private TextView txtBookmarkStatus;
 
+    // Panoya Kopyalama Yardımcı Metodu
+    private void copyToClipboard(String label, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, "Kopyalanacak metin bulunamadı", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(label, text);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(clip);
+            Toast.makeText(this, label + " panoya kopyalandı", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Metin Paylaşma Yardımcı Metodu
+    private void shareText(String title, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, "Paylaşılacak metin bulunamadı", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, text);
+        startActivity(Intent.createChooser(shareIntent, "Şununla paylaş:"));
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +69,11 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         TextView txtBaslik = findViewById(R.id.baslık);
         TextView txtAciklama = findViewById(R.id.txtMainContent);
         EditText etPersonalNote = findViewById(R.id.etPersonalNote);
+
+        // Yeni Eklenen Kopyala / Paylaş Butonları
+        TextView btnCopyMainText = findViewById(R.id.btnCopyMainText);
+        TextView btnShareMainText = findViewById(R.id.btnShareMainText);
+        TextView btnCopyNote = findViewById(R.id.btnCopyNote);
 
         // Kaydet Butonu Bileşenleri
         btnBookmarkSave = findViewById(R.id.btnBookmarkSave);
@@ -75,6 +110,20 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
 
         if (txtBaslik != null) txtBaslik.setText(title);
         if (txtAciklama != null) txtAciklama.setText(description);
+
+        // --- KOPYALA VE PAYLAŞ TIKLAMA OLAYLARI ---
+        if (btnCopyMainText != null && txtAciklama != null) {
+            btnCopyMainText.setOnClickListener(v -> copyToClipboard("Metin", txtAciklama.getText().toString()));
+        }
+
+        if (btnShareMainText != null && txtAciklama != null) {
+            String finalTitle = title;
+            btnShareMainText.setOnClickListener(v -> shareText(finalTitle, txtAciklama.getText().toString()));
+        }
+
+        if (btnCopyNote != null && etPersonalNote != null) {
+            btnCopyNote.setOnClickListener(v -> copyToClipboard("Kişisel Not", etPersonalNote.getText().toString()));
+        }
 
         // Veri tabanından yükle ve durumları ayarla
         checkAndLoadDatabase(title, description, etPersonalNote);

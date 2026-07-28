@@ -121,30 +121,36 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private void loadSavedDataFromDb() {
         if (db == null) return;
 
-        // Veri tabanından tüm verileri çekiyoruz
-        List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+        // Veritabanı sorgusunu ana iş parçacığını (UI Thread) kilitlenmesin diye arka planda çalıştırıyoruz
+        new Thread(() -> {
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+            List<kaydedilenler> tempSavedList = new ArrayList<>();
 
-        savedList.clear();
-
-        if (allConcepts != null) {
-            for (ConceptItem_kavram item : allConcepts) {
-                // Sadece "isSaved == true" olan yani kaydedilmiş verileri süzüyoruz
-                if (item.isSaved()) {
-                    kaydedilenler savedItem = new kaydedilenler(
-                            String.valueOf(item.getId()),
-                            item.getTitle(),
-                            item.getDescription(),
-                            "KAVRAM", // Tür olarak KAVRAM atanıyor
-                            "Kaydedilen Kavram",
-                            "Kayıtlı"
-                    );
-                    savedList.add(savedItem);
+            if (allConcepts != null) {
+                for (ConceptItem_kavram item : allConcepts) {
+                    // Sadece "isSaved == true" olan kaydedilmiş verileri süzüyoruz
+                    if (item.isSaved()) {
+                        kaydedilenler savedItem = new kaydedilenler(
+                                String.valueOf(item.getId()),
+                                item.getTitle(),
+                                item.getDescription(),
+                                "METİN",
+                                "",
+                                "Kayıtlı",
+                                true // isSaved parametresi true olarak aktarıldı
+                        );
+                        tempSavedList.add(savedItem);
+                    }
                 }
             }
-        }
 
-        // Arama ve filtreleme durumuna göre listeyi ekrana yansıtıyoruz
-        applyFilterAndSearch();
+            // Arayüz güncellemesini ana iş parçacığına taşıyoruz
+            runOnUiThread(() -> {
+                savedList.clear();
+                savedList.addAll(tempSavedList);
+                applyFilterAndSearch();
+            });
+        }).start();
     }
 
     private void setupSearchAndFilters() {
