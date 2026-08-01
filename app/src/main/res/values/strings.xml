@@ -137,4 +137,7 @@
     <string name="tum_verileri_sifirla">Tüm Verileri Sıfırla</string>
     <string name="kaydedilenleri_ve_gecmisi_kalici_olarak_sil">Kaydedilenleri ve geçmişi kalıcı olarak sil</string>
     <string name="versiyon_ve_şey_yazısı_ayarlar"><![CDATA[Son İnceleme & Kavramlar Uygulaması\nVersiyon 1.0.0 (Build 2026)]]></string>
+    <string name="dis_seylere_karsi_avunma">dış şeylere karşı savunma</string>
+    <string name="pratik_hayat_icin_fayda">Pratik Hayat İçin Fayda</string>
+    <string name="zihinsel_mekanizma_ve_mimari">Zihinsel Mekanizma ve Mimari</string>
 </resources>
