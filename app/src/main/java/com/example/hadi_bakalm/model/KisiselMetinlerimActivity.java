@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -65,9 +64,12 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
 
         // Tıklama Olayları
         if (btnAll != null) btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
-        if (btnPratikHayat != null) btnPratikHayat.setOnClickListener(v -> filterCategory("Pratik Hayat İçin Fayda", btnPratikHayat));
-        if (btnDisSeyler != null) btnDisSeyler.setOnClickListener(v -> filterCategory("Dış Şeylere Karşı Savunma", btnDisSeyler));
-        if (btnZihinselMekanizma != null) btnZihinselMekanizma.setOnClickListener(v -> filterCategory("Zihinsel Mekanizma & Mimari", btnZihinselMekanizma));
+        if (btnPratikHayat != null)
+            btnPratikHayat.setOnClickListener(v -> filterCategory("Pratik Hayat İçin Fayda", btnPratikHayat));
+        if (btnDisSeyler != null)
+            btnDisSeyler.setOnClickListener(v -> filterCategory("Dış Şeylere Karşı Savunma", btnDisSeyler));
+        if (btnZihinselMekanizma != null)
+            btnZihinselMekanizma.setOnClickListener(v -> filterCategory("Zihinsel Mekanizma & Mimari", btnZihinselMekanizma));
     }
 
     @Override
@@ -129,23 +131,31 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
             if (categoryName.equalsIgnoreCase("TÜMÜ")) {
                 displayList.addAll(masterList);
             } else {
+                java.util.Locale trLocale = new java.util.Locale("tr", "TR");
+                String targetCategory = categoryName.toLowerCase(trLocale).trim();
+
                 for (kaydedilenler item : masterList) {
-                    if (item.getCategory() != null && item.getCategory().equalsIgnoreCase(categoryName)) {
-                        displayList.add(item);
+                    if (item.getCategory() != null) {
+                        String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
+                        if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
+                            displayList.add(item);
+                        }
                     }
                 }
             }
 
-            // Kart Tıklama Dinleyicisinin (OnItemClickListener) Bağlanması
             if (adapter == null) {
                 adapter = new kaydedilenler_adapter(this, displayList);
 
-                // Kart Tıklama İşlemi
                 adapter.setOnItemClickListener(item -> {
-                    Intent intent = new Intent(KisiselMetinlerimActivity.this, kisisel_metin_okuma_sayfa.class); // Kendi detay Activity isminizi yazın
-                    intent.putExtra("title", item.getTitle());
-                    intent.putExtra("content", item.getContent());
-                    intent.putExtra("category", item.get());
+                    Intent intent = new Intent(KisiselMetinlerimActivity.this, kisisel_metin_okuma_sayfa.class);
+                    intent.putExtra("TITLE", item.getTitle());
+
+                    String textContent = (item.getContent() != null && !item.getContent().isEmpty())
+                            ? item.getContent()
+                            : item.getDescription();
+                    intent.putExtra("DESCRIPTION", textContent);
+                    intent.putExtra("category", item.getCategory());
                     startActivity(intent);
                 });
 

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.concept_kavram_adapter;
 import com.example.hadi_bakalm.data.AppDatabase;
+import com.example.hadi_bakalm.data.ConceptRepository;
 import com.example.hadi_bakalm.model.CategoryGroupModel;
 import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import com.example.hadi_bakalm.model.concept_kavram_model;
@@ -39,9 +40,9 @@ public class kavramlar_sayfa extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // 3. RecyclerView Ayarları (Yatay Yönlendirme Eklendi)
+        // 3. RecyclerView Ayarları (Kategoriler Dikey Dizilir, Kartlar Yatay Kayar)
         if (recyclerView != null) {
-            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
             recyclerView.setLayoutManager(layoutManager);
         }
 
@@ -59,25 +60,80 @@ public class kavramlar_sayfa extends AppCompatActivity {
     private void loadConceptList() {
         List<CategoryGroupModel> anaListe = new ArrayList<>();
 
-        // 1. Kategori: Nörobilim ve Beyin
-        List<concept_kavram_model> norobilimKavramlari = new ArrayList<>();
-        norobilimKavramlari.add(new concept_kavram_model("amigdala", "geçici"));
-        norobilimKavramlari.add(new concept_kavram_model("pfc", "geçici"));
-        norobilimKavramlari.add(new concept_kavram_model("Dopamin ve Dopamin Bazal Seviyesi", "geçici"));
+        // 1. JSON'dan verileri anaListe'ye doldurur
+        loadConceptsFromJSON(anaListe);
 
-
-        anaListe.add(new CategoryGroupModel("Nörobilim ve Beyin", norobilimKavramlari));
-
-        // 2. Kategori örneği (isteğe bağlı yeni başlıklar eklenebilir)
-    /*
-    List<concept_kavram_model> psikolojiKavramlari = new ArrayList<>();
-    psikolojiKavramlari.add(new concept_kavram_model("Bilişsel Çelişki", "geçici"));
-    anaListe.add(new CategoryGroupModel("Bilişsel Psikoloji", psikolojiKavramlari));
-    */
-
+        // 2. Doğru ve Tek Yetkili Adaptörü Bağlar
         if (recyclerView != null) {
             adapter = new concept_kavram_adapter(anaListe);
             recyclerView.setAdapter(adapter);
         }
+    }
+
+    private void loadConceptsFromJSON(List<CategoryGroupModel> anaListe) {
+        String jsonString = loadJSONFromAsset("kavramlar.json");
+        if (jsonString == null) return;
+
+        try {
+            // Gson Builder ile bilinmeyen alanları yoksayma garantisi
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<JsonConceptModel>>() {}.getType();
+            List<JsonConceptModel> rawList = gson.fromJson(jsonString, listType);
+
+
+            if (rawList != null && !rawList.isEmpty()) {
+                java.util.Map<String, List<concept_kavram_model>> groupedMap = new java.util.LinkedHashMap<>();
+
+                for (JsonConceptModel item : rawList) {
+                    String category = (item.category != null && !item.category.trim().isEmpty())
+                            ? item.category
+                            : "Diğer Kavramlar";
+
+                    if (!groupedMap.containsKey(category)) {
+                        groupedMap.put(category, new ArrayList<>());
+                    }
+
+                    String title = item.title != null ? item.title : "";
+                    String desc = item.description != null ? item.description : "";
+                    String content = item.content != null ? item.content : "";
+
+                    groupedMap.get(category).add(new concept_kavram_model(item.id, title, desc, content));
+                }
+
+                for (java.util.Map.Entry<String, List<concept_kavram_model>> entry : groupedMap.entrySet()) {
+                    if (!entry.getValue().isEmpty()) {
+                        anaListe.add(new CategoryGroupModel(entry.getKey(), entry.getValue()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 2. Temizlenmiş Kavram Helper Modeli (readTime Barındırmaz)
+    private static class JsonConceptModel {
+        public String id;
+        public String title;
+        public String category;
+        public String description;
+        public String content;
+    }
+
+    // Asset Dosyası Okuyucu
+    private String loadJSONFromAsset(String fileName) {
+        String json = null;
+        try {
+            java.io.InputStream is = getAssets().open(fileName);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (java.io.IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
     }
 }

@@ -1,29 +1,28 @@
 package com.example.hadi_bakalm.model;
 
 public class concept_kavram_model {
-    public static final int TYPE_CATEGORY = 0;
-    public static final int TYPE_CONCEPT = 1;
-
-    private int itemType;
-    private String kategoriAdi;
+    private String id;
     private String kavramAdi;
     private String aciklama;
+    private String icerik; // JSON'daki "content" alanı için
 
-    // Kategori Başlığı İçin Constructor
-    public concept_kavram_model(String kategoriAdi) {
-        this.kategoriAdi = kategoriAdi;
-        this.itemType = TYPE_CATEGORY;
-    }
-
-    // Kavram Kartı İçin Constructor
+    // Standart Kullanım Constructor
     public concept_kavram_model(String kavramAdi, String aciklama) {
         this.kavramAdi = kavramAdi;
         this.aciklama = aciklama;
-        this.itemType = TYPE_CONCEPT;
     }
 
-    public int getItemType() { return itemType; }
-    public String getKategoriAdi() { return kategoriAdi; }
+    // JSON'dan Tam Veri Çekerken Kullanılacak Constructor
+    public concept_kavram_model(String id, String kavramAdi, String aciklama, String icerik) {
+        this.id = id;
+        this.kavramAdi = kavramAdi;
+        this.aciklama = aciklama;
+        this.icerik = icerik;
+    }
+
+    // Getter Metotları
+    public String getId() { return id; }
     public String getKavramAdi() { return kavramAdi; }
     public String getAciklama() { return aciklama; }
+    public String getIcerik() { return icerik; }
 }

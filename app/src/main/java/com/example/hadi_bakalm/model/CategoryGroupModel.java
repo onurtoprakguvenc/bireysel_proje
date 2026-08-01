@@ -15,15 +15,7 @@ public class CategoryGroupModel {
         return kategoriBasligi;
     }
 
-    public void setKategoriBasligi(String kategoriBasligi) {
-        this.kategoriBasligi = kategoriBasligi;
-    }
-
     public List<concept_kavram_model> getKavramlar() {
         return kavramlar;
-    }
-
-    public void setKavramlar(List<concept_kavram_model> kavramlar) {
-        this.kavramlar = kavramlar;
     }
 }

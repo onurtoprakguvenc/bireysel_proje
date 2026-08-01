@@ -433,6 +433,25 @@ public class noroplastite extends AppCompatActivity {
         }
 
         updateSaveButtonUI();
+        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
+        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
+        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
+        com.example.hadi_bakalm.model.kaydedilenler jsonConcept = getConceptFromJSON(kavramAdi);
+        if (jsonConcept != null) {
+            if (txtTitle != null) txtTitle.setText(jsonConcept.getTitle());
+            if (txtDesc != null) txtDesc.setText(jsonConcept.getDescription());
+            if (txtNote != null && jsonConcept.getContent() != null)
+                txtNote.setText(jsonConcept.getContent());
+
+            // Kaydet butonu ve Room DB uyumlaması (Modeldeki doğru setter'lar)
+            if (currentConcept != null) {
+                currentConcept.setTitle(jsonConcept.getTitle());
+                currentConcept.setDescription(jsonConcept.getDescription());
+                if (jsonConcept.getContent() != null) {
+                    currentConcept.setDeveloperNote(jsonConcept.getContent());
+                }
+            }
+        }
     }
 
     private void updateSaveButtonUI() {
@@ -566,5 +585,47 @@ public class noroplastite extends AppCompatActivity {
         }
 
         popupWindow.showAsDropDown(anchorView, -100, 10);
+    }
+
+    // --- SADECE EKLENEN YARDIMCI METOTLAR (MEVCUT KODLARA DOKUNULMADI) ---
+
+    // JSON'dan başlığa göre ilgili kavram nesnesini getiren metot
+    private com.example.hadi_bakalm.model.kaydedilenler getConceptFromJSON(String targetTitle) {
+        String jsonString = loadJSONFromAssetForNoroplastite("kavramlar.json.json");
+        if (jsonString != null && targetTitle != null) {
+            try {
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<com.example.hadi_bakalm.model.kaydedilenler>>() {}.getType();
+                List<com.example.hadi_bakalm.model.kaydedilenler> list = gson.fromJson(jsonString, listType);
+
+                if (list != null) {
+                    for (com.example.hadi_bakalm.model.kaydedilenler item : list) {
+                        if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(targetTitle.trim())) {
+                            return item;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    // Asset Dosyası Okuyucu
+    private String loadJSONFromAssetForNoroplastite(String fileName) {
+        String json = null;
+        try {
+            java.io.InputStream is = getAssets().open(fileName);
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (java.io.IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
     }
 }

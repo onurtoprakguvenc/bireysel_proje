@@ -38,19 +38,18 @@
             android:textStyle="bold" />
     </RelativeLayout>
 
+
     <!-- Yatay Kayan Kavramlar/Kategoriler Listesi -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMainCategories"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_below="@id/topBar"
         android:clipToPadding="false"
         android:nestedScrollingEnabled="true"
-        android:orientation="vertical"
         android:paddingHorizontal="16dp"
         android:paddingTop="8dp"
         android:paddingBottom="24dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_kategori_row" />
 
 </RelativeLayout>

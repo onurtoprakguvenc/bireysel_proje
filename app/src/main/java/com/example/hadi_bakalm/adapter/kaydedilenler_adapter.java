@@ -25,10 +25,19 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
 
     private Context context;
     private List<kaydedilenler> itemList;
+    private OnItemClickListener itemClickListener;
+
+    public interface OnItemClickListener {
+        void onItemClick(kaydedilenler item);
+    }
 
     public kaydedilenler_adapter(Context context, List<kaydedilenler> itemList) {
         this.context = context;
         this.itemList = itemList;
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.itemClickListener = listener;
     }
 
     @NonNull
@@ -49,17 +58,27 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
         // Duruma göre ikon rengi ayarla
         updateBookmarkIconUI(holder.btnRemoveSave, item.isSaved());
 
+        // KARTIN TAMAMINA TIKLANDIĞINDA
+        holder.itemView.setOnClickListener(v -> {
+            if (itemClickListener != null) {
+                itemClickListener.onItemClick(item);
+            }
+        });
+
         // 1. İNCELE BUTONUNA TIKLAMA OLAYI
         if (holder.btnInspect != null) {
             holder.btnInspect.setOnClickListener(v -> {
-                Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
-                intent.putExtra("TITLE", item.getTitle());
-                intent.putExtra("DESCRIPTION", item.getDescription());
-                context.startActivity(intent);
+                if (itemClickListener != null) {
+                    itemClickListener.onItemClick(item);
+                } else {
+                    Intent intent = new Intent(context, kisisel_metin_okuma_sayfa.class);
+                    intent.putExtra("TITLE", item.getTitle());
+                    intent.putExtra("DESCRIPTION", item.getDescription());
+                    context.startActivity(intent);
+                }
             });
         }
 
-        // 2. KAYDET / KAYDEDİLENDEN ÇIKAR (KART SAYFADAN SİLİNMEZ, DURUM GÜNCELLENİR)
         // 2. KAYDET / KAYDEDİLENDEN ÇIKAR
         if (holder.btnRemoveSave != null) {
             holder.btnRemoveSave.setOnClickListener(v -> {
@@ -84,11 +103,9 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
                     }
 
                     if (matchedConcept != null) {
-                        // Kayıt zaten varsa durumunu güncelle
                         matchedConcept.setSaved(newSaveState);
                         db.conceptDao_kavram().update(matchedConcept);
                     } else {
-                        // Kayıt veritabanında yoksa yeni olarak ekle
                         ConceptItem_kavram newConcept = new ConceptItem_kavram(
                                 item.getTitle(),
                                 item.getDescription(),

@@ -106,16 +106,13 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
             holder.txtTitle.setText(item.getKavramAdi());
             holder.txtDesc.setText(item.getAciklama());
 
-            holder.itemView.setOnTouchListener((v, event) -> {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-                }
-                return false;
-            });
-
+            // Tıklama Olayı (Detay sayfasına tüm JSON verilerini eksiksiz taşır)
             holder.itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(v.getContext(), noroplastite.class);
+                intent.putExtra("KAVRAM_ID", item.getId());
                 intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
+                intent.putExtra("KAVRAM_ACIKLAMA", item.getAciklama());
+                intent.putExtra("KAVRAM_ICERIK", item.getIcerik());
                 v.getContext().startActivity(intent);
             });
         }

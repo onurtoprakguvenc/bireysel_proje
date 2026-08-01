@@ -19,7 +19,7 @@ public interface ConceptDao_kavram {
     @Update
     void update(ConceptItem_kavram conceptItem);
 
-    // --- SİLME METOTLARI (EKLENDİ) ---
+    // --- SİLME METOTLARI ---
     @Delete
     void delete(ConceptItem_kavram conceptItem); // Tek bir ögeyi silmek için
 
