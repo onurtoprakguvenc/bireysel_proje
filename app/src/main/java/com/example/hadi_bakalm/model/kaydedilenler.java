@@ -4,13 +4,15 @@ public class kaydedilenler {
     private String id;
     private String title;
     private String description;
-    private String content; // EKLENDİ: Sadece değişken olarak eklendi
+    private String content;
+    private String dialogues;  // EKLENDİ
+    private String importance; // EKLENDİ
     private String type;
     private String category;
     private String addedTime;
     private boolean isSaved;
 
-    // Boş Constructor
+    // Boş Constructor (Gson burayı kullanır)
     public kaydedilenler() {
     }
 
@@ -25,7 +27,7 @@ public class kaydedilenler {
         this.isSaved = false;
     }
 
-    // Mevcut 7 Parametreli Constructor (DOKUNULMADI - DİĞER SAYFALAR BOZULMAZ)
+    // Mevcut 7 Parametreli Constructor (DOKUNULMADI)
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime, boolean isSaved) {
         this.id = id;
         this.title = title;
@@ -46,9 +48,15 @@ public class kaydedilenler {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    // EKLENDİ: Sadece Getter ve Setter
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    // EKLENDİ: dialogues ve importance getter/setter
+    public String getDialogues() { return dialogues; }
+    public void setDialogues(String dialogues) { this.dialogues = dialogues; }
+
+    public String getImportance() { return importance; }
+    public void setImportance(String importance) { this.importance = importance; }
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }

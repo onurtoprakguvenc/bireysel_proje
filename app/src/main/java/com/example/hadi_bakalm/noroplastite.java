@@ -369,42 +369,46 @@ public class noroplastite extends AppCompatActivity {
     }
 
     private void setupConceptData(String kavramAdi, TextView txtTitle, TextView txtDesc, TextView txtNote, TextView txtDialogues, TextView txtImportance) {
-        if (kavramAdi == null) kavramAdi = "Nöroplastisite";
-
-        String title = "", desc = "", note = "", dialogues = "", importance = "";
-
-        if (kavramAdi.equalsIgnoreCase("amigdala")) {
-            title = "Amigdala";
-            desc = "Amigdala Beynin en eski bölgelerinden biridir...";
-            note = "Geldik kişisel düşüncelerime...";
-            dialogues = "Örnek diyalog 1...";
-            importance = "Bu amigdalanın pratik hayattaki önemi...";
-        } else if (kavramAdi.equalsIgnoreCase("pfc")) {
-            title = "PFC(prefrontal korteks)";
-            desc = "PFC(prefrontal korteks)...";
-            note = "Kişisel not...";
-            dialogues = "örnek diyaloglar...";
-            importance = "pratik hayattaki önemi...";
-        } else if (kavramAdi.equalsIgnoreCase("Dopamin ve Dopamin Bazal Seviyesi")) {
-            title = "Dopamin ve Dopamin Bazal Seviyesi";
-            desc = "Tanım: Öncelikle dopamin...";
-            note = "Kişisel Not / Analiz...";
-            dialogues = "dopamin örnek diyaloglar...";
-            importance = "";
-        } else {
-            title = "Nöroplastisite";
-            desc = "Beynin deneyimlere bağlı olarak yapısını ve işlevini değiştirme yeteneğidir.";
-            note = "benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)";
-            dialogues = "A: Beyin yaşlanınca değişmez mi?\nB: Hayır, nöroplastisite sayesinde her yaşta yeni bağlar kurulur.";
-            importance = "Zihinsel becerileri geliştirmek için sürekli yeni şeyler öğrenmenin teorik dayanağıdır.";
+        if (kavramAdi == null || kavramAdi.trim().isEmpty()) {
+            kavramAdi = "Nöroplastisite";
         }
 
+        // 1. JSON'dan Veriyi Getir
+        com.example.hadi_bakalm.model.kaydedilenler jsonConcept = getConceptFromJSON(kavramAdi);
+
+        String title = kavramAdi;
+        String desc = "";
+        String note = "";
+        String dialogues = "";
+        String importance = "";
+
+        if (jsonConcept != null) {
+            if (jsonConcept.getTitle() != null) title = jsonConcept.getTitle();
+            if (jsonConcept.getDescription() != null) desc = jsonConcept.getDescription();
+            if (jsonConcept.getContent() != null) note = jsonConcept.getContent();
+            if (jsonConcept.getDialogues() != null) dialogues = jsonConcept.getDialogues();
+            if (jsonConcept.getImportance() != null) importance = jsonConcept.getImportance();
+        }
+
+        // 2. Metinleri Arayüze Atama
         if (txtTitle != null) txtTitle.setText(title);
         if (txtDesc != null) txtDesc.setText(desc);
         if (txtNote != null) txtNote.setText(note);
         if (txtDialogues != null) txtDialogues.setText(dialogues);
         if (txtImportance != null) txtImportance.setText(importance);
 
+        // 3. Panellerin Görünürlük Kontrolü
+        if (btnDialogues != null) {
+            boolean hasDialogues = dialogues != null && !dialogues.trim().isEmpty();
+            btnDialogues.setVisibility(hasDialogues ? View.VISIBLE : View.GONE);
+        }
+
+        if (btnImportance != null) {
+            boolean hasImportance = importance != null && !importance.trim().isEmpty();
+            btnImportance.setVisibility(hasImportance ? View.VISIBLE : View.GONE);
+        }
+
+        // 4. Room DB İşlemleri
         List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
         ConceptItem_kavram foundConcept = null;
 
@@ -433,26 +437,33 @@ public class noroplastite extends AppCompatActivity {
         }
 
         updateSaveButtonUI();
-        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
-        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
-        // Dinamik JSON Kontrolü (Varsayılan amigdala/pfc if-else blokları eşleşmezse devreye girer)
-        com.example.hadi_bakalm.model.kaydedilenler jsonConcept = getConceptFromJSON(kavramAdi);
-        if (jsonConcept != null) {
-            if (txtTitle != null) txtTitle.setText(jsonConcept.getTitle());
-            if (txtDesc != null) txtDesc.setText(jsonConcept.getDescription());
-            if (txtNote != null && jsonConcept.getContent() != null)
-                txtNote.setText(jsonConcept.getContent());
+    }
 
-            // Kaydet butonu ve Room DB uyumlaması (Modeldeki doğru setter'lar)
-            if (currentConcept != null) {
-                currentConcept.setTitle(jsonConcept.getTitle());
-                currentConcept.setDescription(jsonConcept.getDescription());
-                if (jsonConcept.getContent() != null) {
-                    currentConcept.setDeveloperNote(jsonConcept.getContent());
+    private com.example.hadi_bakalm.model.kaydedilenler getConceptFromJSON(String targetTitle) {
+        String jsonString = loadJSONFromAssetForNoroplastite("kavramlar.json");
+        if (jsonString != null && targetTitle != null) {
+            try {
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<com.example.hadi_bakalm.model.kaydedilenler>>() {}.getType();
+                List<com.example.hadi_bakalm.model.kaydedilenler> list = gson.fromJson(jsonString, listType);
+
+                if (list != null) {
+                    for (com.example.hadi_bakalm.model.kaydedilenler item : list) {
+                        // Karşılaştırma Esnekleştirildi (Boşluklar ve Harf Duyarlılığı Kaldırıldı)
+                        if (item.getTitle() != null && item.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(targetTitle.replaceAll("\\s+", ""))) {
+                            return item;
+                        }
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
+        return null;
     }
+
+
+
 
     private void updateSaveButtonUI() {
         if (txtKaydet != null && currentConcept != null) {
@@ -590,27 +601,7 @@ public class noroplastite extends AppCompatActivity {
     // --- SADECE EKLENEN YARDIMCI METOTLAR (MEVCUT KODLARA DOKUNULMADI) ---
 
     // JSON'dan başlığa göre ilgili kavram nesnesini getiren metot
-    private com.example.hadi_bakalm.model.kaydedilenler getConceptFromJSON(String targetTitle) {
-        String jsonString = loadJSONFromAssetForNoroplastite("kavramlar.json.json");
-        if (jsonString != null && targetTitle != null) {
-            try {
-                com.google.gson.Gson gson = new com.google.gson.Gson();
-                java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<com.example.hadi_bakalm.model.kaydedilenler>>() {}.getType();
-                List<com.example.hadi_bakalm.model.kaydedilenler> list = gson.fromJson(jsonString, listType);
 
-                if (list != null) {
-                    for (com.example.hadi_bakalm.model.kaydedilenler item : list) {
-                        if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(targetTitle.trim())) {
-                            return item;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
 
     // Asset Dosyası Okuyucu
     private String loadJSONFromAssetForNoroplastite(String fileName) {
