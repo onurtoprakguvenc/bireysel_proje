@@ -47,7 +47,7 @@ public class noroplastite extends AppCompatActivity {
     // SharedPreferences & Okuma Ayarları Değişkenleri
     private SharedPreferences sharedPreferences;
     private int currentFontSize = 16;
-    private String currentTheme = "AYDINLIK"; // "AYDINLIK", "SARIMSI", "KARANLIK"
+    private String currentTheme = "AYDINLIK";
 
     private void copyToClipboard(String label, String text) {
         if (text == null || text.trim().isEmpty()) {
@@ -120,7 +120,7 @@ public class noroplastite extends AppCompatActivity {
         String gelenKavram = getIntent().getStringExtra("KAVRAM_ADI");
         setupConceptData(gelenKavram, txtConceptTitle, txtConceptDescription, txtPersonalNote, txtDialoguesContent, txtImportanceContent);
 
-        // --- 4. Kaydet Butonu Tıklama Olayı ---
+        // --- 4. Kaydet Butonu Tıklama Olayı (GÜNCELLEME) ---
         if (btnKaydet != null) {
             btnKaydet.setOnClickListener(v -> {
                 if (currentConcept != null) {
@@ -129,15 +129,12 @@ public class noroplastite extends AppCompatActivity {
 
                     new Thread(() -> {
                         db.conceptDao_kavram().update(currentConcept);
+                        runOnUiThread(() -> {
+                            updateSaveButtonUI();
+                            String msg = newSavedState ? "Kayıtlı kavramlara eklendi" : "Kayıtlı kavramlardan çıkarıldı";
+                            Toast.makeText(noroplastite.this, msg, Toast.LENGTH_SHORT).show();
+                        });
                     }).start();
-
-                    updateSaveButtonUI();
-
-                    if (newSavedState) {
-                        Toast.makeText(this, "Kayıtlı kavramlara eklendi", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Kayıtlı kavramlardan çıkarıldı", Toast.LENGTH_SHORT).show();
-                    }
                 }
             });
         }
@@ -205,7 +202,6 @@ public class noroplastite extends AppCompatActivity {
         if (txtImportanceContent != null) txtImportanceContent.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
     }
 
-    // --- SADECE BU SAYFA İÇİN TÜM BİLEŞENLERİ KARSILAYAN OKUMA TEMASI METODU ---
     private void applyReadingTheme(String theme) {
         currentTheme = theme;
 
@@ -224,7 +220,7 @@ public class noroplastite extends AppCompatActivity {
 
             case "KARANLIK":
                 rootBgColor = Color.parseColor("#0F172A");
-                cardBgColor = Color.parseColor("#1E293B"); // Kart ve buton iç rengi
+                cardBgColor = Color.parseColor("#1E293B");
                 textColor = Color.parseColor("#FFFFFF");
                 subTextColor = Color.parseColor("#94A3B8");
                 break;
@@ -238,13 +234,11 @@ public class noroplastite extends AppCompatActivity {
                 break;
         }
 
-        // 1. En dış kök düzen
         View root = findViewById(R.id.topBar) != null ? (View) findViewById(R.id.topBar).getParent() : null;
         if (root != null) {
             root.setBackgroundColor(rootBgColor);
         }
 
-        // 2. Kartların Arka Plan Renkleri
         if (txtConceptDescription != null && txtConceptDescription.getParent() != null && txtConceptDescription.getParent().getParent() instanceof MaterialCardView) {
             ((MaterialCardView) txtConceptDescription.getParent().getParent()).setCardBackgroundColor(cardBgColor);
         }
@@ -258,7 +252,6 @@ public class noroplastite extends AppCompatActivity {
             contentImportance.setBackgroundColor(cardBgColor);
         }
 
-        // 3. İşaretlenen Açılır Butonların (Örnek Diyaloglar & Pratik Önemi) Arka Planını Beyaz / Açık Yapma
         if (btnDialogues != null) {
             btnDialogues.setBackgroundColor(theme.equals("KARANLIK") ? Color.parseColor("#FFFFFF") : Color.parseColor("#0F172A"));
 
@@ -277,14 +270,12 @@ public class noroplastite extends AppCompatActivity {
             if (imgImp != null) imgImp.setColorFilter(theme.equals("KARANLIK") ? Color.parseColor("#0F172A") : Color.parseColor("#FFFFFF"));
         }
 
-        // 4. Metin Renkleri
         if (txtConceptTitle != null) txtConceptTitle.setTextColor(textColor);
         if (txtConceptDescription != null) txtConceptDescription.setTextColor(textColor);
         if (txtPersonalNote != null) txtPersonalNote.setTextColor(textColor);
         if (txtDialoguesContent != null) txtDialoguesContent.setTextColor(textColor);
         if (txtImportanceContent != null) txtImportanceContent.setTextColor(textColor);
 
-        // Kopyala ve Paylaş Butonlarının Metin Renkleri
         if (btnCopy1 != null) btnCopy1.setTextColor(subTextColor);
         if (btnShare1 != null) btnShare1.setTextColor(subTextColor);
         if (btnCopy2 != null) btnCopy2.setTextColor(subTextColor);
@@ -294,11 +285,9 @@ public class noroplastite extends AppCompatActivity {
         if (btnCopyImportance != null) btnCopyImportance.setTextColor(subTextColor);
         if (btnShareImportance != null) btnShareImportance.setTextColor(subTextColor);
 
-        // 5. Üst Bar İkon Filtreleri
         if (btnBack != null) btnBack.setColorFilter(textColor);
         if (btnMoreMenu != null) btnMoreMenu.setColorFilter(textColor);
 
-        // Tercihi kaydet
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("CONCEPT_READING_THEME", theme);
         editor.apply();
@@ -311,12 +300,10 @@ public class noroplastite extends AppCompatActivity {
         dialogView.setVisibility(View.VISIBLE);
         bottomSheetDialog.setContentView(dialogView);
 
-        // Tema Butonları
         TextView btnThemeAydinlik = dialogView.findViewById(R.id.btnThemeAydinlik);
         TextView btnThemeSarimsi = dialogView.findViewById(R.id.btnThemeSarimsi);
         TextView btnThemeKaranlik = dialogView.findViewById(R.id.btnThemeKaranlik);
 
-        // Metin Boyutu Butonları
         TextView btnDecrease = dialogView.findViewById(R.id.btnTextDecrease);
         TextView btnIncrease = dialogView.findViewById(R.id.btnTextIncrease);
         TextView txtFontSizeIndicator = dialogView.findViewById(R.id.txtFontSizeIndicator);
@@ -325,7 +312,6 @@ public class noroplastite extends AppCompatActivity {
             txtFontSizeIndicator.setText(currentFontSize + " sp");
         }
 
-        // TEMA TIKLAMA OLAYLARI
         if (btnThemeAydinlik != null) {
             btnThemeAydinlik.setOnClickListener(v -> applyReadingTheme("AYDINLIK"));
         }
@@ -336,7 +322,6 @@ public class noroplastite extends AppCompatActivity {
             btnThemeKaranlik.setOnClickListener(v -> applyReadingTheme("KARANLIK"));
         }
 
-        // METİN BOYUTU TIKLAMA OLAYLARI
         if (btnDecrease != null) {
             btnDecrease.setOnClickListener(v -> {
                 if (currentFontSize > 12) {
@@ -368,15 +353,13 @@ public class noroplastite extends AppCompatActivity {
         editor.apply();
     }
 
+    // --- ROOM DB İŞLEMLERİ ARKA PLANA ALINDI VE EŞLEŞTİRME SAĞLANDI ---
     private void setupConceptData(String kavramAdi, TextView txtTitle, TextView txtDesc, TextView txtNote, TextView txtDialogues, TextView txtImportance) {
-        if (kavramAdi == null || kavramAdi.trim().isEmpty()) {
-            kavramAdi = "Nöroplastisite";
-        }
+        String finalKavramAdi = (kavramAdi == null || kavramAdi.trim().isEmpty()) ? "Nöroplastisite" : kavramAdi;
 
-        // 1. JSON'dan Veriyi Getir
-        com.example.hadi_bakalm.model.kaydedilenler jsonConcept = getConceptFromJSON(kavramAdi);
+        com.example.hadi_bakalm.model.kaydedilenler jsonConcept = getConceptFromJSON(finalKavramAdi);
 
-        String title = kavramAdi;
+        String title = finalKavramAdi;
         String desc = "";
         String note = "";
         String dialogues = "";
@@ -390,14 +373,12 @@ public class noroplastite extends AppCompatActivity {
             if (jsonConcept.getImportance() != null) importance = jsonConcept.getImportance();
         }
 
-        // 2. Metinleri Arayüze Atama
         if (txtTitle != null) txtTitle.setText(title);
         if (txtDesc != null) txtDesc.setText(desc);
         if (txtNote != null) txtNote.setText(note);
         if (txtDialogues != null) txtDialogues.setText(dialogues);
         if (txtImportance != null) txtImportance.setText(importance);
 
-        // 3. Panellerin Görünürlük Kontrolü
         if (btnDialogues != null) {
             boolean hasDialogues = dialogues != null && !dialogues.trim().isEmpty();
             btnDialogues.setVisibility(hasDialogues ? View.VISIBLE : View.GONE);
@@ -408,35 +389,40 @@ public class noroplastite extends AppCompatActivity {
             btnImportance.setVisibility(hasImportance ? View.VISIBLE : View.GONE);
         }
 
-        // 4. Room DB İşlemleri
-        List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-        ConceptItem_kavram foundConcept = null;
+        final String searchTitle = title;
+        final String finalDesc = desc;
+        final String finalNote = note;
+        final String finalDialogues = dialogues;
+        final String finalImportance = importance;
 
-        if (allConcepts != null) {
-            for (ConceptItem_kavram item : allConcepts) {
-                if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
-                    foundConcept = item;
-                    break;
+        new Thread(() -> {
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+            ConceptItem_kavram foundConcept = null;
+
+            if (allConcepts != null) {
+                for (ConceptItem_kavram item : allConcepts) {
+                    if (item.getTitle() != null && item.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(searchTitle.replaceAll("\\s+", ""))) {
+                        foundConcept = item;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (foundConcept != null) {
-            currentConcept = foundConcept;
-        } else {
-            currentConcept = new ConceptItem_kavram(title, desc, note, dialogues, importance, false);
-            long newId = db.conceptDao_kavram().insert(currentConcept);
-            currentConcept.setId((int) newId);
-        }
+            if (foundConcept != null) {
+                currentConcept = foundConcept;
+            } else {
+                currentConcept = new ConceptItem_kavram(searchTitle, finalDesc, finalNote, finalDialogues, finalImportance, false);
+                long newId = db.conceptDao_kavram().insert(currentConcept);
+                currentConcept.setId((int) newId);
+            }
 
-        if (currentConcept != null) {
-            currentConcept.setLastViewedTime(System.currentTimeMillis());
-            new Thread(() -> {
+            if (currentConcept != null) {
+                currentConcept.setLastViewedTime(System.currentTimeMillis());
                 db.conceptDao_kavram().update(currentConcept);
-            }).start();
-        }
+            }
 
-        updateSaveButtonUI();
+            runOnUiThread(() -> updateSaveButtonUI());
+        }).start();
     }
 
     private com.example.hadi_bakalm.model.kaydedilenler getConceptFromJSON(String targetTitle) {
@@ -449,7 +435,6 @@ public class noroplastite extends AppCompatActivity {
 
                 if (list != null) {
                     for (com.example.hadi_bakalm.model.kaydedilenler item : list) {
-                        // Karşılaştırma Esnekleştirildi (Boşluklar ve Harf Duyarlılığı Kaldırıldı)
                         if (item.getTitle() != null && item.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(targetTitle.replaceAll("\\s+", ""))) {
                             return item;
                         }
@@ -461,9 +446,6 @@ public class noroplastite extends AppCompatActivity {
         }
         return null;
     }
-
-
-
 
     private void updateSaveButtonUI() {
         if (txtKaydet != null && currentConcept != null) {
@@ -598,12 +580,6 @@ public class noroplastite extends AppCompatActivity {
         popupWindow.showAsDropDown(anchorView, -100, 10);
     }
 
-    // --- SADECE EKLENEN YARDIMCI METOTLAR (MEVCUT KODLARA DOKUNULMADI) ---
-
-    // JSON'dan başlığa göre ilgili kavram nesnesini getiren metot
-
-
-    // Asset Dosyası Okuyucu
     private String loadJSONFromAssetForNoroplastite(String fileName) {
         String json = null;
         try {

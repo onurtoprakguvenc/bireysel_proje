@@ -113,38 +113,54 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         adapter = new kaydedilenler_adapter(this, currentFilteredList);
         recyclerViewSaved.setAdapter(adapter);
 
-        // Verileri ilk kez yüklüyoruz
         loadSavedDataFromDb();
     }
 
-    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
+    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU (DÜZELTİLDİ) ---
     private void loadSavedDataFromDb() {
         if (db == null) return;
 
-        // Veritabanı sorgusunu ana iş parçacığını (UI Thread) kilitlenmesin diye arka planda çalıştırıyoruz
         new Thread(() -> {
-            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
             List<kaydedilenler> tempSavedList = new ArrayList<>();
 
+            // 1. KAVRAMLAR
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
             if (allConcepts != null) {
                 for (ConceptItem_kavram item : allConcepts) {
-                    // Sadece "isSaved == true" olan kaydedilmiş verileri süzüyoruz
                     if (item.isSaved()) {
                         kaydedilenler savedItem = new kaydedilenler(
-                                String.valueOf(item.getId()),
-                                item.getTitle(),
-                                item.getDescription(),
-                                "METİN",
-                                "",
-                                "Kayıtlı",
-                                true // isSaved parametresi true olarak aktarıldı
+                                String.valueOf(item.getId()), // 1. Parametre
+                                item.getTitle(),               // 2. Parametre
+                                item.getDescription(),         // 3. Parametre
+                                "KAVRAM",                      // 4. Parametre (TÜR BURADA!)
+                                "",                            // 5. Parametre
+                                "Dün eklendi",                 // 6. Parametre
+                                true                           // 7. Parametre
                         );
                         tempSavedList.add(savedItem);
                     }
                 }
             }
 
-            // Arayüz güncellemesini ana iş parçacığına taşıyoruz
+            // 2. METİNLER
+            List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
+            if (allMetinler != null) {
+                for (MetinItem item : allMetinler) {
+                    if (item.isSaved()) {
+                        kaydedilenler savedItem = new kaydedilenler(
+                                String.valueOf(item.getId()),
+                                item.getTitle(),
+                                item.getContent() != null ? item.getContent() : "",
+                                "METİN", // Tür doğrudan METİN
+                                "",
+                                "Dün eklendi",
+                                true
+                        );
+                        tempSavedList.add(savedItem);
+                    }
+                }
+            }
+
             runOnUiThread(() -> {
                 savedList.clear();
                 savedList.addAll(tempSavedList);
@@ -172,28 +188,37 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
     private void applyFilterAndSearch() {
         java.util.Locale trLocale = new java.util.Locale("tr", "TR");
-
         String query = etSearch != null ? etSearch.getText().toString().toLowerCase(trLocale).trim() : "";
         List<kaydedilenler> filtered = new ArrayList<>();
 
-        for (kaydedilenler item : savedList) {
-            boolean matchesType = selectedType.equals("ALL") || item.getType().equalsIgnoreCase(selectedType);
+        if (savedList != null) {
+            for (kaydedilenler item : savedList) {
+                if (item == null) continue;
 
-            String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
-            String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
+                String itemType = item.getType() != null ? item.getType().toUpperCase(trLocale).trim() : "";
+                String targetType = selectedType.toUpperCase(trLocale).trim();
 
-            boolean matchesQuery = baslik.contains(query) || aciklama.contains(query);
+                boolean matchesType = targetType.equals("ALL") || itemType.contains(targetType);
 
-            if (matchesType && matchesQuery) {
-                filtered.add(item);
+                String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
+                String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
+                boolean matchesQuery = query.isEmpty() || baslik.contains(query) || aciklama.contains(query);
+
+                if (matchesType && matchesQuery) {
+                    filtered.add(item);
+                }
             }
         }
 
         currentFilteredList = filtered;
-        if (adapter != null) {
-            adapter.filterList(filtered);
-        }
-        updateCount(filtered.size());
+
+        // Arayüz Çizimini Garantiye Alma
+        runOnUiThread(() -> {
+            if (adapter != null) {
+                adapter.filterList(currentFilteredList);
+            }
+            updateCount(currentFilteredList.size());
+        });
     }
 
     private void updateFilterUI() {

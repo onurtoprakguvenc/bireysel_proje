@@ -57,23 +57,31 @@
             android:textColor="#475569"
             android:textSize="13sp" />
 
-        <!-- Alt Bilgi (Tarih ve İncele Linki) -->
+        <!-- Alt Bilgi (Paylaş İkonu, Tarih ve İncele Linki) -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
+            <!-- AYRILAN PAYLAŞIM BUTONU -->
+            <ImageView
+                android:id="@+id/btnShare"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_share"
+                app:tint="#94A3B8" />
 
             <TextView
                 android:id="@+id/txtAddedTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
+                android:layout_toEndOf="@id/btnShare"
                 android:layout_centerVertical="true"
-                android:drawableStart="@drawable/ic_share"
-                android:drawablePadding="6dp"
+                android:layout_marginStart="6dp"
                 android:text="@string/dun_eklendi"
                 android:textColor="#94A3B8"
-                android:textSize="12sp"
-                app:drawableTint="#94A3B8" />
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/btnInspect"

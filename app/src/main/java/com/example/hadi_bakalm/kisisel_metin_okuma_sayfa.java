@@ -125,19 +125,27 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
 
         Intent intent = getIntent();
         String title = "Varsayılan Başlık";
-        String description = "Varsayılan İçerik";
+        String content = "Varsayılan İçerik";
+        String readTime = "1 dk okuma";
 
         if (intent != null) {
             if (intent.getStringExtra("TITLE") != null) {
                 title = intent.getStringExtra("TITLE");
             }
-            if (intent.getStringExtra("DESCRIPTION") != null) {
-                description = intent.getStringExtra("DESCRIPTION");
+            if (intent.getStringExtra("CONTENT") != null && !intent.getStringExtra("CONTENT").isEmpty()) {
+                content = intent.getStringExtra("CONTENT");
+            } else if (intent.getStringExtra("DESCRIPTION") != null) {
+                content = intent.getStringExtra("DESCRIPTION");
+            }
+
+            if (intent.getStringExtra("READ_TIME") != null) {
+                readTime = intent.getStringExtra("READ_TIME");
             }
         }
 
         if (txtBaslik != null) txtBaslik.setText(title);
-        if (txtAciklama != null) txtAciklama.setText(description);
+        if (txtAciklama != null) txtAciklama.setText(content);
+        if (txtReadTime != null) txtReadTime.setText(readTime);
 
         if (btnCopyMainText != null && txtAciklama != null) {
             btnCopyMainText.setOnClickListener(v -> copyToClipboard("Metin", txtAciklama.getText().toString()));
@@ -152,7 +160,8 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
             btnCopyNote.setOnClickListener(v -> copyToClipboard("Kişisel Not", etPersonalNote.getText().toString()));
         }
 
-        checkAndLoadDatabase(title, description, etPersonalNote);
+        // HATA DÜZELTİLDİ: Artık 'description' yerine yukarıda Intent'ten alınan 'content' parametresi gönderiliyor
+        checkAndLoadDatabase(title, content, etPersonalNote);
 
         if (etPersonalNote != null) {
             etPersonalNote.addTextChangedListener(new TextWatcher() {
@@ -211,19 +220,38 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         editor.apply();
     }
 
-    private void checkAndLoadDatabase(String title, String description, EditText etPersonalNote) {
+    private void checkAndLoadDatabase(String title, String content, EditText etPersonalNote) {
         new Thread(() -> {
             List<MetinItem> list = db.metinDao().getAllMetinler();
-            if (list.isEmpty()) {
-                currentMetin = new MetinItem(title, description, "", false);
-                db.metinDao().insert(currentMetin);
-                list = db.metinDao().getAllMetinler();
-                if (!list.isEmpty()) {
-                    currentMetin = list.get(0);
+            MetinItem matchedItem = null;
+
+            if (list != null && !list.isEmpty()) {
+                for (MetinItem item : list) {
+                    if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
+                        matchedItem = item;
+                        break;
+                    }
                 }
-            } else {
-                currentMetin = list.get(0);
             }
+
+            // Eğer veritabanında bu başlıkta metin yoksa yeni oluştur ve ekle
+            if (matchedItem == null) {
+                matchedItem = new MetinItem(title, content, "", false);
+                db.metinDao().insert(matchedItem);
+
+                // Güncel nesneyi çek
+                List<MetinItem> updatedList = db.metinDao().getAllMetinler();
+                if (updatedList != null) {
+                    for (MetinItem item : updatedList) {
+                        if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
+                            matchedItem = item;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            currentMetin = matchedItem;
 
             runOnUiThread(() -> {
                 if (currentMetin != null) {

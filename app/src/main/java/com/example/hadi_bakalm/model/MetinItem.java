@@ -14,6 +14,16 @@ public class MetinItem {
     private String personalNote;
     private boolean isSaved;
 
+    private long lastViewedTime; // Son inceleme zamanı (timestamp)
+
+    public long getLastViewedTime() {
+        return lastViewedTime;
+    }
+
+    public void setLastViewedTime(long lastViewedTime) {
+        this.lastViewedTime = lastViewedTime;
+    }
+
     // Constructor (Yapıcı Metot)
     public MetinItem(String title, String content, String personalNote, boolean isSaved) {
         this.title = title;

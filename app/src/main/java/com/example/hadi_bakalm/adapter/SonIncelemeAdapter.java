@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.SonIncelemeModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.ViewHolder> {
@@ -22,11 +23,11 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     public interface OnItemClickListener {
         void onItemClick(SonIncelemeModel item);
-        void onDeleteClick(SonIncelemeModel item); // Doğrudan modeli gönderiyoruz
+        void onDeleteClick(SonIncelemeModel item);
     }
 
     public SonIncelemeAdapter(List<SonIncelemeModel> incelemeListesi, OnItemClickListener listener) {
-        this.incelemeListesi = incelemeListesi;
+        this.incelemeListesi = incelemeListesi != null ? new ArrayList<>(incelemeListesi) : new ArrayList<>();
         this.listener = listener;
     }
 
@@ -40,7 +41,11 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     @SuppressLint("NotifyDataSetChanged")
     public void updateList(List<SonIncelemeModel> newList) {
-        this.incelemeListesi = newList;
+        if (newList != null) {
+            this.incelemeListesi = new ArrayList<>(newList);
+        } else {
+            this.incelemeListesi = new ArrayList<>();
+        }
         notifyDataSetChanged();
     }
 
@@ -48,12 +53,11 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SonIncelemeModel item = incelemeListesi.get(position);
 
-        if (holder.txtTitle != null) holder.txtTitle.setText(item.getBaslik());
-        if (holder.txtDescription != null) holder.txtDescription.setText(item.getAciklama());
-        if (holder.txtTime != null) holder.txtTime.setText(item.getZaman());
-        if (holder.txtBadge != null) holder.txtBadge.setText(item.getTur());
+        if (holder.txtTitle != null) holder.txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
+        if (holder.txtDescription != null) holder.txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
+        if (holder.txtTime != null) holder.txtTime.setText(item.getZaman() != null ? item.getZaman() : "");
+        if (holder.txtBadge != null) holder.txtBadge.setText(item.getTur() != null ? item.getTur() : "");
 
-        // Türüne göre ikon ve renk ayrımı
         if ("Kavram".equalsIgnoreCase(item.getTur())) {
             if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
             if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
@@ -62,12 +66,10 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
             if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         }
 
-        // Kart tıklaması
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onItemClick(item);
         });
 
-        // Tekli silme (X) tıklaması
         if (holder.btnRemove != null) {
             holder.btnRemove.setOnClickListener(v -> {
                 if (listener != null) listener.onDeleteClick(item);
@@ -77,8 +79,7 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     @SuppressLint("NotifyDataSetChanged")
     public void filterList(List<SonIncelemeModel> filteredList) {
-        this.incelemeListesi = filteredList;
-        notifyDataSetChanged();
+        updateList(filteredList);
     }
 
     @Override

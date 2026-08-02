@@ -39,7 +39,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private LinearLayout chipAll, chipConcepts, chipTexts;
     private String currentFilter = "Tümü";
 
-    // Room Veri Tabanı Bağlantısı
     private AppDatabase db;
 
     @Override
@@ -69,14 +68,18 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     if (item == null) return;
 
                     Intent intent;
-                    if ("Metin".equalsIgnoreCase(item.getTur())) {
+                    if (item.getTur() != null && item.getTur().equalsIgnoreCase("Metin")) {
                         intent = new Intent(SonIncelemeActivity.this, kisisel_metin_okuma_sayfa.class);
+                        intent.putExtra("TITLE", item.getBaslik());
+                        intent.putExtra("DESCRIPTION", item.getAciklama());
+                        intent.putExtra("CONTENT", item.getAciklama());
                     } else {
                         intent = new Intent(SonIncelemeActivity.this, noroplastite.class);
+                        intent.putExtra("KAVRAM_ADI", item.getBaslik());
+                        intent.putExtra("TITLE", item.getBaslik());
+                        intent.putExtra("DESCRIPTION", item.getAciklama());
                     }
 
-                    intent.putExtra("TITLE", item.getBaslik());
-                    intent.putExtra("DESCRIPTION", item.getAciklama());
                     startActivity(intent);
                 }
 
@@ -84,23 +87,40 @@ public class SonIncelemeActivity extends AppCompatActivity {
                 public void onDeleteClick(SonIncelemeModel item) {
                     if (item != null && tumListe != null) {
                         tumListe.remove(item);
-                        applyFilterAndSearch();
+
+                        // Veritabanından geçmiş kaydını sil/sıfırla
+                        new Thread(() -> {
+                            if (db != null) {
+                                if ("Kavram".equalsIgnoreCase(item.getTur())) {
+                                    ConceptItem_kavram concept = db.conceptDao_kavram().getConceptById(item.getId());
+                                    if (concept != null) {
+                                        concept.setLastViewedTime(0);
+                                        db.conceptDao_kavram().update(concept);
+                                    }
+                                } else {
+                                    MetinItem metin = db.metinDao().getMetinById(item.getId());
+                                    if (metin != null) {
+                                        metin.setLastViewedTime(0);
+                                        db.metinDao().update(metin);
+                                    }
+                                }
+                            }
+                            runOnUiThread(SonIncelemeActivity.this::applyFilterAndSearch);
+                        }).start();
                     }
                 }
-            });
+            }); // ADAPTER KAPANIŞI
 
             rvHistoryList.setAdapter(adapter);
         }
 
-        // Çip Tıklama Dinleyicileri
         if (chipAll != null) chipAll.setOnClickListener(v -> filterList("Tümü"));
         if (chipConcepts != null) chipConcepts.setOnClickListener(v -> filterList("Kavram"));
         if (chipTexts != null) chipTexts.setOnClickListener(v -> filterList("Metin"));
 
-        // Arama ve Temizle Entegrasyonları
         setupSearch();
         setupClearButton();
-    }
+    } // ONCREATE KAPANIŞI
 
     @Override
     protected void onResume() {
@@ -108,25 +128,40 @@ public class SonIncelemeActivity extends AppCompatActivity {
         loadHistoryDataFromDb();
     }
 
-    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
     private void loadHistoryDataFromDb() {
         if (db == null) return;
 
         new Thread(() -> {
-            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
             List<SonIncelemeModel> gecmisListesi = new ArrayList<>();
 
+            // 1. KAVRAMLAR
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
             if (allConcepts != null) {
                 for (ConceptItem_kavram item : allConcepts) {
-                    // SADECE GİRİLİP İNCELENMİŞ OLANLARI ALIYORUZ (lastViewedTime > 0)
                     if (item.getLastViewedTime() > 0) {
-
                         SonIncelemeModel modelItem = new SonIncelemeModel(
                                 item.getId(),
                                 item.getTitle(),
                                 item.getDescription(),
                                 "Son incelendi",
                                 "Kavram"
+                        );
+                        gecmisListesi.add(modelItem);
+                    }
+                }
+            }
+
+            // 2. METİNLER
+            List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
+            if (allMetinler != null) {
+                for (MetinItem item : allMetinler) {
+                    if (item.getLastViewedTime() > 0) {
+                        SonIncelemeModel modelItem = new SonIncelemeModel(
+                                item.getId(),
+                                item.getTitle(),
+                                item.getContent() != null ? item.getContent() : "",
+                                "Son incelendi",
+                                "Metin"
                         );
                         gecmisListesi.add(modelItem);
                     }
@@ -154,20 +189,18 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     .setTitle("Geçmişi Temizle")
                     .setMessage("Tüm inceleme geçmişiniz silinecektir. Onaylıyor musunuz?")
                     .setPositiveButton("Temizle", (dialog, which) -> {
-
                         new Thread(() -> {
                             if (db != null) {
                                 db.conceptDao_kavram().deleteAll();
+                                db.metinDao().deleteAll();
                             }
 
                             runOnUiThread(() -> {
                                 tumListe.clear();
                                 applyFilterAndSearch();
-                                updateChipCounts(0, 0, 0);
                                 Toast.makeText(SonIncelemeActivity.this, "Geçmiş temizlendi.", Toast.LENGTH_SHORT).show();
                             });
                         }).start();
-
                     })
                     .setNegativeButton("Vazgeç", null)
                     .show();
@@ -206,6 +239,8 @@ public class SonIncelemeActivity extends AppCompatActivity {
         int textsCount = 0;
 
         for (SonIncelemeModel item : tumListe) {
+            if (item == null || item.getTur() == null) continue;
+
             if ("Kavram".equalsIgnoreCase(item.getTur())) conceptsCount++;
             if ("Metin".equalsIgnoreCase(item.getTur())) textsCount++;
 
@@ -214,97 +249,58 @@ public class SonIncelemeActivity extends AppCompatActivity {
             String baslik = item.getBaslik() != null ? item.getBaslik().toLowerCase(trLocale) : "";
             String aciklama = item.getAciklama() != null ? item.getAciklama().toLowerCase(trLocale) : "";
 
-            boolean matchesQuery = baslik.contains(query) || aciklama.contains(query);
+            boolean matchesQuery = query.isEmpty() || baslik.contains(query) || aciklama.contains(query);
 
             if (matchesType && matchesQuery) {
                 filteredList.add(item);
             }
         }
 
-        updateChipCounts(tumListe.size(), conceptsCount, textsCount);
-
-        if ("Tümü".equalsIgnoreCase(currentFilter)) {
-            updateChipUI(chipAll, true);
-            updateChipUI(chipConcepts, false);
-            updateChipUI(chipTexts, false);
-        } else if ("Kavram".equalsIgnoreCase(currentFilter)) {
-            updateChipUI(chipAll, false);
-            updateChipUI(chipConcepts, true);
-            updateChipUI(chipTexts, false);
-        } else if ("Metin".equalsIgnoreCase(currentFilter)) {
-            updateChipUI(chipAll, false);
-            updateChipUI(chipConcepts, false);
-            updateChipUI(chipTexts, true);
-        }
+        updateChipCountsAndUI(tumListe.size(), conceptsCount, textsCount);
 
         if (adapter != null) {
             adapter.updateList(filteredList);
         }
     }
 
-    private void updateChipCounts(int total, int concepts, int texts) {
-        if (chipAll != null && chipAll.getChildCount() > 0) {
-            View v = chipAll.getChildAt(0);
-            if (v instanceof TextView) {
-                ((TextView) v).setText("Tümü (" + total + ")");
-            }
-        }
-
-        if (chipConcepts != null) {
-            for (int i = 0; i < chipConcepts.getChildCount(); i++) {
-                View v = chipConcepts.getChildAt(i);
-                if (v instanceof TextView) {
-                    TextView tv = (TextView) v;
-                    if (!tv.getText().toString().equals(getString(R.string.kavramlar))) {
-                        tv.setText(String.valueOf(concepts));
-                    }
-                }
-            }
-        }
-
-        if (chipTexts != null) {
-            for (int i = 0; i < chipTexts.getChildCount(); i++) {
-                View v = chipTexts.getChildAt(i);
-                if (v instanceof TextView) {
-                    TextView tv = (TextView) v;
-                    if (!tv.getText().toString().equals(getString(R.string.metinler))) {
-                        tv.setText(String.valueOf(texts));
-                    }
-                }
-            }
-        }
+    private void updateChipCountsAndUI(int total, int concepts, int texts) {
+        updateSingleChip(chipAll, "Tümü".equalsIgnoreCase(currentFilter), String.valueOf(total));
+        updateSingleChip(chipConcepts, "Kavram".equalsIgnoreCase(currentFilter), String.valueOf(concepts));
+        updateSingleChip(chipTexts, "Metin".equalsIgnoreCase(currentFilter), String.valueOf(texts));
     }
 
-    private void updateChipUI(LinearLayout chip, boolean isActive) {
+    private void updateSingleChip(LinearLayout chip, boolean isActive, String countText) {
         if (chip == null) return;
 
-        TextView txtTitle = null;
-        TextView txtCount = null;
-        ImageView imgIcon = null;
+        chip.setBackgroundResource(isActive ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+
+        TextView countView = null;
+        TextView titleView = null;
+        ImageView iconView = null;
 
         for (int i = 0; i < chip.getChildCount(); i++) {
-            View v = chip.getChildAt(i);
-            if (v instanceof ImageView) {
-                imgIcon = (ImageView) v;
-            } else if (v instanceof TextView) {
-                if (txtTitle == null) {
-                    txtTitle = (TextView) v;
+            View child = chip.getChildAt(i);
+            if (child instanceof ImageView) {
+                iconView = (ImageView) child;
+            } else if (child instanceof TextView) {
+                if (titleView == null) {
+                    titleView = (TextView) child;
                 } else {
-                    txtCount = (TextView) v;
+                    countView = (TextView) child;
                 }
             }
         }
 
-        if (isActive) {
-            chip.setBackgroundResource(R.drawable.bg_chip_active);
-            if (txtTitle != null) txtTitle.setTextColor(Color.parseColor("#FFFFFF"));
-            if (txtCount != null) txtCount.setTextColor(Color.parseColor("#94A3B8"));
-            if (imgIcon != null) imgIcon.setColorFilter(Color.parseColor("#FFFFFF"));
-        } else {
-            chip.setBackgroundResource(R.drawable.bg_chip_inactive);
-            if (txtTitle != null) txtTitle.setTextColor(Color.parseColor("#334155"));
-            if (txtCount != null) txtCount.setTextColor(Color.parseColor("#64748B"));
-            if (imgIcon != null) imgIcon.setColorFilter(Color.parseColor("#64748B"));
+        if (countView != null) {
+            countView.setText(countText);
+            countView.setTextColor(isActive ? Color.parseColor("#94A3B8") : Color.parseColor("#64748B"));
+        }
+
+        if (titleView != null) {
+            titleView.setTextColor(isActive ? Color.parseColor("#FFFFFF") : Color.parseColor("#334155"));
+        }
+        if (iconView != null) {
+            iconView.setColorFilter(isActive ? Color.parseColor("#FFFFFF") : Color.parseColor("#64748B"));
         }
     }
 }

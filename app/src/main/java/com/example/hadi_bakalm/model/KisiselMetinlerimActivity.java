@@ -13,7 +13,7 @@ import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
 import com.example.hadi_bakalm.data.AppDatabase;
 import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
-import com.example.hadi_bakalm.model.ConceptItem_kavram;
+import com.example.hadi_bakalm.model.MetinItem;
 import com.example.hadi_bakalm.model.kaydedilenler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -89,15 +89,22 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
                 rawList = gson.fromJson(jsonString, listType);
             }
 
+            // DOĞRUDAN KİŞİSEL METİNLER DAO'SU İLE EŞLEŞTİRME Yapılıyor:
             AppDatabase db = AppDatabase.getInstance(KisiselMetinlerimActivity.this);
-            List<ConceptItem_kavram> dbConcepts = db.conceptDao_kavram().getAllConceptler();
+            List<MetinItem> dbMetinler = db.metinDao().getAllMetinler();
 
-            if (dbConcepts != null && !dbConcepts.isEmpty() && rawList != null) {
+            if (dbMetinler != null && !dbMetinler.isEmpty() && rawList != null) {
                 for (kaydedilenler item : rawList) {
-                    for (ConceptItem_kavram concept : dbConcepts) {
-                        if (concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(item.getTitle())) {
-                            item.setSaved(concept.isSaved());
-                            break;
+                    if (item.getTitle() == null) continue;
+                    String cleanItemTitle = item.getTitle().replaceAll("\\s+", "").toLowerCase();
+
+                    for (MetinItem dbItem : dbMetinler) {
+                        if (dbItem.getTitle() != null) {
+                            String cleanDbTitle = dbItem.getTitle().replaceAll("\\s+", "").toLowerCase();
+                            if (cleanDbTitle.equals(cleanItemTitle)) {
+                                item.setSaved(dbItem.isSaved());
+                                break;
+                            }
                         }
                     }
                 }
@@ -128,6 +135,7 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
 
         if (masterList != null) {
             displayList.clear();
+
             if (categoryName.equalsIgnoreCase("TÜMÜ")) {
                 displayList.addAll(masterList);
             } else {
@@ -135,34 +143,32 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
                 String targetCategory = categoryName.toLowerCase(trLocale).trim();
 
                 for (kaydedilenler item : masterList) {
-                    if (item.getCategory() != null) {
-                        String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
-                        if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
+                    if (item != null) {
+                        if (item.getCategory() != null) {
+                            String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
+                            if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
+                                displayList.add(item);
+                            }
+                        } else {
+                            // Kategori alanı boş veya tanımlanmamışsa elemanı yine de ekrana bas
                             displayList.add(item);
                         }
                     }
                 }
             }
 
-            if (adapter == null) {
-                adapter = new kaydedilenler_adapter(this, displayList);
+            adapter = new kaydedilenler_adapter(this, displayList);
+            adapter.setOnItemClickListener(item -> {
+                Intent intent = new Intent(KisiselMetinlerimActivity.this, kisisel_metin_okuma_sayfa.class);
+                intent.putExtra("TITLE", item.getTitle());
+                intent.putExtra("CONTENT", item.getContent());
+                intent.putExtra("DESCRIPTION", item.getDescription());
+                intent.putExtra("READ_TIME", item.getAddedTime());
+                intent.putExtra("CATEGORY", item.getCategory());
+                startActivity(intent);
+            });
 
-                adapter.setOnItemClickListener(item -> {
-                    Intent intent = new Intent(KisiselMetinlerimActivity.this, kisisel_metin_okuma_sayfa.class);
-                    intent.putExtra("TITLE", item.getTitle());
-
-                    String textContent = (item.getContent() != null && !item.getContent().isEmpty())
-                            ? item.getContent()
-                            : item.getDescription();
-                    intent.putExtra("DESCRIPTION", textContent);
-                    intent.putExtra("category", item.getCategory());
-                    startActivity(intent);
-                });
-
-                recyclerView.setAdapter(adapter);
-            } else {
-                adapter.notifyDataSetChanged();
-            }
+            recyclerView.setAdapter(adapter);
         }
     }
 
