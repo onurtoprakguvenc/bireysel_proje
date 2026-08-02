@@ -22,9 +22,9 @@ public abstract class AppDatabase extends RoomDatabase {
             instance = Room.databaseBuilder(
                             context.getApplicationContext(),
                             AppDatabase.class,
-                            "hadi_bakalim_database"
-                    ).fallbackToDestructiveMigration()
-                    .allowMainThreadQueries()
+                            "hadi_bakalim_db"
+                    )
+                    .fallbackToDestructiveMigration() // GÜNCELLEME SIRAŞINDA ŞEMA ÇAKIŞIRSA ESKİ DB'Yİ SIFIRLAR, UYGULAMAYI ÇÖKERTMEZ
                     .build();
         }
         return instance;
