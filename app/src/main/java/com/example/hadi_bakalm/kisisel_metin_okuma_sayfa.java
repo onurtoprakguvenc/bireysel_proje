@@ -128,7 +128,15 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         String content = "Varsayılan İçerik";
         String readTime = "1 dk okuma";
 
+        // DÜZELTME: Hem "METIN_ID" hem de "ID" kontrolleri hedeflendi
+        int metinId = -1;
         if (intent != null) {
+            if (intent.hasExtra("METIN_ID")) {
+                metinId = intent.getIntExtra("METIN_ID", -1);
+            } else if (intent.hasExtra("ID")) {
+                metinId = intent.getIntExtra("ID", -1);
+            }
+
             if (intent.getStringExtra("TITLE") != null) {
                 title = intent.getStringExtra("TITLE");
             }
@@ -160,8 +168,8 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
             btnCopyNote.setOnClickListener(v -> copyToClipboard("Kişisel Not", etPersonalNote.getText().toString()));
         }
 
-        // HATA DÜZELTİLDİ: Artık 'description' yerine yukarıda Intent'ten alınan 'content' parametresi gönderiliyor
-        checkAndLoadDatabase(title, content, etPersonalNote);
+        // Veritabanı yüklemesi ve zaman damgası güncellemesi
+        checkAndLoadDatabase(metinId, title, content, etPersonalNote);
 
         if (etPersonalNote != null) {
             etPersonalNote.addTextChangedListener(new TextWatcher() {
@@ -220,26 +228,33 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         editor.apply();
     }
 
-    private void checkAndLoadDatabase(String title, String content, EditText etPersonalNote) {
+    private void checkAndLoadDatabase(int targetId, String title, String content, EditText etPersonalNote) {
         new Thread(() -> {
-            List<MetinItem> list = db.metinDao().getAllMetinler();
             MetinItem matchedItem = null;
 
-            if (list != null && !list.isEmpty()) {
-                for (MetinItem item : list) {
-                    if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
-                        matchedItem = item;
-                        break;
+            // 1. Önce ID ile bulmaya çalış
+            if (targetId != -1) {
+                matchedItem = db.metinDao().getMetinById(targetId);
+            }
+
+            // 2. ID ile bulunamadıysa Başlık ile bulmaya çalış
+            if (matchedItem == null) {
+                List<MetinItem> list = db.metinDao().getAllMetinler();
+                if (list != null && !list.isEmpty()) {
+                    for (MetinItem item : list) {
+                        if (item.getTitle() != null && item.getTitle().equalsIgnoreCase(title)) {
+                            matchedItem = item;
+                            break;
+                        }
                     }
                 }
             }
 
-            // Eğer veritabanında bu başlıkta metin yoksa yeni oluştur ve ekle
+            // 3. Hiç yoksa veritabanına yeni ekle
             if (matchedItem == null) {
                 matchedItem = new MetinItem(title, content, "", false);
                 db.metinDao().insert(matchedItem);
 
-                // Güncel nesneyi çek
                 List<MetinItem> updatedList = db.metinDao().getAllMetinler();
                 if (updatedList != null) {
                     for (MetinItem item : updatedList) {
@@ -249,6 +264,12 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
                         }
                     }
                 }
+            }
+
+            // KRİTİK DÜZELTME: Zaman damgasını burada en son güncel hallerine basıyoruz
+            if (matchedItem != null) {
+                matchedItem.setLastViewedTime(System.currentTimeMillis());
+                db.metinDao().update(matchedItem);
             }
 
             currentMetin = matchedItem;

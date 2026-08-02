@@ -29,7 +29,6 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
     @NonNull
     @Override
     public ConceptViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // DÜZELTME: R.layout.activity_main YERİNE Kart Tasarımı (item_kategori_card) GELECEK
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_kategori_card, parent, false);
         return new ConceptViewHolder(view);
@@ -37,20 +36,28 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
 
     @Override
     public void onBindViewHolder(@NonNull ConceptViewHolder holder, int position) {
+        if (conceptList == null || position >= conceptList.size()) return;
+
         Concept concept = conceptList.get(position);
-        holder.tvKavramAdi.setText(concept.getName());
+        if (concept == null) return;
+
+        if (holder.tvKavramAdi != null) {
+            holder.tvKavramAdi.setText(concept.getName() != null ? concept.getName() : "");
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
-            Intent intent = new Intent(context, noroplastite.class);
-            intent.putExtra(EXTRA_CONCEPT_NAME, concept.getName());
-            context.startActivity(intent);
+            if (context != null) {
+                Intent intent = new Intent(context, noroplastite.class);
+                intent.putExtra(EXTRA_CONCEPT_NAME, concept.getName());
+                context.startActivity(intent);
+            }
         });
     }
 
     @Override
     public int getItemCount() {
-        return conceptList.size();
+        return conceptList != null ? conceptList.size() : 0;
     }
 
     public static class ConceptViewHolder extends RecyclerView.ViewHolder {
@@ -59,7 +66,6 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
 
         public ConceptViewHolder(@NonNull View itemView) {
             super(itemView);
-            // DÜZELTME: item_kategori_card.xml içindeki başlık TextView ID'si (txtCardTitle)
             tvKavramAdi = itemView.findViewById(R.id.txtCardTitle);
         }
     }

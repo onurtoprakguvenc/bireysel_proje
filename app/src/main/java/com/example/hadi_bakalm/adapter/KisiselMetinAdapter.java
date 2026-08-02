@@ -33,26 +33,35 @@ public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapte
 
     @Override
     public void onBindViewHolder(@NonNull MetinViewHolder holder, int position) {
+        if (metinListesi == null || position >= metinListesi.size()) return;
+
         MetinItem item = metinListesi.get(position);
+        if (item == null) return;
 
         if (holder.txtTitle != null) {
-            holder.txtTitle.setText(item.getTitle());
+            holder.txtTitle.setText(item.getTitle() != null ? item.getTitle() : "");
         }
 
         if (holder.txtDesc != null) {
             String ozet = (item.getPersonalNote() != null && !item.getPersonalNote().trim().isEmpty())
                     ? item.getPersonalNote()
-                    : item.getContent();
+                    : (item.getContent() != null ? item.getContent() : "");
             holder.txtDesc.setText(ozet);
         }
 
         // Tıklama ile Detay Sayfasına Geçiş
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(v.getContext(), kisisel_metin_okuma_sayfa.class);
-            intent.putExtra("TITLE", item.getTitle());
-            intent.putExtra("CONTENT", item.getContent());
-            intent.putExtra("PERSONAL_NOTE", item.getPersonalNote());
-            v.getContext().startActivity(intent);
+            if (v.getContext() != null) {
+                Intent intent = new Intent(v.getContext(), kisisel_metin_okuma_sayfa.class);
+
+                // KRİTİK DÜZELTME: VERİTABANI İNCELEME ZAMANINI GÜNCELLEYEBİLMEK İÇİN ID ŞART!
+                intent.putExtra("METIN_ID", item.getId());
+                intent.putExtra("TITLE", item.getTitle());
+                intent.putExtra("CONTENT", item.getContent());
+                intent.putExtra("PERSONAL_NOTE", item.getPersonalNote());
+
+                v.getContext().startActivity(intent);
+            }
         });
     }
 

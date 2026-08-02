@@ -70,6 +70,7 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     Intent intent;
                     if (item.getTur() != null && item.getTur().equalsIgnoreCase("Metin")) {
                         intent = new Intent(SonIncelemeActivity.this, kisisel_metin_okuma_sayfa.class);
+                        intent.putExtra("ID", (int) item.getId());
                         intent.putExtra("TITLE", item.getBaslik());
                         intent.putExtra("DESCRIPTION", item.getAciklama());
                         intent.putExtra("CONTENT", item.getAciklama());
@@ -91,25 +92,26 @@ public class SonIncelemeActivity extends AppCompatActivity {
                         // Veritabanından geçmiş kaydını sil/sıfırla
                         new Thread(() -> {
                             if (db != null) {
+                                int itemId = (int) item.getId();
+
                                 if ("Kavram".equalsIgnoreCase(item.getTur())) {
-                                    ConceptItem_kavram concept = db.conceptDao_kavram().getConceptById(item.getId());
+                                    ConceptItem_kavram concept = db.conceptDao_kavram().getConceptById(itemId);
                                     if (concept != null) {
                                         concept.setLastViewedTime(0);
                                         db.conceptDao_kavram().update(concept);
                                     }
                                 } else {
-                                    MetinItem metin = db.metinDao().getMetinById(item.getId());
+                                    MetinItem metin = db.metinDao().getMetinById(itemId);
                                     if (metin != null) {
                                         metin.setLastViewedTime(0);
                                         db.metinDao().update(metin);
                                     }
                                 }
                             }
-                            runOnUiThread(SonIncelemeActivity.this::applyFilterAndSearch);
                         }).start();
                     }
                 }
-            }); // ADAPTER KAPANIŞI
+            });
 
             rvHistoryList.setAdapter(adapter);
         }
@@ -120,7 +122,7 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
         setupSearch();
         setupClearButton();
-    } // ONCREATE KAPANIŞI
+    }
 
     @Override
     protected void onResume() {
@@ -151,22 +153,21 @@ public class SonIncelemeActivity extends AppCompatActivity {
                 }
             }
 
-            // 2. METİNLER
-            List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
-            if (allMetinler != null) {
-                for (MetinItem item : allMetinler) {
-                    if (item.getLastViewedTime() > 0) {
-                        SonIncelemeModel modelItem = new SonIncelemeModel(
-                                item.getId(),
-                                item.getTitle(),
-                                item.getContent() != null ? item.getContent() : "",
-                                "Son incelendi",
-                                "Metin"
-                        );
-                        gecmisListesi.add(modelItem);
-                    }
+            // 2. METİNLER (Yeni DAO Metodu Çağrılıyor)
+            List<MetinItem> metinler = db.metinDao().getRecentMetinler();
+
+            if (metinler != null) {
+                for (MetinItem item : metinler) {
+                    SonIncelemeModel model = new SonIncelemeModel(
+                            item.getId(),
+                            item.getTitle(),
+                            item.getContent() != null ? item.getContent() : "",
+                            "Son incelendi",
+                            "Metin"
+                    );
+                    gecmisListesi.add(model);
                 }
-            }
+            } // DÜZELTME: FAZLADAN '}' BURADAN KALDIRILDI
 
             runOnUiThread(() -> {
                 tumListe.clear();

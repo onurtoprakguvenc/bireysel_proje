@@ -41,10 +41,12 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     @SuppressLint("NotifyDataSetChanged")
     public void updateList(List<SonIncelemeModel> newList) {
-        if (newList != null) {
-            this.incelemeListesi = new ArrayList<>(newList);
-        } else {
+        if (this.incelemeListesi == null) {
             this.incelemeListesi = new ArrayList<>();
+        }
+        this.incelemeListesi.clear();
+        if (newList != null) {
+            this.incelemeListesi.addAll(newList);
         }
         notifyDataSetChanged();
     }
@@ -52,16 +54,21 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SonIncelemeModel item = incelemeListesi.get(position);
+        if (item == null) return;
 
         if (holder.txtTitle != null) holder.txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
         if (holder.txtDescription != null) holder.txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
         if (holder.txtTime != null) holder.txtTime.setText(item.getZaman() != null ? item.getZaman() : "");
-        if (holder.txtBadge != null) holder.txtBadge.setText(item.getTur() != null ? item.getTur() : "");
 
-        if ("Kavram".equalsIgnoreCase(item.getTur())) {
+        String tur = item.getTur() != null ? item.getTur().trim() : "";
+
+        // TÜR EŞLEŞTİRMESİ (TÜRKÇE KARAKTER VEYA BÜYÜK/KÜÇÜK HARF HASSASİYETİ SIFIRLANDI)
+        if ("KAVRAM".equalsIgnoreCase(tur) || "Kavram".equalsIgnoreCase(tur)) {
+            if (holder.txtBadge != null) holder.txtBadge.setText("Kavram");
             if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
             if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         } else {
+            if (holder.txtBadge != null) holder.txtBadge.setText("Metin");
             if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_document);
             if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         }

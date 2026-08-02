@@ -23,6 +23,11 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
     private RecyclerView recyclerViewSaved;
     private kaydedilenler_adapter adapter;
+
+    // TÜRKÇE KARAKTER RİSKİNİ VE İSİMLENDİRME SAFSATASINI BİTİREN SABİTLER
+    public static final String TYPE_KAVRAM = "KAVRAM";
+    public static final String TYPE_METIN = "METIN"; // Standart İngilizce harflerle tanımlandı
+
     private List<kaydedilenler> savedList;
     private List<kaydedilenler> currentFilteredList;
     private TextView txtItemCount;
@@ -89,7 +94,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
         if (btnFilterConcepts != null) {
             btnFilterConcepts.setOnClickListener(v -> {
-                selectedType = "KAVRAM";
+                selectedType = TYPE_KAVRAM;
                 updateFilterUI();
                 applyFilterAndSearch();
             });
@@ -97,7 +102,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
         if (btnFilterTexts != null) {
             btnFilterTexts.setOnClickListener(v -> {
-                selectedType = "METİN";
+                selectedType = TYPE_METIN;
                 updateFilterUI();
                 applyFilterAndSearch();
             });
@@ -116,7 +121,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         loadSavedDataFromDb();
     }
 
-    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU (DÜZELTİLDİ) ---
+    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
     private void loadSavedDataFromDb() {
         if (db == null) return;
 
@@ -129,13 +134,13 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
                 for (ConceptItem_kavram item : allConcepts) {
                     if (item.isSaved()) {
                         kaydedilenler savedItem = new kaydedilenler(
-                                String.valueOf(item.getId()), // 1. Parametre
-                                item.getTitle(),               // 2. Parametre
-                                item.getDescription(),         // 3. Parametre
-                                "KAVRAM",                      // 4. Parametre (TÜR BURADA!)
-                                "",                            // 5. Parametre
-                                "Dün eklendi",                 // 6. Parametre
-                                true                           // 7. Parametre
+                                String.valueOf(item.getId()),
+                                item.getTitle(),
+                                item.getDescription(),
+                                TYPE_KAVRAM,                   // Sabit bağlandı
+                                "",
+                                "Dün eklendi",
+                                true
                         );
                         tempSavedList.add(savedItem);
                     }
@@ -151,7 +156,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
                                 String.valueOf(item.getId()),
                                 item.getTitle(),
                                 item.getContent() != null ? item.getContent() : "",
-                                "METİN", // Tür doğrudan METİN
+                                TYPE_METIN,                    // Sabit bağlandı
                                 "",
                                 "Dün eklendi",
                                 true
@@ -195,10 +200,10 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             for (kaydedilenler item : savedList) {
                 if (item == null) continue;
 
-                String itemType = item.getType() != null ? item.getType().toUpperCase(trLocale).trim() : "";
-                String targetType = selectedType.toUpperCase(trLocale).trim();
+                String itemType = item.getType() != null ? item.getType().trim() : "";
 
-                boolean matchesType = targetType.equals("ALL") || itemType.contains(targetType);
+                // Kesin tür eşleşmesi (Metinsel bozulmalara kapalı)
+                boolean matchesType = selectedType.equals("ALL") || itemType.equalsIgnoreCase(selectedType);
 
                 String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
                 String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
@@ -227,12 +232,12 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             btnFilterAll.setTextColor(selectedType.equals("ALL") ? 0xFFFFFFFF : 0xFF475569);
         }
         if (btnFilterConcepts != null) {
-            btnFilterConcepts.setBackgroundResource(selectedType.equals("KAVRAM") ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
-            btnFilterConcepts.setTextColor(selectedType.equals("KAVRAM") ? 0xFFFFFFFF : 0xFF475569);
+            btnFilterConcepts.setBackgroundResource(selectedType.equals(TYPE_KAVRAM) ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
+            btnFilterConcepts.setTextColor(selectedType.equals(TYPE_KAVRAM) ? 0xFFFFFFFF : 0xFF475569);
         }
         if (btnFilterTexts != null) {
-            btnFilterTexts.setBackgroundResource(selectedType.equals("METİN") ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
-            btnFilterTexts.setTextColor(selectedType.equals("METİN") ? 0xFFFFFFFF : 0xFF475569);
+            btnFilterTexts.setBackgroundResource(selectedType.equals(TYPE_METIN) ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
+            btnFilterTexts.setTextColor(selectedType.equals(TYPE_METIN) ? 0xFFFFFFFF : 0xFF475569);
         }
     }
 
