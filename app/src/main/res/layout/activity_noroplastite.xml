@@ -149,7 +149,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="@string/kisisel_not_analiz"
+                        android:text="@string/benim_kisisel_gelistirici_notum"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp" />
 

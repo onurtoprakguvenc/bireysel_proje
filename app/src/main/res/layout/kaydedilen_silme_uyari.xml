@@ -79,7 +79,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_black_icon_box"
                 android:backgroundTint="#F43F5E"
-                android:text="@string/evet_cıkar"
+                android:text="@string/evet_cikar"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"

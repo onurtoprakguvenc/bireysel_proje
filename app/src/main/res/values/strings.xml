@@ -17,11 +17,9 @@
     <string name="genislet">genişlet</string>
 
     <!-- KAVRAM DETAY ALANLARI VE METİNLERİ -->
-    <string name="kavram_sembolik">kavram temsili</string>
     <string name="kavram_temsili">kavram temsili</string>
     <string name="kavram_aciklamasi_normal">kavram açıklaması normal</string>
     <string name="benim_kisisel_gelistirici_notum">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
-    <string name="kisisel_not_analiz">benim kişisel geliştirici notum ve düşüncem o kavram hakkında (eğer varsa)</string>
     <string name="nasil_detaylandirmak_istersin_aciklamayi">nasıl detaylandırmak istersin açıklamayı?</string>
     <string name="ornek_diyaloglar">örnek diyaloglar</string>
     <string name="buraya_ornek_diyalog_icerigi_gelecek">Buraya örnek diyalog içeriği gelecek.</string>
@@ -83,7 +81,7 @@
 
     <!-- KAYDEDİLENLER VE SİLME POPUP -->
     <string name="kaydedilenler">kaydedilenler</string>
-    <string name="daha_sonra_okumak_icin_kaydettigin_icerikler">Daha sonra okumak için kaydettiğin içerikler</string>
+    <string name="daha_sonra_okumak_icin_kaydettigin_icerikler">Daha sonra okumak için kaydettığın içerikler</string>
     <string name="x_icerik">x İçerik</string>
     <string name="kaydedilenlerde_ara">Kaydedilenlerde ara...</string>
     <string name="metinler">Metinler</string>
@@ -113,7 +111,6 @@
     <string name="gecici">Zihinsel modeller, dünyayı anlama ve karmaşık durumları basitleştirme şeklimizi belirler.</string>
     <string name="incele"><![CDATA[İncele >]]></string>
     <string name="vazgec">Vazgeç</string>
-    <string name="evet_cıkar">Evet, Çıkar</string>
     <string name="bu_icerigi_kaydedilenler_listenden_cikarmak_istedigine_emin_misin">Bu içeriği kaydedilenler listenden çıkarmak istediğine emin misin?</string>
     <string name="emin_misin">Emin misin?</string>
     <string name="_x_dk_nce">45 dk önce</string>
@@ -142,7 +139,6 @@
     <string name="zihinsel_mekanizma_ve_mimari">Zihinsel Mekanizma ve Mimari</string>
     <string name="karanlik">Karanlık</string>
     <string name="sarimsi">Sarımsı</string>
-    <string name="ayd_nl_k">Aydınlık</string>
     <string name="baslik_1_dusunce_mimarisi">başlık 1 – düşünce mimarisi</string>
     <string name="sil">Sil</string>
     <string name="kavram">kavram</string>
