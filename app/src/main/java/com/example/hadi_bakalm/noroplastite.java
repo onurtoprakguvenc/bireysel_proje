@@ -354,6 +354,7 @@ public class noroplastite extends AppCompatActivity {
     }
 
     // --- ROOM DB İŞLEMLERİ ARKA PLANA ALINDI VE EŞLEŞTİRME SAĞLANDI ---
+    // --- ROOM DB İŞLEMLERİ ARKA PLANA ALINDI VE EŞLEŞTİRME SAĞLANDI ---
     private void setupConceptData(String kavramAdi, TextView txtTitle, TextView txtDesc, TextView txtNote, TextView txtDialogues, TextView txtImportance) {
         String finalKavramAdi = (kavramAdi == null || kavramAdi.trim().isEmpty()) ? "Bilişsel Atrofi" : kavramAdi;
 
@@ -368,7 +369,7 @@ public class noroplastite extends AppCompatActivity {
         if (jsonConcept != null) {
             if (jsonConcept.getTitle() != null) title = jsonConcept.getTitle();
             if (jsonConcept.getDescription() != null) desc = jsonConcept.getDescription();
-            if (jsonConcept.getPersonalNote() != null) note = jsonConcept.getPersonalNote(); // Artık karmaşık content yerine kişisel not çekiliyor
+            if (jsonConcept.getPersonalNote() != null) note = jsonConcept.getPersonalNote();
             if (jsonConcept.getDialogues() != null) dialogues = jsonConcept.getDialogues();
             if (jsonConcept.getImportance() != null) importance = jsonConcept.getImportance();
         }
@@ -402,7 +403,43 @@ public class noroplastite extends AppCompatActivity {
             btnImportance.setVisibility((importance != null && !importance.trim().isEmpty()) ? View.VISIBLE : View.GONE);
         }
 
-        // Room Veritabanı işlemleri aynı şekilde devam eder...
+        // --- VERİTABANI ARAMA VE EŞLEŞTİRME DÜZELTMESİ ---
+        final String searchTitle = title;
+        final String finalDesc = desc;
+        final String finalNote = note;
+        final String finalDialogues = dialogues;
+        final String finalImportance = importance;
+
+        new Thread(() -> {
+            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+            ConceptItem_kavram foundConcept = null;
+
+            if (allConcepts != null) {
+                for (ConceptItem_kavram item : allConcepts) {
+                    if (item.getTitle() != null && item.getTitle().replaceAll("\\s+", "").equalsIgnoreCase(searchTitle.replaceAll("\\s+", ""))) {
+                        foundConcept = item;
+                        break;
+                    }
+                }
+            }
+
+            if (foundConcept != null) {
+                currentConcept = foundConcept;
+            } else {
+                // Veritabanında yoksa sıfırdan ekle
+                currentConcept = new ConceptItem_kavram(searchTitle, finalDesc, finalNote, finalDialogues, finalImportance, false);
+                long newId = db.conceptDao_kavram().insert(currentConcept);
+                currentConcept.setId((int) newId);
+            }
+
+            if (currentConcept != null) {
+                currentConcept.setLastViewedTime(System.currentTimeMillis());
+                db.conceptDao_kavram().update(currentConcept);
+            }
+
+            // Arayüzdeki kaydet butonunu veritabanı durumuna göre güncelle
+            runOnUiThread(this::updateSaveButtonUI);
+        }).start();
     }
 
     private com.example.hadi_bakalm.model.kaydedilenler getConceptFromJSON(String targetTitle) {
