@@ -44,7 +44,7 @@
             android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="Sil"
+            android:contentDescription="@string/sil"
             android:focusable="true"
             android:padding="6dp"
             android:src="@drawable/ic_close"

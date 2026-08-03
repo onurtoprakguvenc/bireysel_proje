@@ -45,7 +45,7 @@
                     android:background="@drawable/bg_theme_option_white"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp"
-                    android:text="Aydınlık"
+                    android:text="@string/aydinlik"
                     android:textColor="#0F172A"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -58,7 +58,7 @@
                     android:background="@drawable/bg_theme_option_sepia"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp"
-                    android:text="Sarımsı"
+                    android:text="@string/sarimsi"
                     android:textColor="#451A03"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -70,7 +70,7 @@
                     android:background="@drawable/bg_theme_option_black"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="6dp"
-                    android:text="Karanlık"
+                    android:text="@string/karanlik"
                     android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold" />

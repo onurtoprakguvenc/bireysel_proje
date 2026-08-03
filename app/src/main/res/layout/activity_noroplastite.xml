@@ -246,7 +246,7 @@
                     android:id="@+id/txtDialoguesContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Buraya örnek diyaloglar gelecek."
+                    android:text="@string/buraya_ornek_diyaloglar_gelecek"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
@@ -346,7 +346,7 @@
                     android:id="@+id/txtImportanceContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Buraya pratik hayattaki önemi ile ilgili metinler gelecek."
+                    android:text="@string/buraya_pratik_hayattaki_onemi_ile_ilgili_metinler_gelecek"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 

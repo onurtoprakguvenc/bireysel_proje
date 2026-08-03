@@ -39,7 +39,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="İsteğe Bağlı Bağış"
+                android:text="@string/istege_bagli_olan_bagis"
                 android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -47,7 +47,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Geliştiriciye Destek Yapın"
+                android:text="@string/gelistiriciye_destek_olun"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -81,7 +81,7 @@
                     android:id="@+id/txtDonateMessage"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Bu uygulama bağımsız bir geliştirici tarafından hazırlanmıştır. Uygulamayı faydalı buluyorsanız bir kahve ısmarlayarak geliştirmeye katkıda bulunabilirsiniz."
+                    android:text="@string/gecici_metin"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -97,7 +97,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentStart="true"
-                    android:text="Bağış Miktarını Seçin"
+                    android:text="@string/bagis_miktarini_secin"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -106,7 +106,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
-                    android:text="TL cinsinden"
+                    android:text="@string/tl_cinsinden"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </RelativeLayout>
@@ -135,14 +135,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Çay İkramı"
+                        android:text="@string/cay_ikrami"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺10"
+                        android:text="@string/_10"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -164,14 +164,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kahve"
+                        android:text="@string/kahve"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺20"
+                        android:text="@string/_20"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -193,14 +193,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Atıştırmalık"
+                        android:text="@string/atistirmalik"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺50"
+                        android:text="@string/_50"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -231,14 +231,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Yemek"
+                        android:text="@string/yemek"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺100"
+                        android:text="@string/_100"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -260,14 +260,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kitap"
+                        android:text="@string/kitap"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺200"
+                        android:text="@string/_200"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -289,14 +289,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Süper Destek"
+                        android:text="@string/super_destek"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₺500"
+                        android:text="@string/_500"
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -319,14 +319,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="👑 VIP Destek"
+                    android:text="@string/vip_destek"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="₺1000"
+                    android:text="@string/_1000"
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -351,7 +351,7 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:background="@drawable/bg_black_icon_box"
-            android:text="₺100 Bağış Yap"
+            android:text="@string/bagis_yap"
             android:textAllCaps="false"
             android:textColor="@color/bg_main"
             android:textSize="16sp"
@@ -362,7 +362,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="8dp"
-            android:text="🔒 Google Play Güvenli Ödeme • İsteğe Bağlı Katkı"
+            android:text="@string/google_play_guvenli_odeme_istege_bagli_katki"
             android:textColor="@color/text_secondary"
             android:textSize="11sp" />
     </LinearLayout>

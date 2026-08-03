@@ -30,7 +30,7 @@
                 android:layout_centerVertical="true"
                 android:layout_toStartOf="@id/btnRemoveSave"
                 android:layout_marginEnd="8dp"
-                android:text="başlık 1 – düşünce mimarisi"
+                android:text="@string/baslik_1_dusunce_mimarisi"
                 android:textColor="#0F172A"
                 android:textSize="16sp"
                 android:textStyle="bold" />

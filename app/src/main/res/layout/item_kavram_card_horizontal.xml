@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Kavram"
+                android:text="@string/kavram"
                 android:textColor="#0F172A"
                 android:textSize="15sp"
                 android:textStyle="bold" />
@@ -71,7 +71,7 @@
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Açıklama"
+                android:text="@string/aciklama"
                 android:textColor="#64748B"
                 android:textSize="12sp" />
         </LinearLayout>
