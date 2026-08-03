@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import com.example.hadi_bakalm.model.bagis_sayfa;
 import android.widget.EditText;
 import android.widget.ImageView;
 
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
 import com.example.hadi_bakalm.model.NavigationHelper;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnMenu;
     private EditText searchBar;
     private RecyclerView recyclerViewCategories;
+    private FloatingActionButton btnSupportDonate;
     private ana_sayfa_adapter adapter;
     private List<String> kategoriListesi;
 
@@ -46,6 +49,14 @@ public class MainActivity extends AppCompatActivity {
         if (btnMenu != null) {
             btnMenu.setOnClickListener(v -> {
                 // İleride: Seçenekler menüsü
+            });
+        }
+
+        // Bağış Butonu Tıklama Olayı (bağış sayfasına yönlendirme)
+        if (btnSupportDonate != null) {
+            btnSupportDonate.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, bagis_sayfa.class);
+                startActivity(intent);
             });
         }
     }
@@ -71,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
         btnMenu = findViewById(R.id.btnMenu);
         searchBar = findViewById(R.id.searchBar);
         recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
+        btnSupportDonate = findViewById(R.id.btnSupportDonate);
     }
 
     private void setupRecyclerView() {

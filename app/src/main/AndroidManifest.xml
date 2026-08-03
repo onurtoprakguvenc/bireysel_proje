@@ -18,6 +18,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".model.bagis_sayfa"
+            android:exported="false" />
+
+        <activity
             android:name=".model.KisiselMetinlerimActivity"
             android:exported="false" />
 

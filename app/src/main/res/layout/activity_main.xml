@@ -81,7 +81,23 @@
         android:paddingBottom="16dp"
         tools:listitem="@layout/item_kategori_card"/>
 
-    <!-- 3. KISIM: ALT NAVİGASYON BARI -->
+    <!-- 3. KISIM: BAĞIŞ / DESTEK BUTONU (FAB) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnSupportDonate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomNavigation"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_coffe_support"
+        app:backgroundTint="@color/text_primary"
+        app:tint="@color/bg_main"
+        app:elevation="4dp"
+        app:fabSize="normal" />
+
+    <!-- 4. KISIM: ALT NAVİGASYON BARI -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
