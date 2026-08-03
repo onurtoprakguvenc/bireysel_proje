@@ -1,22 +1,27 @@
 package com.example.hadi_bakalm.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public class kaydedilenler {
     private String id;
     private String title;
     private String description;
-    private String content;
-    private String dialogues;  // EKLENDİ
-    private String importance; // EKLENDİ
+
+    @SerializedName(value = "personalNote", alternate = {"content"})
+    private String personalNote;
+
+    private String dialogues;
+    private String importance;
     private String type;
     private String category;
     private String addedTime;
     private boolean isSaved;
 
-    // Boş Constructor (Gson burayı kullanır)
+    // Boş Constructor (Gson için)
     public kaydedilenler() {
     }
 
-    // Mevcut 6 Parametreli Constructor (DOKUNULMADI)
+    // 6 Parametreli Constructor
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime) {
         this.id = id;
         this.title = title;
@@ -27,7 +32,7 @@ public class kaydedilenler {
         this.isSaved = false;
     }
 
-    // Mevcut 7 Parametreli Constructor (DOKUNULMADI)
+    // 7 Parametreli Constructor
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime, boolean isSaved) {
         this.id = id;
         this.title = title;
@@ -48,10 +53,13 @@ public class kaydedilenler {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public String getPersonalNote() { return personalNote; }
+    public void setPersonalNote(String personalNote) { this.personalNote = personalNote; }
 
-    // EKLENDİ: dialogues ve importance getter/setter
+    // Eski koddaki bağımlılıklar için geriye dönük uyumluluk (getContent)
+    public String getContent() { return personalNote; }
+    public void setContent(String content) { this.personalNote = content; }
+
     public String getDialogues() { return dialogues; }
     public void setDialogues(String dialogues) { this.dialogues = dialogues; }
 
