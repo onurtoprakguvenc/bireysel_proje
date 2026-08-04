@@ -9,6 +9,7 @@ import android.text.TextWatcher;
 import com.example.hadi_bakalm.model.bagis_sayfa;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -31,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton btnSupportDonate;
     private ana_sayfa_adapter adapter;
     private List<String> kategoriListesi;
+
+    private static final String PREFS_NAME = "AppPrefs";
+    private static final String KEY_DISCLAIMER_ACCEPTED = "is_disclaimer_accepted";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +63,9 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
+        // Sadece daha önce kabul edilmediyse diyalogu gösterir
+        checkAndShowDisclaimer();
     }
 
     private void applySavedTheme() {
@@ -142,5 +149,44 @@ public class MainActivity extends AppCompatActivity {
         if (adapter != null) {
             adapter.filterList(filteredList);
         }
+    }
+
+    private void checkAndShowDisclaimer() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isAccepted = prefs.getBoolean(KEY_DISCLAIMER_ACCEPTED, false);
+
+        if (!isAccepted) {
+            showExpertDisclaimerDialog();
+        }
+    }
+
+    private void showExpertDisclaimerDialog() {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.diyalog_uzman_uyari, null);
+        builder.setView(dialogView);
+
+        android.app.AlertDialog dialog = builder.create();
+
+        // Dışarıya tıklanarak kapatılmasını engeller (Zorunlu görünüm)
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+
+        // Arka planı şeffaf yaparak kendi özel oval tasarımımızın görünmesini sağlar
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        TextView btnAccept = dialogView.findViewById(R.id.btnAcceptDisclaimer);
+        if (btnAccept != null) {
+            btnAccept.setOnClickListener(v -> {
+                // Kullanıcı onayladığında tercihi hafızaya kaydet
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                prefs.edit().putBoolean(KEY_DISCLAIMER_ACCEPTED, true).apply();
+
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
     }
 }

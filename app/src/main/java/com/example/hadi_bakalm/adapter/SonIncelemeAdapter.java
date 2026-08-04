@@ -105,7 +105,6 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
             txtTitle = itemView.findViewById(R.id.txtItemTitle);
             txtBadge = itemView.findViewById(R.id.txtItemBadge);
             txtDescription = itemView.findViewById(R.id.txtItemDescription);
-            txtTime = itemView.findViewById(R.id.txtItemTime);
         }
     }
 }

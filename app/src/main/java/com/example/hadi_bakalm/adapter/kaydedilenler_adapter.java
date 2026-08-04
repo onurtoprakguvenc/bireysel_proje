@@ -215,7 +215,6 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
             super(itemView);
             txtSavedTitle = itemView.findViewById(R.id.txtSavedTitle);
             txtSavedDesc = itemView.findViewById(R.id.txtSavedDesc);
-            txtAddedTime = itemView.findViewById(R.id.txtAddedTime);
             btnInspect = itemView.findViewById(R.id.btnInspect);
             btnRemoveSave = itemView.findViewById(R.id.btnRemoveSave);
             btnShare = itemView.findViewById(R.id.btnShare);

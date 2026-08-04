@@ -44,6 +44,10 @@ public class noroplastite extends AppCompatActivity {
     private TextView btnCopy1, btnShare1, btnCopy2, btnShare2;
     private TextView btnCopyDialogues, btnShareDialogues, btnCopyImportance, btnShareImportance;
 
+    // Tıbbi Uyarı Bileşenleri
+    private TextView txtDisclaimer;
+    private ImageView icDisclaimer;
+
     // SharedPreferences & Okuma Ayarları Değişkenleri
     private SharedPreferences sharedPreferences;
     private int currentFontSize = 16;
@@ -112,6 +116,9 @@ public class noroplastite extends AppCompatActivity {
         contentDialogues = findViewById(R.id.contentDialogues);
         contentImportance = findViewById(R.id.contentImportance);
 
+        txtDisclaimer = findViewById(R.id.txtDisclaimer);
+        icDisclaimer = findViewById(R.id.icDisclaimer);
+
         // Kaydedilmiş olan metin boyutunu ve temasını uygula
         applyFontSizeToViews(currentFontSize);
         applyReadingTheme(currentTheme);
@@ -120,7 +127,7 @@ public class noroplastite extends AppCompatActivity {
         String gelenKavram = getIntent().getStringExtra("KAVRAM_ADI");
         setupConceptData(gelenKavram, txtConceptTitle, txtConceptDescription, txtPersonalNote, txtDialoguesContent, txtImportanceContent);
 
-        // --- 4. Kaydet Butonu Tıklama Olayı (GÜNCELLEME) ---
+        // --- 4. Kaydet Butonu Tıklama Olayı ---
         if (btnKaydet != null) {
             btnKaydet.setOnClickListener(v -> {
                 if (currentConcept != null) {
@@ -288,6 +295,10 @@ public class noroplastite extends AppCompatActivity {
         if (btnBack != null) btnBack.setColorFilter(textColor);
         if (btnMoreMenu != null) btnMoreMenu.setColorFilter(textColor);
 
+        // Uyarı Alanının Temaya Göre Renk Ayarı
+        if (txtDisclaimer != null) txtDisclaimer.setTextColor(subTextColor);
+        if (icDisclaimer != null) icDisclaimer.setColorFilter(subTextColor);
+
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("CONCEPT_READING_THEME", theme);
         editor.apply();
@@ -353,8 +364,6 @@ public class noroplastite extends AppCompatActivity {
         editor.apply();
     }
 
-    // --- ROOM DB İŞLEMLERİ ARKA PLANA ALINDI VE EŞLEŞTİRME SAĞLANDI ---
-    // --- ROOM DB İŞLEMLERİ ARKA PLANA ALINDI VE EŞLEŞTİRME SAĞLANDI ---
     private void setupConceptData(String kavramAdi, TextView txtTitle, TextView txtDesc, TextView txtNote, TextView txtDialogues, TextView txtImportance) {
         String finalKavramAdi = (kavramAdi == null || kavramAdi.trim().isEmpty()) ? "Bilişsel Atrofi" : kavramAdi;
 
@@ -377,7 +386,6 @@ public class noroplastite extends AppCompatActivity {
         if (txtTitle != null) txtTitle.setText(title);
         if (txtDesc != null) txtDesc.setText(desc);
 
-        // Kişisel not yoksa ikinci kartı ekranda tamamen gizle (View.GONE)
         if (txtNote != null) {
             if (note != null && !note.trim().isEmpty()) {
                 txtNote.setText(note);
@@ -394,7 +402,6 @@ public class noroplastite extends AppCompatActivity {
         if (txtDialogues != null) txtDialogues.setText(dialogues);
         if (txtImportance != null) txtImportance.setText(importance);
 
-        // Açılır butonların içeriğe göre görünürlüğü
         if (btnDialogues != null) {
             btnDialogues.setVisibility((dialogues != null && !dialogues.trim().isEmpty()) ? View.VISIBLE : View.GONE);
         }
@@ -403,7 +410,6 @@ public class noroplastite extends AppCompatActivity {
             btnImportance.setVisibility((importance != null && !importance.trim().isEmpty()) ? View.VISIBLE : View.GONE);
         }
 
-        // --- VERİTABANI ARAMA VE EŞLEŞTİRME DÜZELTMESİ ---
         final String searchTitle = title;
         final String finalDesc = desc;
         final String finalNote = note;
@@ -426,7 +432,6 @@ public class noroplastite extends AppCompatActivity {
             if (foundConcept != null) {
                 currentConcept = foundConcept;
             } else {
-                // Veritabanında yoksa sıfırdan ekle
                 currentConcept = new ConceptItem_kavram(searchTitle, finalDesc, finalNote, finalDialogues, finalImportance, false);
                 long newId = db.conceptDao_kavram().insert(currentConcept);
                 currentConcept.setId((int) newId);
@@ -437,7 +442,6 @@ public class noroplastite extends AppCompatActivity {
                 db.conceptDao_kavram().update(currentConcept);
             }
 
-            // Arayüzdeki kaydet butonunu veritabanı durumuna göre güncelle
             runOnUiThread(this::updateSaveButtonUI);
         }).start();
     }

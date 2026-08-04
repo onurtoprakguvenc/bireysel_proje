@@ -104,14 +104,6 @@
                 android:textColor="#64748B"
                 android:textSize="12sp" />
 
-            <TextView
-                android:id="@+id/txtItemTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/_x_dk_nce"
-                android:textColor="#94A3B8"
-                android:textSize="11sp" />
         </LinearLayout>
 
     </RelativeLayout>

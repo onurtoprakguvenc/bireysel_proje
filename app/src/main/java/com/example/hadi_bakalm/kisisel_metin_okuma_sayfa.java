@@ -36,6 +36,10 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
     private EditText etPersonalNote;
     private TextView btnCopyMainText, btnShareMainText, btnCopyNote;
 
+    // Tıbbi Uyarı Bileşenleri
+    private TextView txtDisclaimer;
+    private ImageView icDisclaimer;
+
     // Ayar Paneli İçindeki Elemanlar
     private View cardSettingsPanel;
     private TextView btnThemeAydinlik, btnThemeSarimsi, btnThemeKaranlik;
@@ -96,6 +100,9 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         imgBookmarkIcon = findViewById(R.id.imgBookmarkIcon);
         txtBookmarkStatus = findViewById(R.id.txtBookmarkStatus);
 
+        txtDisclaimer = findViewById(R.id.txtDisclaimer);
+        icDisclaimer = findViewById(R.id.icDisclaimer);
+
         if (cardSettingsPanel != null) {
             btnThemeAydinlik = cardSettingsPanel.findViewById(R.id.btnThemeAydinlik);
             btnThemeSarimsi = cardSettingsPanel.findViewById(R.id.btnThemeSarimsi);
@@ -128,7 +135,6 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         String content = "Varsayılan İçerik";
         String readTime = "1 dk okuma";
 
-        // DÜZELTME: Hem "METIN_ID" hem de "ID" kontrolleri hedeflendi
         int metinId = -1;
         if (intent != null) {
             if (intent.hasExtra("METIN_ID")) {
@@ -168,7 +174,6 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
             btnCopyNote.setOnClickListener(v -> copyToClipboard("Kişisel Not", etPersonalNote.getText().toString()));
         }
 
-        // Veritabanı yüklemesi ve zaman damgası güncellemesi
         checkAndLoadDatabase(metinId, title, content, etPersonalNote);
 
         if (etPersonalNote != null) {
@@ -232,12 +237,10 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         new Thread(() -> {
             MetinItem matchedItem = null;
 
-            // 1. Önce ID ile bulmaya çalış
             if (targetId != -1) {
                 matchedItem = db.metinDao().getMetinById(targetId);
             }
 
-            // 2. ID ile bulunamadıysa Başlık ile bulmaya çalış
             if (matchedItem == null) {
                 List<MetinItem> list = db.metinDao().getAllMetinler();
                 if (list != null && !list.isEmpty()) {
@@ -250,7 +253,6 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
                 }
             }
 
-            // 3. Hiç yoksa veritabanına yeni ekle
             if (matchedItem == null) {
                 matchedItem = new MetinItem(title, content, "", false);
                 db.metinDao().insert(matchedItem);
@@ -266,7 +268,6 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
                 }
             }
 
-            // KRİTİK DÜZELTME: Zaman damgasını burada en son güncel hallerine basıyoruz
             if (matchedItem != null) {
                 matchedItem.setLastViewedTime(System.currentTimeMillis());
                 db.metinDao().update(matchedItem);

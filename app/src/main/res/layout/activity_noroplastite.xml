@@ -408,7 +408,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:id="@+id/btnSave"
@@ -437,6 +437,34 @@
                         android:textStyle="bold" />
                 </LinearLayout>
             </RelativeLayout>
+
+            <!-- MİKRO TIBBİ BİLGİLENDİRME / DİSCLAIMER ALANI -->
+            <LinearLayout
+                android:id="@+id/disclaimerContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
+
+                <ImageView
+                    android:id="@+id/icDisclaimer"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginTop="2dp"
+                    android:src="@drawable/ic_lightbulb"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/txtDisclaimer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Not: Bu içerik yalnızca genel bilgilendirme amaçlıdır; klinik/tıbbi teşhis ve tedavi tavsiyesi niteliği taşımaz."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
