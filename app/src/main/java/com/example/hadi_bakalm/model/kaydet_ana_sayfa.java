@@ -205,9 +205,15 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
                 // Kesin tür eşleşmesi (Metinsel bozulmalara kapalı)
                 boolean matchesType = selectedType.equals("ALL") || itemType.equalsIgnoreCase(selectedType);
 
+                // Arama Kontrolü: Başlık (Title), Açıklama (Description) ve İçerik (Content) katmanlarında arar
                 String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
                 String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
-                boolean matchesQuery = query.isEmpty() || baslik.contains(query) || aciklama.contains(query);
+                String icerik = item.getContent() != null ? item.getContent().toLowerCase(trLocale) : "";
+
+                boolean matchesQuery = query.isEmpty()
+                        || baslik.contains(query)
+                        || aciklama.contains(query)
+                        || icerik.contains(query);
 
                 if (matchesType && matchesQuery) {
                     filtered.add(item);

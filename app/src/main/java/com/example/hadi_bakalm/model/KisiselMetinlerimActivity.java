@@ -3,6 +3,9 @@ package com.example.hadi_bakalm.model;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,6 +38,10 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
     private List<kaydedilenler> displayList;
     private String currentSelectedCategory = "TÜMÜ";
 
+    // Arama Çubuğu Tanımlaması
+    private EditText searchEditText;
+    private String currentSearchQuery = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +69,26 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
 
         displayList = new ArrayList<>();
 
+        // Arama Çubuğu Bağlantısı ve Dinleyicisi
+        searchEditText = findViewById(R.id.searchBar);
+        if (searchEditText != null) {
+            searchEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    currentSearchQuery = s.toString();
+                    filterCategory(currentSelectedCategory, getButtonForCategory(currentSelectedCategory));
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+            });
+        }
+
         // Tıklama Olayları
         if (btnAll != null) btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
         if (btnPratikHayat != null)
@@ -85,7 +112,8 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
 
             if (jsonString != null) {
                 Gson gson = new Gson();
-                Type listType = new TypeToken<List<kaydedilenler>>() {}.getType();
+                Type listType = new TypeToken<List<kaydedilenler>>() {
+                }.getType();
                 rawList = gson.fromJson(jsonString, listType);
             }
 
@@ -123,36 +151,50 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
 
         for (TextView btn : categoryButtons) {
             if (btn != null) {
-                btn.setBackgroundResource(R.drawable.bg_black_icon_box);
-                btn.setTextColor(Color.parseColor("#888888"));
+                btn.setBackgroundResource(R.drawable.bg_search_bar); // Seçili olmayan buton arka planı
+                btn.setTextColor(Color.parseColor("#CCCCCC")); // Aydınlık/Okunabilir Açık Gri
             }
         }
 
         if (selectedButton != null) {
-            selectedButton.setBackgroundResource(R.drawable.bg_black_icon_box);
-            selectedButton.setTextColor(Color.WHITE);
+            selectedButton.setBackgroundResource(R.drawable.bg_black_icon_box); // Seçili olan buton
+            selectedButton.setTextColor(Color.WHITE); // Tam Beyaz
         }
+
 
         if (masterList != null) {
             displayList.clear();
+            java.util.Locale trLocale = new java.util.Locale("tr", "TR");
+            String cleanQuery = currentSearchQuery.toLowerCase(trLocale).trim();
 
-            if (categoryName.equalsIgnoreCase("TÜMÜ")) {
-                displayList.addAll(masterList);
-            } else {
-                java.util.Locale trLocale = new java.util.Locale("tr", "TR");
-                String targetCategory = categoryName.toLowerCase(trLocale).trim();
-
-                for (kaydedilenler item : masterList) {
-                    if (item != null) {
-                        if (item.getCategory() != null) {
-                            String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
-                            if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
-                                displayList.add(item);
-                            }
-                        } else {
-                            // Kategori alanı boş veya tanımlanmamışsa elemanı yine de ekrana bas
-                            displayList.add(item);
+            for (kaydedilenler item : masterList) {
+                if (item != null) {
+                    // 1. Kategori Kontrolü
+                    boolean matchesCategory = false;
+                    if (categoryName.equalsIgnoreCase("TÜMÜ")) {
+                        matchesCategory = true;
+                    } else if (item.getCategory() != null) {
+                        String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
+                        String targetCategory = categoryName.toLowerCase(trLocale).trim();
+                        if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
+                            matchesCategory = true;
                         }
+                    } else {
+                        matchesCategory = true;
+                    }
+
+                    // 2. Arama Sorgusu Kontrolü (Başlık, İçerik ve Açıklamada Arama)
+                    boolean matchesSearch = true;
+                    if (!cleanQuery.isEmpty()) {
+                        String title = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
+                        String content = item.getContent() != null ? item.getContent().toLowerCase(trLocale) : "";
+                        String description = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
+
+                        matchesSearch = title.contains(cleanQuery) || content.contains(cleanQuery) || description.contains(cleanQuery);
+                    }
+
+                    if (matchesCategory && matchesSearch) {
+                        displayList.add(item);
                     }
                 }
             }

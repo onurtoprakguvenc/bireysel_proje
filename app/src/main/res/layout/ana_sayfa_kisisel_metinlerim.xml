@@ -99,7 +99,7 @@
                     android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
                     android:text="@string/dis_seylere_karsi_avunma"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -112,7 +112,7 @@
                     android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
                     android:text="@string/pratik_hayat_icin_fayda"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -125,7 +125,7 @@
                     android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
                     android:text="@string/zihinsel_mekanizma_ve_mimari"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
