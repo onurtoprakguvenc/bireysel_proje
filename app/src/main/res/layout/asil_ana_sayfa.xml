@@ -178,7 +178,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Yüzen Ekleme Butonu (FAB) - Elevation 12dp yapıldı, tıklama önceliği sağlandı -->
+    <!-- Kahve Ismarlama / Bağış Butonu (Küçük FAB) - (+) Simgesinin Solunda -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabDonateCoffee"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:src="@drawable/ic_coffe_support"
+        app:tint="#FFFFFF"
+        app:backgroundTint="#F59E0B"
+        app:fabSize="mini"
+        app:elevation="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/bagis_yap"
+        app:layout_constraintBottom_toBottomOf="@id/fabAddNote"
+        app:layout_constraintTop_toTopOf="@id/fabAddNote"
+        app:layout_constraintEnd_toStartOf="@id/fabAddNote" />
+
+    <!-- Yüzen Ekleme Butonu (FAB) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
         android:layout_width="wrap_content"

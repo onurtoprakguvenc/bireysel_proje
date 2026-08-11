@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView rvNotes;
     private EditText etSearch;
     private ImageButton btnLibraryBridge, btnToggleLayout;
-    private FloatingActionButton fabAddNote;
+    private FloatingActionButton fabAddNote, fabDonateCoffee; // fabDonateCoffee eklendi
     private BottomNavigationView bottomNavigation;
     private TextView tvNoteCount;
 
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
         fabAddNote = findViewById(R.id.fabAddNote);
+        fabDonateCoffee = findViewById(R.id.fabDonateCoffee); // Kahve butonu bağlandı
         bottomNavigation = findViewById(R.id.bottomNavigation);
         tvNoteCount = findViewById(R.id.tvNoteCount);
     }
@@ -115,6 +116,18 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        // KAHVE ISMARLAMA / BAĞIŞ İNTENT'İ -> not_bagis_sayfa Ekranı Bağlandı
+        if (fabDonateCoffee != null) {
+            fabDonateCoffee.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(MainActivity.this, not_bagis_sayfa.class);
+                    startActivity(intent);
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+            });
+        }
     }
 
     private void setupSearchListener() {
