@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingVertical="4dp">
+
+    <!-- Metin Bloğu -->
+    <EditText
+        android:id="@+id/etTextBlock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Yazmaya başla..."
+        android:textSize="16sp"
+        android:textColor="#0F172A"
+        android:background="@null"
+        android:visibility="gone" />
+
+    <!-- Çizim/Tuval Bloğu (Özel Çizim Görünümü) -->
+    <FrameLayout
+        android:id="@+id/containerDrawingBlock"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:visibility="gone">
+        <!-- Buraya dinamik olarak DrawingView eklenecek -->
+    </FrameLayout>
+
+    <!-- Tablo Bloğu -->
+    <TableLayout
+        android:id="@+id/tableBlock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:background="#F8FAFC"
+        android:visibility="gone" />
+
+    <!-- Ses Kaydı / Çalma Bloğu -->
+    <LinearLayout
+        android:id="@+id/containerVoiceBlock"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="#F1F5F9"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/btnPlayVoice"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_mic" />
+
+        <TextView
+            android:id="@+id/tvVoiceDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ses Kaydı (00:30)"
+            android:textSize="14sp"
+            android:textColor="#334155"
+            android:layout_marginStart="12dp" />
+    </LinearLayout>
+
+</LinearLayout>
