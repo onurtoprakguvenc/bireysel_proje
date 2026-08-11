@@ -2,19 +2,36 @@ package com.example.hadi_bakalm.model;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DrawingView extends View {
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER }
+    // SCROLL modu eklendi
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL }
 
-    private Path drawPath;
-    private Paint drawPaint, canvasPaint;
+    private static class DrawPath {
+        Path path;
+        Paint paint;
+
+        DrawPath(Path path, Paint paint) {
+            this.path = path;
+            this.paint = paint;
+        }
+    }
+
+    private List<DrawPath> paths = new ArrayList<>();
+    private Path currentPath;
+    private Paint currentPaint;
+
     private int currentColor = 0xFF09090B;
     private ToolMode currentTool = ToolMode.PEN;
 
@@ -24,37 +41,88 @@ public class DrawingView extends View {
     }
 
     private void setupDrawing() {
-        drawPath = new Path();
-        drawPaint = new Paint();
-        drawPaint.setColor(currentColor);
-        drawPaint.setAntiAlias(true);
-        drawPaint.setStrokeWidth(6f);
-        drawPaint.setStyle(Paint.Style.STROKE);
-        drawPaint.setStrokeJoin(Paint.Join.ROUND);
-        drawPaint.setStrokeCap(Paint.Cap.ROUND);
+        setLayerType(LAYER_TYPE_SOFTWARE, null);
+        initNewStroke();
+    }
 
-        canvasPaint = new Paint(Paint.DITHER_FLAG);
+    private void initNewStroke() {
+        currentPath = new Path();
+        currentPaint = new Paint();
+        currentPaint.setAntiAlias(true);
+        currentPaint.setStyle(Paint.Style.STROKE);
+        currentPaint.setStrokeJoin(Paint.Join.ROUND);
+        currentPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        applyToolSettings(currentPaint);
+    }
+
+    private void applyToolSettings(Paint paint) {
+        if (currentTool == ToolMode.ERASER) {
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            paint.setStrokeWidth(36f);
+        } else if (currentTool == ToolMode.HIGHLIGHTER) {
+            paint.setXfermode(null);
+            paint.setColor(0x40EAB308);
+            paint.setStrokeWidth(24f);
+        } else { // PEN
+            paint.setXfermode(null);
+            paint.setColor(currentColor);
+            paint.setStrokeWidth(6f);
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawPath(drawPath, drawPaint);
+        super.onDraw(canvas);
+
+        for (DrawPath dp : paths) {
+            canvas.drawPath(dp.path, dp.paint);
+        }
+
+        if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL) {
+            canvas.drawPath(currentPath, currentPaint);
+        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        // Eğer kullanıcı SCROLL (Gezinme) modundaysa, dokunmayı çizim tuvali ele geçirmez;
+        // RecyclerView'ın dikeyde rahatça kaymasına izin verir.
+        if (currentTool == ToolMode.SCROLL) {
+            if (getParent() != null) {
+                getParent().requestDisallowInterceptTouchEvent(false);
+            }
+            return false;
+        }
+
         float touchX = event.getX();
         float touchY = event.getY();
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                drawPath.moveTo(touchX, touchY);
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                initNewStroke();
+                currentPath.moveTo(touchX, touchY);
                 break;
+
             case MotionEvent.ACTION_MOVE:
-                drawPath.lineTo(touchX, touchY);
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+                currentPath.lineTo(touchX, touchY);
                 break;
+
             case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                if (getParent() != null) {
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                paths.add(new DrawPath(currentPath, currentPaint));
+                currentPath = new Path();
                 break;
+
             default:
                 return false;
         }
@@ -64,27 +132,20 @@ public class DrawingView extends View {
 
     public void setToolMode(ToolMode mode) {
         this.currentTool = mode;
-        if (mode == ToolMode.ERASER) {
-            drawPaint.setColor(Color.WHITE);
-            drawPaint.setStrokeWidth(30f);
-        } else if (mode == ToolMode.HIGHLIGHTER) {
-            drawPaint.setColor(0x40EAB308); // Yarı saydam sarı
-            drawPaint.setStrokeWidth(24f);
-        } else {
-            drawPaint.setColor(currentColor);
-            drawPaint.setStrokeWidth(6f);
-        }
     }
 
     public void setColor(int newColor) {
         this.currentColor = newColor;
         if (currentTool == ToolMode.PEN) {
-            drawPaint.setColor(newColor);
+            applyToolSettings(currentPaint);
         }
     }
 
     public void clearCanvas() {
-        drawPath.reset();
+        paths.clear();
+        if (currentPath != null) {
+            currentPath.reset();
+        }
         invalidate();
     }
 }

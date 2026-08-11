@@ -2,35 +2,38 @@ package com.example.hadi_bakalm.model;
 
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.hadi_bakalm.model.DrawingView;
 import com.example.hadi_bakalm.R;
+import com.example.hadi_bakalm.adapter.NoteBlockAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class not_alma_sayfa extends AppCompatActivity {
 
     // Arayüz Elemanları
     private ImageButton btnCloseEditor, btnPinNote;
-    private EditText etNoteTitle, etNoteContent;
-    private LinearLayout cardVoiceNote;
+    private EditText etNoteTitle;
+    private RecyclerView rvNoteBlocks;
     private HorizontalScrollView drawingToolBar;
-    private TableLayout tableContainer;
-    private DrawingView drawingCanvas;
+
+    // Adaptör ve Veri Listesi
+    private NoteBlockAdapter blockAdapter;
+    private List<NoteBlockModel> blockList;
 
     // Araç Çubuğu Butonları
-    private ImageButton btnToolPen, btnToolHighlighter, btnToolEraser, btnClearCanvas;
+    private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser, btnClearCanvas;
     private ImageView colorBlack, colorBlue;
     private Button btnAddTable, btnAddImage, btnRecordVoice;
 
@@ -43,7 +46,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.not_sayfa);
 
-        // Modern Geri Tuşu Mantığı (Deprecated onBackPressed yerine)
+        // Modern Geri Tuşu Mantığı
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -52,10 +55,8 @@ public class not_alma_sayfa extends AppCompatActivity {
             }
         });
 
-        // Arayüz Elemanlarını Bağlama
         initViews();
-
-        // Tıklama Dinleyicilerini Başlatma
+        setupRecyclerView();
         setupClickListeners();
     }
 
@@ -63,14 +64,11 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
         etNoteTitle = findViewById(R.id.etNoteTitle);
-        etNoteContent = findViewById(R.id.etNoteContent);
-
-        cardVoiceNote = findViewById(R.id.cardVoiceNote);
-        tableContainer = findViewById(R.id.tableContainer);
-        drawingCanvas = findViewById(R.id.drawingCanvas);
+        rvNoteBlocks = findViewById(R.id.rvNoteBlocks);
         drawingToolBar = findViewById(R.id.drawingToolBar);
 
-        // Çizim Araçları
+        // Çizim ve Gezinme Araçları
+        btnToolScroll = findViewById(R.id.btnToolScroll);
         btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
@@ -84,8 +82,17 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnRecordVoice = findViewById(R.id.btnRecordVoice);
     }
 
+    private void setupRecyclerView() {
+        blockList = new ArrayList<>();
+        // Açılışta ilk metin bloğunu varsayılan olarak ekle
+        blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.TEXT));
+
+        blockAdapter = new NoteBlockAdapter(this, blockList);
+        rvNoteBlocks.setLayoutManager(new LinearLayoutManager(this));
+        rvNoteBlocks.setAdapter(blockAdapter);
+    }
+
     private void setupClickListeners() {
-        // Editörden Çıkış
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> {
                 saveNoteAndExit();
@@ -93,7 +100,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // Notu Sabitleme
         if (btnPinNote != null) {
             btnPinNote.setOnClickListener(v -> {
                 isPinned = !isPinned;
@@ -102,121 +108,104 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // Çizim Araçları Seçimi
+        // Gezinme (Sayfa Kaydırma) Modu Butonu
+        if (btnToolScroll != null) {
+            btnToolScroll.setOnClickListener(v -> {
+                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.SCROLL);
+                Toast.makeText(this, "Gezinme Modu (Sayfa Kaydırılabilir)", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // Çizim Araçları
         if (btnToolPen != null) {
             btnToolPen.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.setToolMode(DrawingView.ToolMode.PEN);
+                ensureDrawingBlockExists();
+                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.PEN);
             });
         }
 
         if (btnToolHighlighter != null) {
             btnToolHighlighter.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.setToolMode(DrawingView.ToolMode.HIGHLIGHTER);
+                ensureDrawingBlockExists();
+                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.HIGHLIGHTER);
             });
         }
 
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.setToolMode(DrawingView.ToolMode.ERASER);
+                ensureDrawingBlockExists();
+                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.ERASER);
             });
         }
 
         if (btnClearCanvas != null) {
-            btnClearCanvas.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.clearCanvas();
-            });
+            btnClearCanvas.setOnClickListener(v -> blockAdapter.clearActiveCanvas());
         }
 
         // Renk Seçimleri
         if (colorBlack != null) {
             colorBlack.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.setColor(0xFF09090B);
+                ensureDrawingBlockExists();
+                blockAdapter.setColorToActiveCanvas(0xFF09090B);
             });
         }
 
         if (colorBlue != null) {
             colorBlue.setOnClickListener(v -> {
-                if (drawingCanvas != null) drawingCanvas.setColor(0xFF0284C7);
+                ensureDrawingBlockExists();
+                blockAdapter.setColorToActiveCanvas(0xFF0284C7);
             });
         }
 
-        // Hızlı 3x5 Tablo Ekleme
+        // Tablo Ekleme
         if (btnAddTable != null) {
-            btnAddTable.setOnClickListener(v -> insertQuickTable());
+            btnAddTable.setOnClickListener(v -> {
+                blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.TABLE));
+                blockAdapter.notifyItemInserted(blockList.size() - 1);
+                rvNoteBlocks.scrollToPosition(blockList.size() - 1);
+            });
         }
 
-        // Ses Kaydı Başlatma/Durdurma
-        if (btnRecordVoice != null) {
-            btnRecordVoice.setOnClickListener(v -> toggleVoiceRecord());
-        }
-
-        // Görsel Ekleme
+        // Görsel / Galeri Butonu
         if (btnAddImage != null) {
             btnAddImage.setOnClickListener(v -> {
                 Toast.makeText(this, "Galeriden görsel seçici açılıyor...", Toast.LENGTH_SHORT).show();
             });
         }
-    }
 
-    // 3x5 Dinamik Tablo Oluşturma
-    private void insertQuickTable() {
-        if (tableContainer == null) return;
-
-        if (tableContainer.getChildCount() > 0) {
-            Toast.makeText(this, "Tablo zaten ekli", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        tableContainer.setVisibility(View.VISIBLE);
-
-        for (int r = 0; r < 5; r++) {
-            TableRow row = new TableRow(this);
-            row.setLayoutParams(new TableLayout.LayoutParams(
-                    TableLayout.LayoutParams.MATCH_PARENT,
-                    TableLayout.LayoutParams.WRAP_CONTENT));
-
-            for (int c = 0; c < 3; c++) {
-                EditText cell = new EditText(this);
-                cell.setLayoutParams(new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f));
-                cell.setTextSize(12);
-                cell.setPadding(12, 12, 12, 12);
-                cell.setBackgroundResource(android.R.drawable.editbox_background);
-
-                if (r == 0) {
-                    cell.setHint("Sütun " + (c + 1));
-                    cell.setTypeface(null, android.graphics.Typeface.BOLD);
-                } else {
-                    cell.setHint("...");
+        // Ses Kaydı Butonu
+        if (btnRecordVoice != null) {
+            btnRecordVoice.setOnClickListener(v -> {
+                isVoiceRecording = !isVoiceRecording;
+                btnRecordVoice.setText(isVoiceRecording ? "Duraklat" : "Ses Kaydı");
+                if (isVoiceRecording) {
+                    blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.VOICE));
+                    blockAdapter.notifyItemInserted(blockList.size() - 1);
+                    rvNoteBlocks.scrollToPosition(blockList.size() - 1);
                 }
-
-                row.addView(cell);
-            }
-            tableContainer.addView(row);
+            });
         }
     }
 
-    // Ses Kaydı Kartı Kontrolü
-    private void toggleVoiceRecord() {
-        if (cardVoiceNote == null || btnRecordVoice == null) return;
-
-        isVoiceRecording = !isVoiceRecording;
-        if (isVoiceRecording) {
-            cardVoiceNote.setVisibility(View.VISIBLE);
-            btnRecordVoice.setText("Duraklat");
-            Toast.makeText(this, "Ses kaydı başladı...", Toast.LENGTH_SHORT).show();
-        } else {
-            btnRecordVoice.setText("Ses Kaydı");
-            Toast.makeText(this, "Ses kaydı durduruldu", Toast.LENGTH_SHORT).show();
+    private void ensureDrawingBlockExists() {
+        boolean hasDrawingBlock = false;
+        for (NoteBlockModel block : blockList) {
+            if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
+                hasDrawingBlock = true;
+                break;
+            }
+        }
+        if (!hasDrawingBlock) {
+            blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.DRAWING));
+            blockAdapter.notifyItemInserted(blockList.size() - 1);
+            rvNoteBlocks.scrollToPosition(blockList.size() - 1);
         }
     }
 
     private void saveNoteAndExit() {
-        if (etNoteTitle == null || etNoteContent == null) return;
-
+        if (etNoteTitle == null) return;
         String title = etNoteTitle.getText().toString().trim();
-        String content = etNoteContent.getText().toString().trim();
-
-        if (!TextUtils.isEmpty(title) || !TextUtils.isEmpty(content)) {
+        if (!TextUtils.isEmpty(title)) {
             Toast.makeText(this, "Not kaydedildi", Toast.LENGTH_SHORT).show();
         }
     }
