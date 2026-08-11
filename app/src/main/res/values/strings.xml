@@ -168,4 +168,17 @@
     <string name="buraya_ornek_diyaloglar_gelecek">Buraya örnek diyaloglar gelecek.</string>
     <string name="buraya_pratik_hayattaki_onemi_ile_ilgili_metinler_gelecek">Buraya pratik hayattaki önemi ile ilgili metinler gelecek.</string>
     <string name="uyari_uzman">Not: Bu içerik yalnızca genel bilgilendirme amaçlıdır; klinik/tıbbi teşhis ve tedavi tavsiyesi niteliği taşımaz.</string>
+    <string name="simdilik_boyle">geçici</string>
+    <string name="kisisel">Kişisel</string>
+    <string name="yeni_not_ekle">Yeni Not Ekle</string>
+    <string name="notlarda_veya_etiketlerde_ara">Notlarda veya etiketlerde ara...</string>
+    <string name="duzeni_degistir">Düzeni Değiştir</string>
+    <string name="kutuphane_koprusu">Kütüphane Köprüsü</string>
+    <string name="dummy">dummy yani şuan için böyle ama sayı eklenecek\n</string>
+    <string name="notlarim">Notlarım</string>
+    <string name="ses_kaydi">Ses Kaydı</string>
+    <string name="gorsel">Görsel</string>
+    <string name="tablo">+ Tablo</string>
+    <string name="yazmaya_basla">yazmaya başla</string>
+    <string name="basliksiz_not">baslıksız not</string>
 </resources>

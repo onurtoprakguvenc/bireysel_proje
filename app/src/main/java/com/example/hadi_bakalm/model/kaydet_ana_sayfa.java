@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
 import com.example.hadi_bakalm.data.AppDatabase;
@@ -76,7 +77,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private void setupClickListeners() {
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
-                Intent intent = new Intent(kaydet_ana_sayfa.this, com.example.hadi_bakalm.MainActivity.class);
+                Intent intent = new Intent(kaydet_ana_sayfa.this, EskiMainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
                 finish();

@@ -6,9 +6,13 @@
 
     <!-- Yazı Renkleri (Karanlık) -->
     <color name="text_primary">#F8FAFC</color>
-    <color name="text_secondary">#94A3B8</color> <!-- Açık gri/mavi ton, okunabilirliği yüksek -->
+    <color name="text_secondary">#94A3B8</color>
 
     <!-- Navigasyon ve Çizgiler (Karanlık) -->
     <color name="nav_bg">#1E293B</color>
     <color name="divider_color">#334155</color>
+
+    <!-- Navigasyon Durum Renkleri (Gece) -->
+    <color name="nav_active">#38BDF8</color>
+    <color name="nav_inactive">#64748B</color>
 </resources>

@@ -14,10 +14,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
-import com.example.hadi_bakalm.MainActivity;
+import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.data.AppDatabase;
-import com.example.hadi_bakalm.model.ConceptItem_kavram;
 
 import java.util.List;
 
@@ -55,7 +54,7 @@ public class AyarlarActivity extends AppCompatActivity {
 
         if (navCategories != null) {
             navCategories.setOnClickListener(v -> {
-                Intent intent = new Intent(AyarlarActivity.this, MainActivity.class);
+                Intent intent = new Intent(AyarlarActivity.this, EskiMainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(intent);
                 finish();

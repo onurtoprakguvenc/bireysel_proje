@@ -4,12 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.widget.LinearLayout;
 
-import com.example.hadi_bakalm.MainActivity;
+import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
-import com.example.hadi_bakalm.model.AyarlarActivity;
-import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
-import com.example.hadi_bakalm.model.SonIncelemeActivity;
-import com.example.hadi_bakalm.model.kaydet_ana_sayfa;
 
 public class NavigationHelper {
 
@@ -19,8 +15,8 @@ public class NavigationHelper {
         LinearLayout navRecent = currentActivity.findViewById(R.id.navRecent);
         LinearLayout navSettings = currentActivity.findViewById(R.id.navSettings);
 
-        if (navCategories != null && !(currentActivity instanceof MainActivity)) {
-            navCategories.setOnClickListener(v -> navigateTo(currentActivity, MainActivity.class));
+        if (navCategories != null && !(currentActivity instanceof EskiMainActivity)) {
+            navCategories.setOnClickListener(v -> navigateTo(currentActivity, EskiMainActivity.class));
         }
 
         if (navSaved != null && !(currentActivity instanceof kaydet_ana_sayfa)) {

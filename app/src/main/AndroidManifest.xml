@@ -42,17 +42,28 @@
             android:exported="false" />
 
         <activity
+            android:name=".model.not_alma_sayfa"
+            android:exported="false"
+            />
+
+        <activity
             android:name=".noroplastite"
             android:exported="false" />
 
+        <!-- YENİ ANA SAYFA (Açılış Ekranı Yapıldı) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".model.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- ESKİ ANA SAYFA (Açılış Tetiği Kaldırıldı) -->
+        <activity
+            android:name=".EskiMainActivity"
+            android:exported="false" />
 
     </application>
 

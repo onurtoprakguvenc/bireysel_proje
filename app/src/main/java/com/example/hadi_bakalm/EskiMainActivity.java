@@ -24,7 +24,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class EskiMainActivity extends AppCompatActivity {
 
     private ImageView btnMenu;
     private EditText searchBar;
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         // Bağış Butonu Tıklama Olayı (bağış sayfasına yönlendirme)
         if (btnSupportDonate != null) {
             btnSupportDonate.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, bagis_sayfa.class);
+                Intent intent = new Intent(EskiMainActivity.this, bagis_sayfa.class);
                 startActivity(intent);
             });
         }
@@ -103,10 +103,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(String kategoriAdi) {
                 if (kategoriAdi.equals("Kavramlar")) {
-                    Intent intent = new Intent(MainActivity.this, kavramlar_sayfa.class);
+                    Intent intent = new Intent(EskiMainActivity.this, kavramlar_sayfa.class);
                     startActivity(intent);
                 } else if (kategoriAdi.equals("Kişisel Metinlerim")) {
-                    Intent intent = new Intent(MainActivity.this, KisiselMetinlerimActivity.class);
+                    Intent intent = new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class);
                     startActivity(intent);
                 }
             }
