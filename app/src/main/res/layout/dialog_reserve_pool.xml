@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Gizlenen Araçlar Çekmecesi"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="#0F172A" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Araç çubuğuna geri eklemek istediğiniz araca dokunun."
+        android:textSize="12sp"
+        android:textColor="#64748B"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvHiddenTools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="100dp" />
+
+    <Button
+        android:id="@+id/btnCloseReservePool"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Kapat"
+        android:textColor="#64748B"
+        android:layout_marginTop="8dp" />
+</LinearLayout>

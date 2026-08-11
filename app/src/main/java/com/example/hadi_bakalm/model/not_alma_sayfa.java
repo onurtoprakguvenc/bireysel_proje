@@ -2,11 +2,12 @@ package com.example.hadi_bakalm.model;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -26,14 +27,16 @@ public class not_alma_sayfa extends AppCompatActivity {
     private ImageButton btnCloseEditor, btnPinNote;
     private EditText etNoteTitle;
     private RecyclerView rvNoteBlocks;
-    private HorizontalScrollView drawingToolBar;
+    private LinearLayout drawingToolBar; // HorizontalScrollView yerine LinearLayout yapıldı
 
     // Adaptör ve Veri Listesi
     private NoteBlockAdapter blockAdapter;
     private List<NoteBlockModel> blockList;
 
     // Araç Çubuğu Butonları
-    private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser, btnClearCanvas;
+    private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser;
+    private ImageButton btnToolShapes, btnToolUndo, btnToolRedo, btnToolStrokeWidth;
+    private ImageButton btnColorPicker, btnClearCanvas, btnReservePool;
     private ImageView colorBlack, colorBlue;
     private Button btnAddTable, btnAddImage, btnRecordVoice;
 
@@ -72,7 +75,17 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
+
+        // Yeni Eklenen Araçlar
+        btnToolShapes = findViewById(R.id.btnToolShapes);
+        btnToolUndo = findViewById(R.id.btnToolUndo);
+        btnToolRedo = findViewById(R.id.btnToolRedo);
+        btnToolStrokeWidth = findViewById(R.id.btnToolStrokeWidth);
+        btnColorPicker = findViewById(R.id.btnColorPicker);
         btnClearCanvas = findViewById(R.id.btnClearCanvas);
+        btnReservePool = findViewById(R.id.btnReservePool);
+
+        // Renkler
         colorBlack = findViewById(R.id.colorBlack);
         colorBlue = findViewById(R.id.colorBlue);
 
@@ -112,7 +125,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (btnToolScroll != null) {
             btnToolScroll.setOnClickListener(v -> {
                 blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.SCROLL);
-                Toast.makeText(this, "Gezinme Modu (Sayfa Kaydırılabilir)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Gezinme Modu", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -140,6 +153,26 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnClearCanvas != null) {
             btnClearCanvas.setOnClickListener(v -> blockAdapter.clearActiveCanvas());
+        }
+
+        // Yeni Eklenen Araç Tıklamaları (Şimdilik Bilgilendirme Toast'ı)
+        if (btnToolShapes != null) {
+            btnToolShapes.setOnClickListener(v -> Toast.makeText(this, "Şekil Aracı Seçildi", Toast.LENGTH_SHORT).show());
+        }
+        if (btnToolUndo != null) {
+            btnToolUndo.setOnClickListener(v -> Toast.makeText(this, "Geri Alındı", Toast.LENGTH_SHORT).show());
+        }
+        if (btnToolRedo != null) {
+            btnToolRedo.setOnClickListener(v -> Toast.makeText(this, "İleri Alındı", Toast.LENGTH_SHORT).show());
+        }
+        if (btnToolStrokeWidth != null) {
+            btnToolStrokeWidth.setOnClickListener(v -> Toast.makeText(this, "Fırça Kalınlığı Ayarı", Toast.LENGTH_SHORT).show());
+        }
+        if (btnColorPicker != null) {
+            btnColorPicker.setOnClickListener(v -> Toast.makeText(this, "Renk Paleti Açılıyor", Toast.LENGTH_SHORT).show());
+        }
+        if (btnReservePool != null) {
+            btnReservePool.setOnClickListener(v -> Toast.makeText(this, "Gizlenen Araçlar Çekmecesi", Toast.LENGTH_SHORT).show());
         }
 
         // Renk Seçimleri

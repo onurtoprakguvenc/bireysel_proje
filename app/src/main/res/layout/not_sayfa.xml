@@ -68,64 +68,98 @@
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
-        android:paddingBottom="12dp"
+        android:paddingBottom="8dp"
         android:elevation="8dp">
 
-        <!-- Çizim/Fırça Kontrolleri -->
-        <HorizontalScrollView
+        <!-- Çizim/Fırça ve Ek Araç Kontrolleri (İki Satırlı Sabit Yapı) -->
+        <LinearLayout
             android:id="@+id/drawingToolBar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:scrollbars="none"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:paddingHorizontal="12dp"
-            android:background="#FFFFFF">
+            android:paddingVertical="4dp">
 
+            <!-- 1. Satır Araçlar -->
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
                 <ImageButton
                     android:id="@+id/btnToolScroll"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:src="@drawable/ic_chevron_left"
                     android:contentDescription="@string/app_name"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginEnd="8dp" />
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <ImageButton
                     android:id="@+id/btnToolPen"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:src="@drawable/ic_pen"
                     android:contentDescription="@string/app_name"
                     android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <ImageButton
                     android:id="@+id/btnToolHighlighter"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:src="@drawable/ic_highlighter"
                     android:contentDescription="@string/app_name"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="8dp" />
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <ImageButton
                     android:id="@+id/btnToolEraser"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:src="@drawable/ic_eraser"
                     android:contentDescription="@string/app_name"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="8dp" />
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="20dp"
-                    android:background="#E2E8F0"
-                    android:layout_marginHorizontal="12dp" />
+                <ImageButton
+                    android:id="@+id/btnToolShapes"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_table"
+                    android:contentDescription="@string/app_name"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <ImageButton
+                    android:id="@+id/btnToolUndo"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_chevron_left"
+                    android:contentDescription="@string/app_name"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <ImageButton
+                    android:id="@+id/btnToolRedo"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_chevron_left"
+                    android:rotation="180"
+                    android:contentDescription="@string/app_name"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+            </LinearLayout>
+
+            <!-- 2. Satır Araçlar (Renkler, Kalınlık, Silme, Ekstra) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <ImageButton
+                    android:id="@+id/btnToolStrokeWidth"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_pen"
+                    android:contentDescription="@string/app_name"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <ImageView
                     android:id="@+id/colorBlack"
@@ -133,7 +167,7 @@
                     android:layout_height="24dp"
                     android:src="@drawable/shape_color_circle_black"
                     android:contentDescription="@string/app_name"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginHorizontal="6dp" />
 
                 <ImageView
                     android:id="@+id/colorBlue"
@@ -141,24 +175,43 @@
                     android:layout_height="24dp"
                     android:src="@drawable/shape_color_circle_blue"
                     android:contentDescription="@string/app_name"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="6dp" />
+
+                <ImageButton
+                    android:id="@+id/btnColorPicker"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/shape_color_circle_blue"
+                    android:contentDescription="@string/app_name"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <ImageButton
                     android:id="@+id/btnClearCanvas"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:src="@drawable/ic_trash"
                     android:contentDescription="@string/app_name"
                     app:tint="#EF4444"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="12dp" />
+                    android:layout_marginStart="8dp" />
+
+                <ImageButton
+                    android:id="@+id/btnReservePool"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_pin"
+                    android:contentDescription="@string/app_name"
+                    app:tint="#0284C7"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginStart="8dp" />
             </LinearLayout>
-        </HorizontalScrollView>
+
+        </LinearLayout>
 
         <!-- Medya Ekleme Araçları -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="44dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="16dp">
