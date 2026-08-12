@@ -81,8 +81,14 @@ public class DrawingView extends View {
             paint.setStrokeWidth(currentStrokeWidth * 3);
         } else if (currentTool == ToolMode.HIGHLIGHTER) {
             paint.setXfermode(null);
-            paint.setColor(0x40EAB308);
-            paint.setStrokeWidth(currentStrokeWidth * 2.5f);
+            // Renk ne olursa olsun varsayılan şeffaflık (Alpha %40 -> 0x66) eklenir
+            int alphaColor = (currentColor & 0x00FFFFFF) | 0x66000000;
+            // Eğer siyah seçiliyse fosfor etkisi için sarı renk atanır
+            if ((currentColor & 0x00FFFFFF) == 0x09090B || (currentColor & 0x00FFFFFF) == 0x000000) {
+                alphaColor = 0x66EAB308; // Yarı şeffaf canlı sarı
+            }
+            paint.setColor(alphaColor);
+            paint.setStrokeWidth(currentStrokeWidth * 3f);
         } else {
             paint.setXfermode(null);
             paint.setColor(currentColor);
@@ -173,7 +179,6 @@ public class DrawingView extends View {
         return true;
     }
 
-    // VERİTABANINA KAYIT İÇİN JSON ÇIKTILAR
     public String getDrawingJson() {
         try {
             JSONArray pathsArray = new JSONArray();
@@ -199,7 +204,6 @@ public class DrawingView extends View {
         }
     }
 
-    // VERİTABANINDAN OKUNAN JSON'I EKRANA ÇİZER
     public void loadDrawingFromJson(String jsonStr) {
         if (jsonStr == null || jsonStr.isEmpty()) return;
         try {
@@ -244,17 +248,20 @@ public class DrawingView extends View {
 
     public void setToolMode(ToolMode mode) {
         this.currentTool = mode;
-        if (currentPaint != null) applyToolSettings(currentPaint);
+        initNewStroke();
+        invalidate();
     }
 
     public void setColor(int newColor) {
         this.currentColor = newColor;
-        if (currentPaint != null) applyToolSettings(currentPaint);
+        initNewStroke();
+        invalidate();
     }
 
     public void setStrokeWidth(float width) {
         this.currentStrokeWidth = width;
-        if (currentPaint != null) applyToolSettings(currentPaint);
+        initNewStroke();
+        invalidate();
     }
 
     public void undo() {

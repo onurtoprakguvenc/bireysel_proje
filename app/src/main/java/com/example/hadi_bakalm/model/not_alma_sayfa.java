@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -38,11 +39,13 @@ public class not_alma_sayfa extends AppCompatActivity {
     private LinearLayout drawingToolBar;
 
     private NoteBlockAdapter blockAdapter;
+
+    private FrameLayout frameToolPen, frameToolHighlighter;
     private List<NoteBlockModel> blockList;
 
     private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser;
-    private ImageButton btnToolShapes, btnToolUndo, btnToolRedo, btnToolStrokeWidth;
-    private ImageButton btnColorPicker, btnClearCanvas, btnReservePool;
+    private ImageButton btnToolShapes, btnToolUndo, btnToolRedo;
+    private ImageButton btnColorPicker, btnClearCanvas;
     private ImageView colorBlack, colorBlue;
     private Button btnAddTable, btnAddImage, btnRecordVoice;
 
@@ -61,6 +64,8 @@ public class not_alma_sayfa extends AppCompatActivity {
         noteDao = not_app_database.getInstance(this).noteDao();
 
         initViews();
+        frameToolPen = findViewById(R.id.frameToolPen);
+        frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
         setupRecyclerView();
         setupClickListeners();
 
@@ -72,7 +77,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 etNoteTitle.setText(incomingTitle);
             }
 
-            // DÜZELTME: Veritabanında daha önce kaydedilmiş blok listesi varsa yüklenir
             if (currentNoteId != -1 && noteDao != null) {
                 notentity existingNote = noteDao.getNoteById(currentNoteId);
                 if (existingNote != null && existingNote.blocks != null && !existingNote.blocks.isEmpty()) {
@@ -101,16 +105,15 @@ public class not_alma_sayfa extends AppCompatActivity {
         drawingToolBar = findViewById(R.id.drawingToolBar);
 
         btnToolScroll = findViewById(R.id.btnToolScroll);
+        btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
 
         btnToolShapes = findViewById(R.id.btnToolShapes);
         btnToolUndo = findViewById(R.id.btnToolUndo);
         btnToolRedo = findViewById(R.id.btnToolRedo);
-        btnToolStrokeWidth = findViewById(R.id.btnToolStrokeWidth);
         btnColorPicker = findViewById(R.id.btnColorPicker);
         btnClearCanvas = findViewById(R.id.btnClearCanvas);
-        btnReservePool = findViewById(R.id.btnReservePool);
 
         colorBlack = findViewById(R.id.colorBlack);
         colorBlue = findViewById(R.id.colorBlue);
@@ -142,30 +145,41 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
+        // El İkonu: Kaydırma Modu
         if (btnToolScroll != null) {
             btnToolScroll.setOnClickListener(v -> {
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.SCROLL);
+                if (blockAdapter != null) {
+                    blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.SCROLL);
+                    Toast.makeText(this, "Kaydırma Modu", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
+        // Kalem Butonu
         if (btnToolPen != null) {
             btnToolPen.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.PEN);
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
+                showStrokeWidthDialog();
             });
         }
 
+        // Fosforlu Kalem Butonu
         if (btnToolHighlighter != null) {
             btnToolHighlighter.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.HIGHLIGHTER);
+                ensureDrawingBlockExists(DrawingView.ToolMode.HIGHLIGHTER);
+                Toast.makeText(this, "Fosforlu Kalem Modu", Toast.LENGTH_SHORT).show();
             });
         }
 
+        // Silgi Butonu: Tuval yoksa boşuna yeni çizim alanı açmaz
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.ERASER);
+                if (blockAdapter != null && blockAdapter.getActiveDrawingCanvas() != null) {
+                    blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.ERASER);
+                    Toast.makeText(this, "Silgi Modu", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Önce bir çizim yapmalısınız", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -193,24 +207,20 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        if (btnToolStrokeWidth != null) {
-            btnToolStrokeWidth.setOnClickListener(v -> showStrokeWidthDialog());
-        }
-
         if (btnToolShapes != null) {
             btnToolShapes.setOnClickListener(v -> showShapePickerDialog());
         }
 
         if (colorBlack != null) {
             colorBlack.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                 blockAdapter.setColorToActiveCanvas(0xFF09090B);
             });
         }
 
         if (colorBlue != null) {
             colorBlue.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                 blockAdapter.setColorToActiveCanvas(0xFF0284C7);
             });
         }
@@ -255,7 +265,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     currentStrokeWidth = Math.max(2, progress);
-                    ensureDrawingBlockExists();
+                    ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                     blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
                 }
 
@@ -271,7 +281,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnThin.setOnClickListener(v -> {
                 currentStrokeWidth = 4f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(4);
-                ensureDrawingBlockExists();
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                 blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
                 dialog.dismiss();
             });
@@ -281,7 +291,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnMedium.setOnClickListener(v -> {
                 currentStrokeWidth = 12f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(12);
-                ensureDrawingBlockExists();
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                 blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
                 dialog.dismiss();
             });
@@ -291,7 +301,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnThick.setOnClickListener(v -> {
                 currentStrokeWidth = 28f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(28);
-                ensureDrawingBlockExists();
+                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
                 blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
                 dialog.dismiss();
             });
@@ -313,8 +323,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnRectangle != null) {
             btnRectangle.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.RECTANGLE);
+                ensureDrawingBlockExists(DrawingView.ToolMode.RECTANGLE);
                 Toast.makeText(this, "Dikdörtgen çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -322,8 +331,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnCircle != null) {
             btnCircle.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.CIRCLE);
+                ensureDrawingBlockExists(DrawingView.ToolMode.CIRCLE);
                 Toast.makeText(this, "Daire çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -331,8 +339,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnLine != null) {
             btnLine.setOnClickListener(v -> {
-                ensureDrawingBlockExists();
-                blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.LINE);
+                ensureDrawingBlockExists(DrawingView.ToolMode.LINE);
                 Toast.makeText(this, "Düz çizgi çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -380,7 +387,12 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
+    // Parametresiz çağrılar için varsayılan olarak PEN modunu çalıştırır
     private void ensureDrawingBlockExists() {
+        ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
+    }
+
+    private void ensureDrawingBlockExists(DrawingView.ToolMode targetMode) {
         boolean hasDrawingBlock = false;
         for (NoteBlockModel block : blockList) {
             if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
@@ -388,15 +400,26 @@ public class not_alma_sayfa extends AppCompatActivity {
                 break;
             }
         }
+
         if (!hasDrawingBlock) {
             blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.DRAWING));
-            blockAdapter.notifyItemInserted(blockList.size() - 1);
-            rvNoteBlocks.scrollToPosition(blockList.size() - 1);
+            int newPosition = blockList.size() - 1;
+            blockAdapter.notifyItemInserted(newPosition);
+            rvNoteBlocks.scrollToPosition(newPosition);
+
+            rvNoteBlocks.post(() -> {
+                if (blockAdapter != null) {
+                    blockAdapter.setToolModeToActiveCanvas(targetMode);
+                }
+            });
+        } else {
+            if (blockAdapter != null) {
+                blockAdapter.setToolModeToActiveCanvas(targetMode);
+            }
         }
     }
 
     private void saveNoteAndExit() {
-        // 1. Çizim tuvali varsa çizimi JSON yapıp çizim bloğuna donduruyoruz
         if (blockAdapter != null && blockAdapter.getActiveDrawingCanvas() != null) {
             String drawingJson = blockAdapter.getActiveDrawingCanvas().getDrawingJson();
             for (NoteBlockModel block : blockList) {
@@ -409,7 +432,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
         String summaryContent = "İçerik yok";
 
-        // İlk metin bloğundan kart özeti için içeriği alıyoruz
         if (rvNoteBlocks != null && rvNoteBlocks.getChildCount() > 0) {
             View firstBlockView = rvNoteBlocks.getChildAt(0);
             if (firstBlockView != null) {
@@ -433,8 +455,6 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         notentity note = new notentity(title, summaryContent, "Kişisel", "#0284C7", currentTime);
         note.isPinned = isPinned;
-
-        // DÜZELTME: Tüm blok listesi nesne olarak not entity'sine verilmektedir
         note.blocks = blockList;
 
         if (noteDao != null) {
@@ -450,4 +470,23 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         finish();
     }
+
+    private void updateActiveToolUI(DrawingView.ToolMode mode) {
+        if (frameToolPen != null) {
+            boolean isPen = (mode == DrawingView.ToolMode.PEN);
+            frameToolPen.setBackgroundResource(isPen ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolPen != null) {
+                btnToolPen.setColorFilter(isPen ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+
+        if (frameToolHighlighter != null) {
+            boolean isHighlighter = (mode == DrawingView.ToolMode.HIGHLIGHTER);
+            frameToolHighlighter.setBackgroundResource(isHighlighter ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolHighlighter != null) {
+                btnToolHighlighter.setColorFilter(isHighlighter ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+    }
 }
+
