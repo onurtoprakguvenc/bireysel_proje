@@ -10,37 +10,44 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DrawingView extends View {
 
-    // RECTANGLE modu eklendi
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE }
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, CIRCLE, LINE }
+
+    public static class Point {
+        public float x, y;
+        public Point(float x, float y) { this.x = x; this.y = y; }
+    }
 
     private static class DrawPath {
         Path path;
         Paint paint;
+        List<Point> points;
 
-        DrawPath(Path path, Paint paint) {
+        DrawPath(Path path, Paint paint, List<Point> points) {
             this.path = path;
             this.paint = paint;
+            this.points = points;
         }
     }
 
-    // Ana Çizim Listesi
     private final List<DrawPath> paths = new ArrayList<>();
-    // Geri Alınan Çizimleri Saklayan İleri Al (Redo) Listesi
     private final List<DrawPath> undonePaths = new ArrayList<>();
 
     private Path currentPath;
     private Paint currentPaint;
+    private List<Point> currentPoints;
 
     private int currentColor = 0xFF09090B;
-    private float currentStrokeWidth = 8f; // Dinamik fırça kalınlığı
+    private float currentStrokeWidth = 8f;
     private ToolMode currentTool = ToolMode.PEN;
 
-    // Şekil çizimi için ilk dokunma noktaları
     private float startX, startY;
 
     public DrawingView(Context context, AttributeSet attrs) {
@@ -56,6 +63,8 @@ public class DrawingView extends View {
     private void initNewStroke() {
         currentPath = new Path();
         currentPaint = new Paint();
+        currentPoints = new ArrayList<>();
+
         currentPaint.setAntiAlias(true);
         currentPaint.setStyle(Paint.Style.STROKE);
         currentPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -65,14 +74,16 @@ public class DrawingView extends View {
     }
 
     private void applyToolSettings(Paint paint) {
+        if (paint == null) return;
+
         if (currentTool == ToolMode.ERASER) {
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            paint.setStrokeWidth(currentStrokeWidth * 3); // Silgi fırçadan daha geniş olur
+            paint.setStrokeWidth(currentStrokeWidth * 3);
         } else if (currentTool == ToolMode.HIGHLIGHTER) {
             paint.setXfermode(null);
-            paint.setColor(0x40EAB308); // Yarı saydam sarı
+            paint.setColor(0x40EAB308);
             paint.setStrokeWidth(currentStrokeWidth * 2.5f);
-        } else { // PEN veya RECTANGLE
+        } else {
             paint.setXfermode(null);
             paint.setColor(currentColor);
             paint.setStrokeWidth(currentStrokeWidth);
@@ -83,12 +94,10 @@ public class DrawingView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Kaydedilmiş tüm yolları çiz
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
 
-        // Şu an çizilmekte olan yolu çiz
         if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL) {
             canvas.drawPath(currentPath, currentPaint);
         }
@@ -116,6 +125,7 @@ public class DrawingView extends View {
 
                 initNewStroke();
                 currentPath.moveTo(touchX, touchY);
+                currentPoints.add(new Point(touchX, touchY));
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -123,15 +133,26 @@ public class DrawingView extends View {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 if (currentTool == ToolMode.RECTANGLE) {
-                    // Dikdörtgen çizilirken yolu anlık olarak güncelle
                     currentPath.reset();
                     float left = Math.min(startX, touchX);
                     float top = Math.min(startY, touchY);
                     float right = Math.max(startX, touchX);
                     float bottom = Math.max(startY, touchY);
                     currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                } else if (currentTool == ToolMode.CIRCLE) {
+                    currentPath.reset();
+                    float left = Math.min(startX, touchX);
+                    float top = Math.min(startY, touchY);
+                    float right = Math.max(startX, touchX);
+                    float bottom = Math.max(startY, touchY);
+                    currentPath.addOval(left, top, right, bottom, Path.Direction.CW);
+                } else if (currentTool == ToolMode.LINE) {
+                    currentPath.reset();
+                    currentPath.moveTo(startX, startY);
+                    currentPath.lineTo(touchX, touchY);
                 } else {
                     currentPath.lineTo(touchX, touchY);
+                    currentPoints.add(new Point(touchX, touchY));
                 }
                 break;
 
@@ -140,9 +161,8 @@ public class DrawingView extends View {
                 if (getParent() != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
                 }
-                // Yeni bir hamle yapıldığında Redo (İleri Al) geçmişi temizlenir
                 undonePaths.clear();
-                paths.add(new DrawPath(currentPath, currentPaint));
+                paths.add(new DrawPath(currentPath, new Paint(currentPaint), currentPoints));
                 currentPath = new Path();
                 break;
 
@@ -153,28 +173,90 @@ public class DrawingView extends View {
         return true;
     }
 
-    // MOD SEÇİMİ
+    // VERİTABANINA KAYIT İÇİN JSON ÇIKTILAR
+    public String getDrawingJson() {
+        try {
+            JSONArray pathsArray = new JSONArray();
+            for (DrawPath dp : paths) {
+                JSONObject pathObj = new JSONObject();
+                pathObj.put("color", dp.paint.getColor());
+                pathObj.put("strokeWidth", dp.paint.getStrokeWidth());
+
+                JSONArray pointsArray = new JSONArray();
+                for (Point p : dp.points) {
+                    JSONObject pointObj = new JSONObject();
+                    pointObj.put("x", p.x);
+                    pointObj.put("y", p.y);
+                    pointsArray.put(pointObj);
+                }
+                pathObj.put("points", pointsArray);
+                pathsArray.put(pathObj);
+            }
+            return pathsArray.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    // VERİTABANINDAN OKUNAN JSON'I EKRANA ÇİZER
+    public void loadDrawingFromJson(String jsonStr) {
+        if (jsonStr == null || jsonStr.isEmpty()) return;
+        try {
+            paths.clear();
+            JSONArray pathsArray = new JSONArray(jsonStr);
+            for (int i = 0; i < pathsArray.length(); i++) {
+                JSONObject pathObj = pathsArray.getJSONObject(i);
+                int color = pathObj.getInt("color");
+                float strokeWidth = (float) pathObj.getDouble("strokeWidth");
+
+                Paint paint = new Paint();
+                paint.setAntiAlias(true);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setColor(color);
+                paint.setStrokeWidth(strokeWidth);
+
+                JSONArray pointsArray = pathObj.getJSONArray("points");
+                Path path = new Path();
+                List<Point> points = new ArrayList<>();
+
+                for (int j = 0; j < pointsArray.length(); j++) {
+                    JSONObject pointObj = pointsArray.getJSONObject(j);
+                    float x = (float) pointObj.getDouble("x");
+                    float y = (float) pointObj.getDouble("y");
+                    points.add(new Point(x, y));
+
+                    if (j == 0) {
+                        path.moveTo(x, y);
+                    } else {
+                        path.lineTo(x, y);
+                    }
+                }
+                paths.add(new DrawPath(path, paint, points));
+            }
+            invalidate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setToolMode(ToolMode mode) {
         this.currentTool = mode;
+        if (currentPaint != null) applyToolSettings(currentPaint);
     }
 
-    // RENK DEĞİŞTİRME
     public void setColor(int newColor) {
         this.currentColor = newColor;
-        if (currentTool == ToolMode.PEN || currentTool == ToolMode.RECTANGLE) {
-            applyToolSettings(currentPaint);
-        }
+        if (currentPaint != null) applyToolSettings(currentPaint);
     }
 
-    // FIRÇA KALINLIĞI DEĞİŞTİRME
     public void setStrokeWidth(float width) {
         this.currentStrokeWidth = width;
-        if (currentPaint != null) {
-            applyToolSettings(currentPaint);
-        }
+        if (currentPaint != null) applyToolSettings(currentPaint);
     }
 
-    // GERİ AL (UNDO)
     public void undo() {
         if (!paths.isEmpty()) {
             DrawPath lastPath = paths.remove(paths.size() - 1);
@@ -183,7 +265,6 @@ public class DrawingView extends View {
         }
     }
 
-    // İLERİ AL (REDO)
     public void redo() {
         if (!undonePaths.isEmpty()) {
             DrawPath pathToRestore = undonePaths.remove(undonePaths.size() - 1);
@@ -192,13 +273,10 @@ public class DrawingView extends View {
         }
     }
 
-    // TUVAN TEMİZLE
     public void clearCanvas() {
         paths.clear();
         undonePaths.clear();
-        if (currentPath != null) {
-            currentPath.reset();
-        }
+        if (currentPath != null) currentPath.reset();
         invalidate();
     }
 }

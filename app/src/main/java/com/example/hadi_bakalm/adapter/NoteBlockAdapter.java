@@ -57,7 +57,6 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             View view = inflater.inflate(R.layout.item_block_drawing, parent, false);
             return new DrawingViewHolder(view);
         } else if (viewType == TYPE_TABLE) {
-            // DÜZELTİLEN SATIR: dialog_table_config YERİNE item_block_table OLMALI
             View view = inflater.inflate(R.layout.item_block_table, parent, false);
             return new TableViewHolder(view);
         } else {
@@ -74,19 +73,20 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             ((TextViewHolder) holder).etContent.setText(block.getContent());
         } else if (holder instanceof DrawingViewHolder) {
             activeDrawingCanvas = ((DrawingViewHolder) holder).drawingCanvas;
+            // KAYITLI ÇİZİM VERİSİ VARSA TUVALE YÜKLENİR
+            if (block.getContent() != null && !block.getContent().isEmpty()) {
+                activeDrawingCanvas.loadDrawingFromJson(block.getContent());
+            }
         } else if (holder instanceof TableViewHolder) {
-            // TABLO DOLDURMA MANTIĞI (Satır x Sütun hücrelerini dinamik ekler)
             TableViewHolder tableHolder = (TableViewHolder) holder;
             buildTableLayout(tableHolder.tableContainer, block.getRows(), block.getCols());
         }
     }
 
-    // DİNAMİK TABLO HÜCRELERİ OLUŞTURAN YARDIMCI METOD
     private void buildTableLayout(TableLayout tableLayout, int rows, int cols) {
         if (tableLayout == null) return;
-        tableLayout.removeAllViews(); // Önceki hücreleri temizle
+        tableLayout.removeAllViews();
 
-        // Varsayılan boyutlar (Eğer belirtilmediyse 3x3 çizer)
         int rowCount = rows > 0 ? rows : 3;
         int colCount = cols > 0 ? cols : 3;
 
@@ -102,12 +102,12 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 TableRow.LayoutParams params = new TableRow.LayoutParams(
                         0,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1f // Hücrelerin dikeyde eşit dağılmasını sağlar
+                        1f
                 );
                 params.setMargins(4, 4, 4, 4);
                 cell.setLayoutParams(params);
                 cell.setPadding(12, 12, 12, 12);
-                cell.setBackgroundResource(R.drawable.bg_chip_inactive); // Hücre kenarlığı/arka planı
+                cell.setBackgroundResource(R.drawable.bg_chip_inactive);
                 cell.setTextSize(14);
                 cell.setHint((r + 1) + "," + (c + 1));
                 tableRow.addView(cell);
@@ -119,6 +119,11 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     @Override
     public int getItemCount() {
         return blocks.size();
+    }
+
+    // AKTİF ÇİZİM TUVALİNİ SAYFA DÜZEYİNDE ALMAK İÇİN GETTER METODU
+    public DrawingView getActiveDrawingCanvas() {
+        return activeDrawingCanvas;
     }
 
     public void undoActiveCanvas() {
@@ -145,7 +150,6 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         if (activeDrawingCanvas != null) activeDrawingCanvas.setStrokeWidth(width);
     }
 
-    // ViewHolder Sınıfları
     public static class TextViewHolder extends RecyclerView.ViewHolder {
         EditText etContent;
         public TextViewHolder(@NonNull View itemView) {
@@ -162,7 +166,6 @@ public class NoteBlockAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
-    // TABLO HOLDER SINIFI (YENİ EKLENDİ)
     public static class TableViewHolder extends RecyclerView.ViewHolder {
         TableLayout tableContainer;
         public TableViewHolder(@NonNull View itemView) {

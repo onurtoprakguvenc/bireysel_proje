@@ -16,6 +16,10 @@ public interface notdao {
     @Query("SELECT * FROM user_notes ORDER BY isPinned DESC, id DESC")
     List<notentity> getAllNotes();
 
+    // ID'ye göre tek not getiren metod
+    @Query("SELECT * FROM user_notes WHERE id = :id LIMIT 1")
+    notentity getNoteById(int id);
+
     // Arama Çubuğu İçin Sorgu (Başlıkta veya İçerikte Ara)
     @Query("SELECT * FROM user_notes WHERE title LIKE '%' || :searchQuery || '%' OR content LIKE '%' || :searchQuery || '%' ORDER BY id DESC")
     List<notentity> searchNotes(String searchQuery);

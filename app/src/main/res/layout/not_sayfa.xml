@@ -95,13 +95,7 @@
                     android:contentDescription="@string/app_name"
                     android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <ImageButton
-                    android:id="@+id/btnToolPen"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_pen"
-                    android:contentDescription="@string/app_name"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
+
 
                 <ImageButton
                     android:id="@+id/btnToolHighlighter"

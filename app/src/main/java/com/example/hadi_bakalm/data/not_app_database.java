@@ -4,8 +4,10 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
 
-@Database(entities = {notentity.class}, version = 1, exportSchema = false)
+@Database(entities = {notentity.class}, version = 2, exportSchema = false)
+@TypeConverters({note_Converters.class})
 public abstract class not_app_database extends RoomDatabase {
 
     private static not_app_database instance;
@@ -18,7 +20,7 @@ public abstract class not_app_database extends RoomDatabase {
                             context.getApplicationContext(),
                             not_app_database.class,
                             "sade_not_database"
-                    ).allowMainThreadQueries() // Basit testler ve hızlı senkronizasyon için
+                    ).allowMainThreadQueries()
                     .fallbackToDestructiveMigration()
                     .build();
         }
