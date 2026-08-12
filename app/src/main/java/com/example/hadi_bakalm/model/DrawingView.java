@@ -15,8 +15,8 @@ import java.util.List;
 
 public class DrawingView extends View {
 
-    // SCROLL modu eklendi
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL }
+    // RECTANGLE modu eklendi
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE }
 
     private static class DrawPath {
         Path path;
@@ -28,12 +28,20 @@ public class DrawingView extends View {
         }
     }
 
-    private List<DrawPath> paths = new ArrayList<>();
+    // Ana Çizim Listesi
+    private final List<DrawPath> paths = new ArrayList<>();
+    // Geri Alınan Çizimleri Saklayan İleri Al (Redo) Listesi
+    private final List<DrawPath> undonePaths = new ArrayList<>();
+
     private Path currentPath;
     private Paint currentPaint;
 
     private int currentColor = 0xFF09090B;
+    private float currentStrokeWidth = 8f; // Dinamik fırça kalınlığı
     private ToolMode currentTool = ToolMode.PEN;
+
+    // Şekil çizimi için ilk dokunma noktaları
+    private float startX, startY;
 
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -59,15 +67,15 @@ public class DrawingView extends View {
     private void applyToolSettings(Paint paint) {
         if (currentTool == ToolMode.ERASER) {
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            paint.setStrokeWidth(36f);
+            paint.setStrokeWidth(currentStrokeWidth * 3); // Silgi fırçadan daha geniş olur
         } else if (currentTool == ToolMode.HIGHLIGHTER) {
             paint.setXfermode(null);
-            paint.setColor(0x40EAB308);
-            paint.setStrokeWidth(24f);
-        } else { // PEN
+            paint.setColor(0x40EAB308); // Yarı saydam sarı
+            paint.setStrokeWidth(currentStrokeWidth * 2.5f);
+        } else { // PEN veya RECTANGLE
             paint.setXfermode(null);
             paint.setColor(currentColor);
-            paint.setStrokeWidth(6f);
+            paint.setStrokeWidth(currentStrokeWidth);
         }
     }
 
@@ -75,10 +83,12 @@ public class DrawingView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        // Kaydedilmiş tüm yolları çiz
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
 
+        // Şu an çizilmekte olan yolu çiz
         if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL) {
             canvas.drawPath(currentPath, currentPaint);
         }
@@ -86,8 +96,6 @@ public class DrawingView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Eğer kullanıcı SCROLL (Gezinme) modundaysa, dokunmayı çizim tuvali ele geçirmez;
-        // RecyclerView'ın dikeyde rahatça kaymasına izin verir.
         if (currentTool == ToolMode.SCROLL) {
             if (getParent() != null) {
                 getParent().requestDisallowInterceptTouchEvent(false);
@@ -103,6 +111,9 @@ public class DrawingView extends View {
                 if (getParent() != null) {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
+                startX = touchX;
+                startY = touchY;
+
                 initNewStroke();
                 currentPath.moveTo(touchX, touchY);
                 break;
@@ -111,7 +122,17 @@ public class DrawingView extends View {
                 if (getParent() != null) {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
-                currentPath.lineTo(touchX, touchY);
+                if (currentTool == ToolMode.RECTANGLE) {
+                    // Dikdörtgen çizilirken yolu anlık olarak güncelle
+                    currentPath.reset();
+                    float left = Math.min(startX, touchX);
+                    float top = Math.min(startY, touchY);
+                    float right = Math.max(startX, touchX);
+                    float bottom = Math.max(startY, touchY);
+                    currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
+                } else {
+                    currentPath.lineTo(touchX, touchY);
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -119,6 +140,8 @@ public class DrawingView extends View {
                 if (getParent() != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
                 }
+                // Yeni bir hamle yapıldığında Redo (İleri Al) geçmişi temizlenir
+                undonePaths.clear();
                 paths.add(new DrawPath(currentPath, currentPaint));
                 currentPath = new Path();
                 break;
@@ -130,19 +153,49 @@ public class DrawingView extends View {
         return true;
     }
 
+    // MOD SEÇİMİ
     public void setToolMode(ToolMode mode) {
         this.currentTool = mode;
     }
 
+    // RENK DEĞİŞTİRME
     public void setColor(int newColor) {
         this.currentColor = newColor;
-        if (currentTool == ToolMode.PEN) {
+        if (currentTool == ToolMode.PEN || currentTool == ToolMode.RECTANGLE) {
             applyToolSettings(currentPaint);
         }
     }
 
+    // FIRÇA KALINLIĞI DEĞİŞTİRME
+    public void setStrokeWidth(float width) {
+        this.currentStrokeWidth = width;
+        if (currentPaint != null) {
+            applyToolSettings(currentPaint);
+        }
+    }
+
+    // GERİ AL (UNDO)
+    public void undo() {
+        if (!paths.isEmpty()) {
+            DrawPath lastPath = paths.remove(paths.size() - 1);
+            undonePaths.add(lastPath);
+            invalidate();
+        }
+    }
+
+    // İLERİ AL (REDO)
+    public void redo() {
+        if (!undonePaths.isEmpty()) {
+            DrawPath pathToRestore = undonePaths.remove(undonePaths.size() - 1);
+            paths.add(pathToRestore);
+            invalidate();
+        }
+    }
+
+    // TUVAN TEMİZLE
     public void clearCanvas() {
         paths.clear();
+        undonePaths.clear();
         if (currentPath != null) {
             currentPath.reset();
         }

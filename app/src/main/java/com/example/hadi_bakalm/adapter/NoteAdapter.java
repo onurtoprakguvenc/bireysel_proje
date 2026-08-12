@@ -17,14 +17,24 @@ import java.util.List;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder> {
 
+    public interface OnItemClickListener {
+        void onItemClick(NoteModel note, int position);
+        void onItemLongClick(NoteModel note, int position); // YENİ EKLENDİ
+    }
+
     private Context context;
     private List<NoteModel> noteList;
-    private List<NoteModel> filteredList; // Arama/filtreleme için kopya liste
+    private List<NoteModel> filteredList;
+    private OnItemClickListener listener;
 
     public NoteAdapter(Context context, List<NoteModel> noteList) {
         this.context = context;
         this.noteList = noteList;
         this.filteredList = new ArrayList<>(noteList);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -36,10 +46,27 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
-        NoteModel note = filteredList.get(position);
-        holder.tvTitle.setText(note.getTitle());
-        holder.tvContent.setText(note.getContent());
-        holder.tvDate.setText(note.getDate());
+        if (position < filteredList.size()) {
+            NoteModel note = filteredList.get(position);
+            holder.tvTitle.setText(note.getTitle());
+            holder.tvContent.setText(note.getContent());
+            holder.tvDate.setText(note.getDate());
+
+            // Normal Tıklama
+            holder.itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(note, position);
+                }
+            });
+
+            // BASILI TUTMA (LONG CLICK) - SİLME İÇİN
+            holder.itemView.setOnLongClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemLongClick(note, position);
+                }
+                return true; // Tıklama olayını tüketir
+            });
+        }
     }
 
     @Override
@@ -47,7 +74,12 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         return filteredList.size();
     }
 
-    // Arama Çubuğu Filtreleme Metodu
+    public void updateList(List<NoteModel> newList) {
+        this.noteList = newList;
+        this.filteredList = new ArrayList<>(newList);
+        notifyDataSetChanged();
+    }
+
     public void filter(String query) {
         filteredList.clear();
         if (query.trim().isEmpty()) {
@@ -55,8 +87,8 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         } else {
             String filterPattern = query.toLowerCase().trim();
             for (NoteModel item : noteList) {
-                if (item.getTitle().toLowerCase().contains(filterPattern) ||
-                        item.getContent().toLowerCase().contains(filterPattern)) {
+                if ((item.getTitle() != null && item.getTitle().toLowerCase().contains(filterPattern)) ||
+                        (item.getContent() != null && item.getContent().toLowerCase().contains(filterPattern))) {
                     filteredList.add(item);
                 }
             }

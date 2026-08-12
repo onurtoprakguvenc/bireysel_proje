@@ -8,17 +8,17 @@ import androidx.room.RoomDatabase;
 @Database(entities = {notentity.class}, version = 1, exportSchema = false)
 public abstract class not_app_database extends RoomDatabase {
 
-    private static AppDatabase instance;
+    private static not_app_database instance;
 
     public abstract notdao noteDao();
 
-    public static synchronized AppDatabase getInstance(Context context) {
+    public static synchronized not_app_database getInstance(Context context) {
         if (instance == null) {
             instance = Room.databaseBuilder(
                             context.getApplicationContext(),
-                            AppDatabase.class,
-                            "sade_not_database" // Yerel Veritabanı Adı
-                    ).allowMainThreadQueries() // Basit testler için (Daha sonra Coroutine/AsyncTask bağlanır)
+                            not_app_database.class,
+                            "sade_not_database"
+                    ).allowMainThreadQueries() // Basit testler ve hızlı senkronizasyon için
                     .fallbackToDestructiveMigration()
                     .build();
         }
