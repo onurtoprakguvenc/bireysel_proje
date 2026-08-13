@@ -8,6 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import org.json.JSONArray;
@@ -19,6 +20,16 @@ import java.util.List;
 public class DrawingView extends View {
 
     public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, CIRCLE, LINE }
+
+    public interface OnDrawingChangeListener {
+        void onDrawingChanged(String jsonContent);
+    }
+
+    private OnDrawingChangeListener onDrawingChangeListener;
+
+    public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
+        this.onDrawingChangeListener = listener;
+    }
 
     public static class Point {
         public float x, y;
@@ -50,6 +61,12 @@ public class DrawingView extends View {
 
     private float startX, startY;
 
+    // SADECE DİKEY KAYDIRMA VE ZOOM DEĞİŞKENLERİ
+    private float offsetY = 0f; // Sağ-Sol (offsetX) tamamen kaldırıldı
+    private float lastTouchY;
+    private float scaleFactor = 1.0f;
+    private ScaleGestureDetector scaleGestureDetector;
+
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setupDrawing();
@@ -58,6 +75,17 @@ public class DrawingView extends View {
     private void setupDrawing() {
         setLayerType(LAYER_TYPE_SOFTWARE, null);
         initNewStroke();
+
+        // Zoom (Yakınlaştırma) Dinleyicisi
+        scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                scaleFactor *= detector.getScaleFactor();
+                scaleFactor = Math.max(0.5f, Math.min(scaleFactor, 3.0f)); // Min 0.5x, Max 3.0x zoom
+                invalidate();
+                return true;
+            }
+        });
     }
 
     private void initNewStroke() {
@@ -81,11 +109,9 @@ public class DrawingView extends View {
             paint.setStrokeWidth(currentStrokeWidth * 3);
         } else if (currentTool == ToolMode.HIGHLIGHTER) {
             paint.setXfermode(null);
-            // Renk ne olursa olsun varsayılan şeffaflık (Alpha %40 -> 0x66) eklenir
             int alphaColor = (currentColor & 0x00FFFFFF) | 0x66000000;
-            // Eğer siyah seçiliyse fosfor etkisi için sarı renk atanır
             if ((currentColor & 0x00FFFFFF) == 0x09090B || (currentColor & 0x00FFFFFF) == 0x000000) {
-                alphaColor = 0x66EAB308; // Yarı şeffaf canlı sarı
+                alphaColor = 0x66EAB308;
             }
             paint.setColor(alphaColor);
             paint.setStrokeWidth(currentStrokeWidth * 3f);
@@ -100,6 +126,11 @@ public class DrawingView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        canvas.save();
+        // ZOOM VE SADECE DİKEY (Y) DÖNÜŞÜMÜ
+        canvas.scale(scaleFactor, scaleFactor);
+        canvas.translate(0, offsetY);
+
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
@@ -107,25 +138,55 @@ public class DrawingView extends View {
         if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL) {
             canvas.drawPath(currentPath, currentPaint);
         }
+
+        canvas.restore();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (currentTool == ToolMode.SCROLL) {
-            if (getParent() != null) {
-                getParent().requestDisallowInterceptTouchEvent(false);
+        // Zoom hareketini işle
+        scaleGestureDetector.onTouchEvent(event);
+
+        int pointerCount = event.getPointerCount();
+
+        // 1. İKİ PARMAK İLE KAYDIRMA VEYA SCROLL MODU (Sadece Dikey)
+        if (pointerCount > 1 || currentTool == ToolMode.SCROLL) {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    lastTouchY = event.getY();
+                    break;
+
+                case MotionEvent.ACTION_MOVE:
+                    if (!scaleGestureDetector.isInProgress()) {
+                        float newY = event.getY();
+                        float dy = (newY - lastTouchY) / scaleFactor;
+
+                        offsetY += dy;
+
+                        // Sayfanın üst sınırını koru (Sayfa aşağı kaçmasın)
+                        if (offsetY > 0) {
+                            offsetY = 0;
+                        }
+
+                        lastTouchY = newY;
+                        invalidate();
+                    }
+                    break;
             }
-            return false;
+            return true;
         }
 
-        float touchX = event.getX();
-        float touchY = event.getY();
+        // 2. TEK PARMAK / S-PEN İLE DİKEY YÖNLÜ ÇİZİM
+        float rawX = event.getX();
+        float rawY = event.getY();
+
+        // Dokunma noktasını Zoom ve Dikey Offset'e göre hesapla
+        float touchX = rawX / scaleFactor;
+        float touchY = (rawY / scaleFactor) - offsetY;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if (getParent() != null) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                }
                 startX = touchX;
                 startY = touchY;
 
@@ -135,9 +196,6 @@ public class DrawingView extends View {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (getParent() != null) {
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                }
                 if (currentTool == ToolMode.RECTANGLE) {
                     currentPath.reset();
                     float left = Math.min(startX, touchX);
@@ -164,12 +222,13 @@ public class DrawingView extends View {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (getParent() != null) {
-                    getParent().requestDisallowInterceptTouchEvent(false);
-                }
                 undonePaths.clear();
                 paths.add(new DrawPath(currentPath, new Paint(currentPaint), currentPoints));
                 currentPath = new Path();
+
+                if (onDrawingChangeListener != null) {
+                    onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+                }
                 break;
 
             default:
@@ -209,6 +268,7 @@ public class DrawingView extends View {
         try {
             paths.clear();
             JSONArray pathsArray = new JSONArray(jsonStr);
+
             for (int i = 0; i < pathsArray.length(); i++) {
                 JSONObject pathObj = pathsArray.getJSONObject(i);
                 int color = pathObj.getInt("color");
@@ -240,6 +300,7 @@ public class DrawingView extends View {
                 }
                 paths.add(new DrawPath(path, paint, points));
             }
+
             invalidate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -269,6 +330,9 @@ public class DrawingView extends View {
             DrawPath lastPath = paths.remove(paths.size() - 1);
             undonePaths.add(lastPath);
             invalidate();
+            if (onDrawingChangeListener != null) {
+                onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+            }
         }
     }
 
@@ -277,6 +341,9 @@ public class DrawingView extends View {
             DrawPath pathToRestore = undonePaths.remove(undonePaths.size() - 1);
             paths.add(pathToRestore);
             invalidate();
+            if (onDrawingChangeListener != null) {
+                onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+            }
         }
     }
 
@@ -284,6 +351,60 @@ public class DrawingView extends View {
         paths.clear();
         undonePaths.clear();
         if (currentPath != null) currentPath.reset();
+        offsetY = 0f;
+        scaleFactor = 1.0f;
         invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
+    public void addTableToCanvas(int rows, int cols) {
+        float startX = 100f;
+        float startY = -offsetY + 200f; // O an ekranda görünen yerin üst kısmına koyar
+        float cellWidth = 150f;
+        float cellHeight = 80f;
+
+        float totalWidth = cols * cellWidth;
+        float totalHeight = rows * cellHeight;
+
+        Paint tablePaint = new Paint();
+        tablePaint.setAntiAlias(true);
+        tablePaint.setStyle(Paint.Style.STROKE);
+        tablePaint.setColor(0xFF334155); // Koyu gri tablo çizgileri
+        tablePaint.setStrokeWidth(4f);
+
+        // Yatay Çizgiler
+        for (int i = 0; i <= rows; i++) {
+            Path yPath = new Path();
+            float y = startY + (i * cellHeight);
+            yPath.moveTo(startX, y);
+            yPath.lineTo(startX + totalWidth, y);
+
+            List<Point> points = new ArrayList<>();
+            points.add(new Point(startX, y));
+            points.add(new Point(startX + totalWidth, y));
+
+            paths.add(new DrawPath(yPath, new Paint(tablePaint), points));
+        }
+
+        // Dikey Çizgiler
+        for (int j = 0; j <= cols; j++) {
+            Path xPath = new Path();
+            float x = startX + (j * cellWidth);
+            xPath.moveTo(x, startY);
+            xPath.lineTo(x, startY + totalHeight);
+
+            List<Point> points = new ArrayList<>();
+            points.add(new Point(x, startY));
+            points.add(new Point(x, startY + totalHeight));
+
+            paths.add(new DrawPath(xPath, new Paint(tablePaint), points));
+        }
+
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
     }
 }

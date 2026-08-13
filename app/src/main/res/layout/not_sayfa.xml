@@ -14,7 +14,8 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
-        android:background="#FFFFFF">
+        android:background="#FFFFFF"
+        android:elevation="4dp">
 
         <ImageButton
             android:id="@+id/btnCloseEditor"
@@ -48,18 +49,15 @@
             app:tint="#94A3B8" />
     </LinearLayout>
 
-    <!-- Dinamik İçerik Alanı -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvNoteBlocks"
+    <!-- TEK VE ÖZGÜR KATMAN: Tüm Ekranı Kaplayan Tuval -->
+    <com.example.hadi_bakalm.model.DrawingView
+        android:id="@+id/globalDrawingCanvas"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/editorHeader"
-        android:layout_above="@+id/editorFooterToolbar"
-        android:padding="16dp"
-        android:clipToPadding="false"
-        android:scrollbars="vertical" />
+        android:layout_above="@id/editorFooterToolbar" />
 
-    <!-- Alt Araç Çubuğu -->
+    <!-- Alt Araç Çubuğu (Toolbar) -->
     <LinearLayout
         android:id="@+id/editorFooterToolbar"
         android:layout_width="match_parent"
@@ -69,7 +67,7 @@
         android:background="#FFFFFF"
         android:paddingTop="8dp"
         android:paddingBottom="12dp"
-        android:elevation="8dp">
+        android:elevation="12dp">
 
         <LinearLayout
             android:id="@+id/drawingToolBar"
@@ -146,7 +144,6 @@
                 android:layout_marginTop="4dp"
                 android:paddingHorizontal="8dp">
 
-                <!-- Kalem Kapsülü -->
                 <FrameLayout
                     android:id="@+id/frameToolPen"
                     android:layout_width="44dp"
@@ -163,7 +160,6 @@
                         app:tint="#475569" />
                 </FrameLayout>
 
-                <!-- Fosforlu Kalem Kapsülü -->
                 <FrameLayout
                     android:id="@+id/frameToolHighlighter"
                     android:layout_width="44dp"
@@ -186,7 +182,6 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
-                <!-- Siyah Renk -->
                 <ImageView
                     android:id="@+id/colorBlack"
                     android:layout_width="24dp"
@@ -195,7 +190,6 @@
                     android:contentDescription="@string/app_name"
                     android:layout_marginEnd="12dp" />
 
-                <!-- Mavi Renk -->
                 <ImageView
                     android:id="@+id/colorBlue"
                     android:layout_width="32dp"
@@ -204,7 +198,6 @@
                     android:contentDescription="@string/app_name"
                     android:layout_marginEnd="12dp" />
 
-                <!-- Renk Seçici -->
                 <ImageButton
                     android:id="@+id/btnColorPicker"
                     android:layout_width="28dp"
@@ -218,7 +211,6 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
-                <!-- Tuval Temizleme -->
                 <ImageButton
                     android:id="@+id/btnClearCanvas"
                     android:layout_width="36dp"

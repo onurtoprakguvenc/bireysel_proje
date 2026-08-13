@@ -16,11 +16,8 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
-import com.example.hadi_bakalm.adapter.NoteBlockAdapter;
 import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
@@ -35,10 +32,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private ImageButton btnCloseEditor, btnPinNote;
     private EditText etNoteTitle;
-    private RecyclerView rvNoteBlocks;
-    private LinearLayout drawingToolBar;
 
-    private NoteBlockAdapter blockAdapter;
+    private DrawingView globalDrawingCanvas;
+    private LinearLayout drawingToolBar;
 
     private FrameLayout frameToolPen, frameToolHighlighter;
     private List<NoteBlockModel> blockList;
@@ -53,6 +49,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private boolean isVoiceRecording = false;
     private int currentNoteId = -1;
     private float currentStrokeWidth = 8f;
+    private DrawingView.ToolMode activeMode = DrawingView.ToolMode.PEN;
 
     private notdao noteDao;
 
@@ -62,11 +59,9 @@ public class not_alma_sayfa extends AppCompatActivity {
         setContentView(R.layout.not_sayfa);
 
         noteDao = not_app_database.getInstance(this).noteDao();
+        blockList = new ArrayList<>();
 
         initViews();
-        frameToolPen = findViewById(R.id.frameToolPen);
-        frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
-        setupRecyclerView();
         setupClickListeners();
 
         if (getIntent() != null) {
@@ -79,11 +74,11 @@ public class not_alma_sayfa extends AppCompatActivity {
 
             if (currentNoteId != -1 && noteDao != null) {
                 notentity existingNote = noteDao.getNoteById(currentNoteId);
-                if (existingNote != null && existingNote.blocks != null && !existingNote.blocks.isEmpty()) {
-                    blockList.clear();
-                    blockList.addAll(existingNote.blocks);
-                    if (blockAdapter != null) {
-                        blockAdapter.notifyDataSetChanged();
+                if (existingNote != null && existingNote.blocks != null) {
+                    for (NoteBlockModel block : existingNote.blocks) {
+                        if (block.getType() == NoteBlockModel.BlockType.DRAWING && globalDrawingCanvas != null) {
+                            globalDrawingCanvas.loadDrawingFromJson(block.getContent());
+                        }
                     }
                 }
             }
@@ -101,8 +96,12 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
         etNoteTitle = findViewById(R.id.etNoteTitle);
-        rvNoteBlocks = findViewById(R.id.rvNoteBlocks);
+
+        globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
         drawingToolBar = findViewById(R.id.drawingToolBar);
+
+        frameToolPen = findViewById(R.id.frameToolPen);
+        frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
 
         btnToolScroll = findViewById(R.id.btnToolScroll);
         btnToolPen = findViewById(R.id.btnToolPen);
@@ -123,15 +122,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnRecordVoice = findViewById(R.id.btnRecordVoice);
     }
 
-    private void setupRecyclerView() {
-        blockList = new ArrayList<>();
-        blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.TEXT));
-
-        blockAdapter = new NoteBlockAdapter(this, blockList);
-        rvNoteBlocks.setLayoutManager(new LinearLayoutManager(this));
-        rvNoteBlocks.setAdapter(blockAdapter);
-    }
-
     private void setupClickListeners() {
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
@@ -145,66 +135,52 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // El İkonu: Kaydırma Modu
         if (btnToolScroll != null) {
             btnToolScroll.setOnClickListener(v -> {
-                if (blockAdapter != null) {
-                    blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.SCROLL);
-                    Toast.makeText(this, "Kaydırma Modu", Toast.LENGTH_SHORT).show();
-                }
+                activeMode = DrawingView.ToolMode.SCROLL;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Kaydırma Modu (Dikey kaydırın)", Toast.LENGTH_SHORT).show();
             });
         }
 
-        // Kalem Butonu
         if (btnToolPen != null) {
             btnToolPen.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
+                activeMode = DrawingView.ToolMode.PEN;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
                 showStrokeWidthDialog();
             });
         }
 
-        // Fosforlu Kalem Butonu
         if (btnToolHighlighter != null) {
             btnToolHighlighter.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.HIGHLIGHTER);
+                activeMode = DrawingView.ToolMode.HIGHLIGHTER;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
                 Toast.makeText(this, "Fosforlu Kalem Modu", Toast.LENGTH_SHORT).show();
             });
         }
 
-        // Silgi Butonu: Tuval yoksa boşuna yeni çizim alanı açmaz
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
-                if (blockAdapter != null && blockAdapter.getActiveDrawingCanvas() != null) {
-                    blockAdapter.setToolModeToActiveCanvas(DrawingView.ToolMode.ERASER);
-                    Toast.makeText(this, "Silgi Modu", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Önce bir çizim yapmalısınız", Toast.LENGTH_SHORT).show();
-                }
+                activeMode = DrawingView.ToolMode.ERASER;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Silgi Modu", Toast.LENGTH_SHORT).show();
             });
         }
 
-        if (btnToolUndo != null) {
-            btnToolUndo.setOnClickListener(v -> {
-                if (blockAdapter != null) {
-                    blockAdapter.undoActiveCanvas();
-                }
-            });
+        if (btnToolUndo != null && globalDrawingCanvas != null) {
+            btnToolUndo.setOnClickListener(v -> globalDrawingCanvas.undo());
         }
 
-        if (btnToolRedo != null) {
-            btnToolRedo.setOnClickListener(v -> {
-                if (blockAdapter != null) {
-                    blockAdapter.redoActiveCanvas();
-                }
-            });
+        if (btnToolRedo != null && globalDrawingCanvas != null) {
+            btnToolRedo.setOnClickListener(v -> globalDrawingCanvas.redo());
         }
 
-        if (btnClearCanvas != null) {
-            btnClearCanvas.setOnClickListener(v -> {
-                if (blockAdapter != null) {
-                    blockAdapter.clearActiveCanvas();
-                }
-            });
+        if (btnClearCanvas != null && globalDrawingCanvas != null) {
+            btnClearCanvas.setOnClickListener(v -> globalDrawingCanvas.clearCanvas());
         }
 
         if (btnToolShapes != null) {
@@ -213,18 +189,17 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (colorBlack != null) {
             colorBlack.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                blockAdapter.setColorToActiveCanvas(0xFF09090B);
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF09090B);
             });
         }
 
         if (colorBlue != null) {
             colorBlue.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                blockAdapter.setColorToActiveCanvas(0xFF0284C7);
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF0284C7);
             });
         }
 
+        // TABLO BUTONU TEKRAR AKTİF
         if (btnAddTable != null) {
             btnAddTable.setOnClickListener(v -> showTableCreationDialog());
         }
@@ -237,11 +212,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnRecordVoice.setOnClickListener(v -> {
                 isVoiceRecording = !isVoiceRecording;
                 btnRecordVoice.setText(isVoiceRecording ? "Duraklat" : "Ses Kaydı");
-                if (isVoiceRecording) {
-                    blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.VOICE));
-                    blockAdapter.notifyItemInserted(blockList.size() - 1);
-                    rvNoteBlocks.scrollToPosition(blockList.size() - 1);
-                }
             });
         }
     }
@@ -265,8 +235,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     currentStrokeWidth = Math.max(2, progress);
-                    ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                    blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
+                    if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
                 }
 
                 @Override
@@ -281,8 +250,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnThin.setOnClickListener(v -> {
                 currentStrokeWidth = 4f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(4);
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
                 dialog.dismiss();
             });
         }
@@ -291,8 +259,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnMedium.setOnClickListener(v -> {
                 currentStrokeWidth = 12f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(12);
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
                 dialog.dismiss();
             });
         }
@@ -301,8 +268,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnThick.setOnClickListener(v -> {
                 currentStrokeWidth = 28f;
                 if (seekBarStrokeWidth != null) seekBarStrokeWidth.setProgress(28);
-                ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-                blockAdapter.setStrokeWidthToActiveCanvas(currentStrokeWidth);
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
                 dialog.dismiss();
             });
         }
@@ -323,7 +289,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnRectangle != null) {
             btnRectangle.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.RECTANGLE);
+                activeMode = DrawingView.ToolMode.RECTANGLE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
                 Toast.makeText(this, "Dikdörtgen çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -331,7 +299,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnCircle != null) {
             btnCircle.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.CIRCLE);
+                activeMode = DrawingView.ToolMode.CIRCLE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
                 Toast.makeText(this, "Daire çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -339,7 +309,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnLine != null) {
             btnLine.setOnClickListener(v -> {
-                ensureDrawingBlockExists(DrawingView.ToolMode.LINE);
+                activeMode = DrawingView.ToolMode.LINE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
                 Toast.makeText(this, "Düz çizgi çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
@@ -348,6 +320,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
+    // GERİ GETİRİLEN TABLO OLUŞTURMA PENCERESİ
     private void showTableCreationDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table_config, null);
@@ -376,84 +349,34 @@ public class not_alma_sayfa extends AppCompatActivity {
                 return;
             }
 
-            NoteBlockModel tableBlock = new NoteBlockModel(NoteBlockModel.BlockType.TABLE, rows, cols);
-            blockList.add(tableBlock);
-            blockAdapter.notifyItemInserted(blockList.size() - 1);
-            rvNoteBlocks.scrollToPosition(blockList.size() - 1);
+            // Tablo çizimini tuval üzerine vektörel ızgara olarak düşürür
+            if (globalDrawingCanvas != null) {
+                globalDrawingCanvas.addTableToCanvas(rows, cols);
+            }
 
+            Toast.makeText(this, "Tablo tuvale eklendi", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
         dialog.show();
     }
 
-    // Parametresiz çağrılar için varsayılan olarak PEN modunu çalıştırır
-    private void ensureDrawingBlockExists() {
-        ensureDrawingBlockExists(DrawingView.ToolMode.PEN);
-    }
-
-    private void ensureDrawingBlockExists(DrawingView.ToolMode targetMode) {
-        boolean hasDrawingBlock = false;
-        for (NoteBlockModel block : blockList) {
-            if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
-                hasDrawingBlock = true;
-                break;
-            }
-        }
-
-        if (!hasDrawingBlock) {
-            blockList.add(new NoteBlockModel(NoteBlockModel.BlockType.DRAWING));
-            int newPosition = blockList.size() - 1;
-            blockAdapter.notifyItemInserted(newPosition);
-            rvNoteBlocks.scrollToPosition(newPosition);
-
-            rvNoteBlocks.post(() -> {
-                if (blockAdapter != null) {
-                    blockAdapter.setToolModeToActiveCanvas(targetMode);
-                }
-            });
-        } else {
-            if (blockAdapter != null) {
-                blockAdapter.setToolModeToActiveCanvas(targetMode);
-            }
-        }
-    }
-
     private void saveNoteAndExit() {
-        if (blockAdapter != null && blockAdapter.getActiveDrawingCanvas() != null) {
-            String drawingJson = blockAdapter.getActiveDrawingCanvas().getDrawingJson();
-            for (NoteBlockModel block : blockList) {
-                if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
-                    block.setContent(drawingJson);
-                }
-            }
-        }
-
         String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
-        String summaryContent = "İçerik yok";
-
-        if (rvNoteBlocks != null && rvNoteBlocks.getChildCount() > 0) {
-            View firstBlockView = rvNoteBlocks.getChildAt(0);
-            if (firstBlockView != null) {
-                EditText etBlockContent = firstBlockView.findViewById(R.id.etBlockText);
-                if (etBlockContent != null && !TextUtils.isEmpty(etBlockContent.getText().toString().trim())) {
-                    summaryContent = etBlockContent.getText().toString().trim();
-                }
-            }
-        }
-
-        if (TextUtils.isEmpty(title) && summaryContent.equals("İçerik yok") && blockList.size() <= 1) {
-            finish();
-            return;
-        }
-
         if (TextUtils.isEmpty(title)) {
             title = "Başlıksız Not";
         }
 
         String currentTime = new SimpleDateFormat("dd MMM, HH:mm", new Locale("tr", "TR")).format(new Date());
 
-        notentity note = new notentity(title, summaryContent, "Kişisel", "#0284C7", currentTime);
+        blockList.clear();
+        if (globalDrawingCanvas != null) {
+            NoteBlockModel drawingBlock = new NoteBlockModel(NoteBlockModel.BlockType.DRAWING);
+            drawingBlock.setContent(globalDrawingCanvas.getDrawingJson());
+            blockList.add(drawingBlock);
+        }
+
+        notentity note = new notentity(title, "Çizim Notu", "Kişisel", "#0284C7", currentTime);
         note.isPinned = isPinned;
         note.blocks = blockList;
 
@@ -489,4 +412,3 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 }
-
