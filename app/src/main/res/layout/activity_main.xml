@@ -41,13 +41,17 @@
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
+            <!-- NOT UYGULAMASINA GERİ DÖNÜŞ KÖPRÜSÜ (EASTER EGG) -->
             <ImageView
-                android:id="@+id/btnMenu"
+                android:id="@+id/btnBackToNotes"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:src="@drawable/ic_more_vert"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_pen"
                 app:tint="@color/text_primary" />
         </RelativeLayout>
 

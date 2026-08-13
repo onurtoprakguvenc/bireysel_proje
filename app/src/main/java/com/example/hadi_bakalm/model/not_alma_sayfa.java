@@ -1,8 +1,12 @@
 package com.example.hadi_bakalm.model;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,6 +18,8 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -42,7 +48,8 @@ public class not_alma_sayfa extends AppCompatActivity {
     private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser;
     private ImageButton btnToolShapes, btnToolUndo, btnToolRedo;
     private ImageButton btnColorPicker, btnClearCanvas;
-    private ImageView colorBlack, colorBlue;
+
+    private ImageView colorBlack, colorBlue, colorRed, colorGreen;
     private Button btnAddTable, btnAddImage, btnRecordVoice;
 
     private boolean isPinned = false;
@@ -53,6 +60,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private notdao noteDao;
 
+    // GALERİ SEÇİCİ LAUNCHER
+    private ActivityResultLauncher<String> imagePickerLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,8 +71,28 @@ public class not_alma_sayfa extends AppCompatActivity {
         noteDao = not_app_database.getInstance(this).noteDao();
         blockList = new ArrayList<>();
 
+        // Galeri Dinleyicisini Başlat
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        try {
+                            Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
+                            if (globalDrawingCanvas != null) {
+                                globalDrawingCanvas.addImageToCanvas(bitmap, uri.toString());
+                                Toast.makeText(this, "Görsel tuvale eklendi", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(this, "Görsel yüklenemedi", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+
         initViews();
         setupClickListeners();
+        setupTableTouchListener();
 
         if (getIntent() != null) {
             currentNoteId = getIntent().getIntExtra("EXTRA_NOTE_ID", -1);
@@ -116,10 +146,56 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         colorBlack = findViewById(R.id.colorBlack);
         colorBlue = findViewById(R.id.colorBlue);
+        colorRed = findViewById(R.id.colorRed);
+        colorGreen = findViewById(R.id.colorGreen);
 
         btnAddTable = findViewById(R.id.btnAddTable);
         btnAddImage = findViewById(R.id.btnAddImage);
         btnRecordVoice = findViewById(R.id.btnRecordVoice);
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupTableTouchListener() {
+        if (globalDrawingCanvas != null) {
+            globalDrawingCanvas.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    float touchX = event.getX() / globalDrawingCanvas.getScaleFactor();
+                    float touchY = (event.getY() / globalDrawingCanvas.getScaleFactor()) - globalDrawingCanvas.getOffsetY();
+
+                    DrawingView.TableCellClickResult result = globalDrawingCanvas.checkTableCellClick(touchX, touchY);
+                    if (result != null) {
+                        showCellTextInputDialog(result);
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+    }
+
+    private void showCellTextInputDialog(DrawingView.TableCellClickResult result) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Hücre Yazısı (" + (result.row + 1) + ". Satır, " + (result.col + 1) + ". Sütun)");
+
+        final EditText input = new EditText(this);
+        input.setPadding(32, 32, 32, 32);
+
+        for (DrawingView.TableCell cell : result.table.cells) {
+            if (cell.row == result.row && cell.col == result.col) {
+                input.setText(cell.text);
+                break;
+            }
+        }
+
+        builder.setView(input);
+
+        builder.setPositiveButton("Kaydet", (dialog, which) -> {
+            String text = input.getText().toString().trim();
+            globalDrawingCanvas.updateTableCellText(result.table, result.row, result.col, text);
+        });
+
+        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 
     private void setupClickListeners() {
@@ -187,6 +263,11 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnToolShapes.setOnClickListener(v -> showShapePickerDialog());
         }
 
+        // RENK SEÇME PALETİ DIALOG'UNU ÇAĞIRAN BUTON
+        if (btnColorPicker != null) {
+            btnColorPicker.setOnClickListener(v -> showColorPickerDialog());
+        }
+
         if (colorBlack != null) {
             colorBlack.setOnClickListener(v -> {
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF09090B);
@@ -199,13 +280,29 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // TABLO BUTONU TEKRAR AKTİF
+        if (colorRed != null) {
+            colorRed.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFEF4444);
+            });
+        }
+
+        if (colorGreen != null) {
+            colorGreen.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF10B981);
+            });
+        }
+
         if (btnAddTable != null) {
             btnAddTable.setOnClickListener(v -> showTableCreationDialog());
         }
 
+        // GÖRSEL BUTONUNA BASILINCA GALERİYİ AÇAR
         if (btnAddImage != null) {
-            btnAddImage.setOnClickListener(v -> Toast.makeText(this, "Galeriden görsel seçici açılıyor...", Toast.LENGTH_SHORT).show());
+            btnAddImage.setOnClickListener(v -> {
+                if (imagePickerLauncher != null) {
+                    imagePickerLauncher.launch("image/*");
+                }
+            });
         }
 
         if (btnRecordVoice != null) {
@@ -214,6 +311,63 @@ public class not_alma_sayfa extends AppCompatActivity {
                 btnRecordVoice.setText(isVoiceRecording ? "Duraklat" : "Ses Kaydı");
             });
         }
+    }
+
+    // ÖZEL RENK PALETİ DIALOG PENCERESİ
+    private void showColorPickerDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_color_picker, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        ImageView colorRedDialog = dialogView.findViewById(R.id.colorRed);
+        ImageView colorGreenDialog = dialogView.findViewById(R.id.colorGreen);
+        ImageView colorPurpleDialog = dialogView.findViewById(R.id.colorPurple);
+        ImageView colorOrangeDialog = dialogView.findViewById(R.id.colorOrange);
+        ImageView colorYellowDialog = dialogView.findViewById(R.id.colorYellow);
+        Button btnCloseColorPicker = dialogView.findViewById(R.id.btnCloseColorPicker);
+
+        if (colorRedDialog != null) {
+            colorRedDialog.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFEF4444);
+                dialog.dismiss();
+            });
+        }
+
+        if (colorGreenDialog != null) {
+            colorGreenDialog.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF22C55E);
+                dialog.dismiss();
+            });
+        }
+
+        if (colorPurpleDialog != null) {
+            colorPurpleDialog.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFA855F7);
+                dialog.dismiss();
+            });
+        }
+
+        if (colorOrangeDialog != null) {
+            colorOrangeDialog.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFF97316);
+                dialog.dismiss();
+            });
+        }
+
+        if (colorYellowDialog != null) {
+            colorYellowDialog.setOnClickListener(v -> {
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFEAB308);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnCloseColorPicker != null) {
+            btnCloseColorPicker.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     private void showStrokeWidthDialog() {
@@ -320,7 +474,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
-    // GERİ GETİRİLEN TABLO OLUŞTURMA PENCERESİ
     private void showTableCreationDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table_config, null);
@@ -349,12 +502,11 @@ public class not_alma_sayfa extends AppCompatActivity {
                 return;
             }
 
-            // Tablo çizimini tuval üzerine vektörel ızgara olarak düşürür
             if (globalDrawingCanvas != null) {
                 globalDrawingCanvas.addTableToCanvas(rows, cols);
             }
 
-            Toast.makeText(this, "Tablo tuvale eklendi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Tablo tuvale eklendi. Hücreye tıklayarak yazı yazabilirsiniz.", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 

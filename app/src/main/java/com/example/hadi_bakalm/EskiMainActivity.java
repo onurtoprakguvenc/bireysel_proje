@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import com.example.hadi_bakalm.model.bagis_sayfa;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -18,7 +17,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
+import com.example.hadi_bakalm.model.MainActivity;
 import com.example.hadi_bakalm.model.NavigationHelper;
+import com.example.hadi_bakalm.model.bagis_sayfa;
+import com.example.hadi_bakalm.model.not_alma_sayfa;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -26,7 +28,8 @@ import java.util.List;
 
 public class EskiMainActivity extends AppCompatActivity {
 
-    private ImageView btnMenu;
+    // XML'de adını değiştirdiğimiz gizli köprü ikonu
+    private ImageView btnBackToNotes;
     private EditText searchBar;
     private RecyclerView recyclerViewCategories;
     private FloatingActionButton btnSupportDonate;
@@ -50,9 +53,12 @@ public class EskiMainActivity extends AppCompatActivity {
         setupRecyclerView();
         setupSearch();
 
-        if (btnMenu != null) {
-            btnMenu.setOnClickListener(v -> {
-                // İleride: Seçenekler menüsü
+        // GİZLİ KÖPRÜ: Kalem İkonuna basınca ana notlar sayfasına (asil_ana_sayfa) yönlendirir
+        if (btnBackToNotes != null) {
+            btnBackToNotes.setOnClickListener(v -> {
+                Intent intent = new Intent(EskiMainActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish(); // Bu ekranı kapatıp ana notlar listesine döner
             });
         }
 
@@ -86,7 +92,8 @@ public class EskiMainActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        btnMenu = findViewById(R.id.btnMenu);
+        // XML'deki yeni ID bağlandı
+        btnBackToNotes = findViewById(R.id.btnBackToNotes);
         searchBar = findViewById(R.id.searchBar);
         recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
         btnSupportDonate = findViewById(R.id.btnSupportDonate);
@@ -167,11 +174,9 @@ public class EskiMainActivity extends AppCompatActivity {
 
         android.app.AlertDialog dialog = builder.create();
 
-        // Dışarıya tıklanarak kapatılmasını engeller (Zorunlu görünüm)
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
 
-        // Arka planı şeffaf yaparak kendi özel oval tasarımımızın görünmesini sağlar
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -179,7 +184,6 @@ public class EskiMainActivity extends AppCompatActivity {
         TextView btnAccept = dialogView.findViewById(R.id.btnAcceptDisclaimer);
         if (btnAccept != null) {
             btnAccept.setOnClickListener(v -> {
-                // Kullanıcı onayladığında tercihi hafızaya kaydet
                 SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 prefs.edit().putBoolean(KEY_DISCLAIMER_ACCEPTED, true).apply();
 

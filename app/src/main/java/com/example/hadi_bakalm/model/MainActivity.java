@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -22,11 +23,11 @@ import com.example.hadi_bakalm.adapter.NoteAdapter;
 import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText etSearch;
     private ImageButton btnLibraryBridge, btnToggleLayout;
     private FloatingActionButton fabAddNote, fabDonateCoffee;
-    private BottomNavigationView bottomNavigation;
     private TextView tvNoteCount;
     private LinearLayout categoryChipContainer;
 
@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.asil_ana_sayfa);
 
-        // Room Veritabanı DAO Başlatma
         noteDao = not_app_database.getInstance(this).noteDao();
 
         initViews();
@@ -60,10 +59,8 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
         setupSearchListener();
         setupCategoryChips();
-        setupBottomNavigation();
     }
 
-    // SAYFA HER ÖN PLANA GELDİĞİNDE VERİTABANINDAN CANLI VERİ ÇEKER
     @Override
     protected void onResume() {
         super.onResume();
@@ -77,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
         fabAddNote = findViewById(R.id.fabAddNote);
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
         tvNoteCount = findViewById(R.id.tvNoteCount);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
     }
@@ -96,10 +92,9 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
 
-            // KARTA BASILI TUTULDUĞUNDA ÇALIŞIR (SİLME İŞLEMİ)
             @Override
             public void onItemLongClick(NoteModel note, int position) {
-                new androidx.appcompat.app.AlertDialog.Builder(MainActivity.this)
+                new AlertDialog.Builder(MainActivity.this)
                         .setTitle("Notu Sil")
                         .setMessage("\"" + note.getTitle() + "\" başlıklı notu silmek istediğinize emin misiniz?")
                         .setPositiveButton("Sil", (dialog, which) -> {
@@ -114,60 +109,72 @@ public class MainActivity extends AppCompatActivity {
         rvNotes.setAdapter(noteAdapter);
     }
 
-    // VERİTABANINDAN TÜM NOTLARI ID DAHİL ÇEKEN METOD
+    // VERİTABANINDAN VERİLERİ ARKA PLANDA ÇEKER
     private void loadNotesFromDatabase() {
         if (noteDao == null) return;
 
-        List<notentity> dbEntities = noteDao.getAllNotes();
-        noteList.clear();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<notentity> dbEntities = noteDao.getAllNotes();
+            List<NoteModel> updatedList = new ArrayList<>();
 
-        for (notentity entity : dbEntities) {
-            noteList.add(new NoteModel(
-                    entity.id,
-                    entity.title,
-                    entity.content,
-                    entity.timestamp,
-                    entity.category,
-                    entity.isPinned
-            ));
-        }
+            for (notentity entity : dbEntities) {
+                updatedList.add(new NoteModel(
+                        entity.id,
+                        entity.title,
+                        entity.content,
+                        entity.timestamp,
+                        entity.category,
+                        entity.isPinned
+                ));
+            }
 
-        if (noteAdapter != null) {
-            noteAdapter.updateList(noteList);
-        }
-        updateNoteCount(noteList.size());
+            runOnUiThread(() -> {
+                noteList.clear();
+                noteList.addAll(updatedList);
+                if (noteAdapter != null) {
+                    noteAdapter.updateList(noteList);
+                }
+                updateNoteCount(noteList.size());
+            });
+        });
     }
 
     private void deleteNoteFromDatabase(int noteId) {
         if (noteDao == null) return;
 
-        notentity noteToDelete = new notentity("", "", "", "", "");
-        noteToDelete.id = noteId;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            notentity noteToDelete = new notentity("", "", "", "", "");
+            noteToDelete.id = noteId;
+            noteDao.deleteNote(noteToDelete);
 
-        noteDao.deleteNote(noteToDelete);
-        Toast.makeText(this, "Not silindi", Toast.LENGTH_SHORT).show();
-
-        loadNotesFromDatabase();
+            runOnUiThread(() -> {
+                Toast.makeText(MainActivity.this, "Not silindi", Toast.LENGTH_SHORT).show();
+                loadNotesFromDatabase();
+            });
+        });
     }
 
     private void setupClickListeners() {
-        btnLibraryBridge.setOnClickListener(v -> openLibraryActivity());
+        if (btnLibraryBridge != null) {
+            btnLibraryBridge.setOnClickListener(v -> openLibraryActivity());
+        }
 
-        btnToggleLayout.setOnClickListener(v -> {
-            isGridMode = !isGridMode;
-            if (isGridMode) {
-                rvNotes.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
-                btnToggleLayout.setImageResource(R.drawable.ic_list);
-            } else {
-                rvNotes.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                btnToggleLayout.setImageResource(R.drawable.ic_grid);
-            }
-        });
+        if (btnToggleLayout != null) {
+            btnToggleLayout.setOnClickListener(v -> {
+                isGridMode = !isGridMode;
+                if (isGridMode) {
+                    rvNotes.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
+                    btnToggleLayout.setImageResource(R.drawable.ic_list);
+                } else {
+                    rvNotes.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                    btnToggleLayout.setImageResource(R.drawable.ic_grid);
+                }
+            });
+        }
 
-        fabAddNote.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
-            startActivity(intent);
-        });
+        if (fabAddNote != null) {
+            fabAddNote.setOnClickListener(v -> showCategorySelectionDialog());
+        }
 
         if (fabDonateCoffee != null) {
             fabDonateCoffee.setOnClickListener(v -> {
@@ -178,7 +185,54 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void showCategorySelectionDialog() {
+        String[] categories = {"Kişisel", "Geçici", "İş / Okul", "+ Yeni Kategori Ekle"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Hangi kategori olsun?");
+        builder.setItems(categories, (dialog, which) -> {
+            if (which == categories.length - 1) {
+                showCustomCategoryInputDialog();
+            } else {
+                String selectedCategory = categories[which];
+                openNoteEditorWithCategory(selectedCategory);
+            }
+        });
+
+        builder.setNegativeButton("İptal", null);
+        builder.show();
+    }
+
+    private void showCustomCategoryInputDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Yeni Kategori İsmi");
+
+        final EditText input = new EditText(this);
+        input.setHint("Kategori adını girin (Örn: Proje, Alışveriş)");
+        input.setPadding(48, 32, 48, 32);
+        builder.setView(input);
+
+        builder.setPositiveButton("Oluştur ve Not Aç", (dialog, which) -> {
+            String customCategory = input.getText().toString().trim();
+            if (customCategory.isEmpty()) {
+                customCategory = "Genel";
+            }
+            openNoteEditorWithCategory(customCategory);
+        });
+
+        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    private void openNoteEditorWithCategory(String category) {
+        Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
+        intent.putExtra("EXTRA_NOTE_CATEGORY", category);
+        startActivity(intent);
+    }
+
     private void setupSearchListener() {
+        if (etSearch == null) return;
+
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -196,29 +250,35 @@ public class MainActivity extends AppCompatActivity {
     private void filterNotesFromDatabase(String query) {
         if (noteDao == null) return;
 
-        List<notentity> dbEntities;
-        if (query.trim().isEmpty()) {
-            dbEntities = noteDao.getAllNotes();
-        } else {
-            dbEntities = noteDao.searchNotes(query);
-        }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<notentity> dbEntities;
+            if (query.trim().isEmpty()) {
+                dbEntities = noteDao.getAllNotes();
+            } else {
+                dbEntities = noteDao.searchNotes(query);
+            }
 
-        noteList.clear();
-        for (notentity entity : dbEntities) {
-            noteList.add(new NoteModel(
-                    entity.id,
-                    entity.title,
-                    entity.content,
-                    entity.timestamp,
-                    entity.category,
-                    entity.isPinned
-            ));
-        }
+            List<NoteModel> filteredList = new ArrayList<>();
+            for (notentity entity : dbEntities) {
+                filteredList.add(new NoteModel(
+                        entity.id,
+                        entity.title,
+                        entity.content,
+                        entity.timestamp,
+                        entity.category,
+                        entity.isPinned
+                ));
+            }
 
-        if (noteAdapter != null) {
-            noteAdapter.updateList(noteList);
-        }
-        updateNoteCount(noteList.size());
+            runOnUiThread(() -> {
+                noteList.clear();
+                noteList.addAll(filteredList);
+                if (noteAdapter != null) {
+                    noteAdapter.updateList(noteList);
+                }
+                updateNoteCount(noteList.size());
+            });
+        });
     }
 
     private void setupCategoryChips() {
@@ -254,23 +314,6 @@ public class MainActivity extends AppCompatActivity {
                 chip.setTextColor(getResources().getColor(R.color.text_secondary));
             }
         }
-    }
-
-    private void setupBottomNavigation() {
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_notes) {
-                return true;
-            } else if (id == R.id.nav_library) {
-                openLibraryActivity();
-                return true;
-            } else if (id == R.id.nav_settings) {
-                Toast.makeText(MainActivity.this, "Ayarlar Açılıyor...", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            return false;
-        });
     }
 
     private void openLibraryActivity() {

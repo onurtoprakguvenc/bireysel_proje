@@ -1,11 +1,13 @@
 package com.example.hadi_bakalm.model;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -31,6 +33,59 @@ public class DrawingView extends View {
         this.onDrawingChangeListener = listener;
     }
 
+    // --- TABLO VERİ MODELLERİ ---
+    public static class TableCell {
+        public int row, col;
+        public String text;
+        public TableCell(int row, int col, String text) {
+            this.row = row;
+            this.col = col;
+            this.text = text;
+        }
+    }
+
+    public static class TableObject {
+        public float startX, startY;
+        public float cellWidth = 160f;
+        public float cellHeight = 90f;
+        public int rows, cols;
+        public List<TableCell> cells = new ArrayList<>();
+
+        public TableObject(float startX, float startY, int rows, int cols) {
+            this.startX = startX;
+            this.startY = startY;
+            this.rows = rows;
+            this.cols = cols;
+        }
+    }
+
+    public static class TableCellClickResult {
+        public TableObject table;
+        public int row, col;
+        public TableCellClickResult(TableObject table, int row, int col) {
+            this.table = table;
+            this.row = row;
+            this.col = col;
+        }
+    }
+
+    // --- GÖRSEL NESNESİ MODELİ ---
+    public static class ImageObject {
+        public float x, y;
+        public float width, height;
+        public Bitmap bitmap;
+        public String imageUriStr;
+
+        public ImageObject(float x, float y, float width, float height, Bitmap bitmap, String imageUriStr) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.bitmap = bitmap;
+            this.imageUriStr = imageUriStr;
+        }
+    }
+
     public static class Point {
         public float x, y;
         public Point(float x, float y) { this.x = x; this.y = y; }
@@ -50,9 +105,12 @@ public class DrawingView extends View {
 
     private final List<DrawPath> paths = new ArrayList<>();
     private final List<DrawPath> undonePaths = new ArrayList<>();
+    private final List<TableObject> tables = new ArrayList<>();
+    private final List<ImageObject> images = new ArrayList<>();
 
     private Path currentPath;
     private Paint currentPaint;
+    private Paint textPaint;
     private List<Point> currentPoints;
 
     private int currentColor = 0xFF09090B;
@@ -60,9 +118,7 @@ public class DrawingView extends View {
     private ToolMode currentTool = ToolMode.PEN;
 
     private float startX, startY;
-
-    // SADECE DİKEY KAYDIRMA VE ZOOM DEĞİŞKENLERİ
-    private float offsetY = 0f; // Sağ-Sol (offsetX) tamamen kaldırıldı
+    private float offsetY = 0f;
     private float lastTouchY;
     private float scaleFactor = 1.0f;
     private ScaleGestureDetector scaleGestureDetector;
@@ -75,17 +131,25 @@ public class DrawingView extends View {
     private void setupDrawing() {
         setLayerType(LAYER_TYPE_SOFTWARE, null);
         initNewStroke();
+        initTextPaint();
 
-        // Zoom (Yakınlaştırma) Dinleyicisi
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(ScaleGestureDetector detector) {
                 scaleFactor *= detector.getScaleFactor();
-                scaleFactor = Math.max(0.5f, Math.min(scaleFactor, 3.0f)); // Min 0.5x, Max 3.0x zoom
+                scaleFactor = Math.max(0.5f, Math.min(scaleFactor, 3.0f));
                 invalidate();
                 return true;
             }
         });
+    }
+
+    private void initTextPaint() {
+        textPaint = new Paint();
+        textPaint.setAntiAlias(true);
+        textPaint.setColor(0xFF0F172A);
+        textPaint.setTextSize(32f);
+        textPaint.setTextAlign(Paint.Align.CENTER);
     }
 
     private void initNewStroke() {
@@ -127,10 +191,13 @@ public class DrawingView extends View {
         super.onDraw(canvas);
 
         canvas.save();
-        // ZOOM VE SADECE DİKEY (Y) DÖNÜŞÜMÜ
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
 
+        // 1. Görselleri Çiz (En alt katmanda dursun)
+        drawImages(canvas);
+
+        // 2. Serbest Çizimleri Çiz
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
@@ -139,17 +206,58 @@ public class DrawingView extends View {
             canvas.drawPath(currentPath, currentPaint);
         }
 
+        // 3. Vektörel Tabloları Çiz
+        drawTables(canvas);
+
         canvas.restore();
+    }
+
+    private void drawImages(Canvas canvas) {
+        for (ImageObject img : images) {
+            if (img.bitmap != null && !img.bitmap.isRecycled()) {
+                RectF dst = new RectF(img.x, img.y, img.x + img.width, img.y + img.height);
+                canvas.drawBitmap(img.bitmap, null, dst, null);
+            }
+        }
+    }
+
+    private void drawTables(Canvas canvas) {
+        Paint gridPaint = new Paint();
+        gridPaint.setAntiAlias(true);
+        gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setColor(0xFF334155);
+        gridPaint.setStrokeWidth(4f);
+
+        for (TableObject table : tables) {
+            float totalWidth = table.cols * table.cellWidth;
+            float totalHeight = table.rows * table.cellHeight;
+
+            for (int i = 0; i <= table.rows; i++) {
+                float y = table.startY + (i * table.cellHeight);
+                canvas.drawLine(table.startX, y, table.startX + totalWidth, y, gridPaint);
+            }
+            for (int j = 0; j <= table.cols; j++) {
+                float x = table.startX + (j * table.cellWidth);
+                canvas.drawLine(x, table.startY, x, table.startY + totalHeight, gridPaint);
+            }
+
+            if (textPaint == null) initTextPaint();
+            for (TableCell cell : table.cells) {
+                if (cell.text != null && !cell.text.isEmpty()) {
+                    float cellCenterX = table.startX + (cell.col * table.cellWidth) + (table.cellWidth / 2f);
+                    float cellCenterY = table.startY + (cell.row * table.cellHeight) + (table.cellHeight / 2f) + 10f;
+                    canvas.drawText(cell.text, cellCenterX, cellCenterY, textPaint);
+                }
+            }
+        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Zoom hareketini işle
         scaleGestureDetector.onTouchEvent(event);
 
         int pointerCount = event.getPointerCount();
 
-        // 1. İKİ PARMAK İLE KAYDIRMA VEYA SCROLL MODU (Sadece Dikey)
         if (pointerCount > 1 || currentTool == ToolMode.SCROLL) {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
@@ -164,7 +272,6 @@ public class DrawingView extends View {
 
                         offsetY += dy;
 
-                        // Sayfanın üst sınırını koru (Sayfa aşağı kaçmasın)
                         if (offsetY > 0) {
                             offsetY = 0;
                         }
@@ -177,11 +284,9 @@ public class DrawingView extends View {
             return true;
         }
 
-        // 2. TEK PARMAK / S-PEN İLE DİKEY YÖNLÜ ÇİZİM
         float rawX = event.getX();
         float rawY = event.getY();
 
-        // Dokunma noktasını Zoom ve Dikey Offset'e göre hesapla
         float touchX = rawX / scaleFactor;
         float touchY = (rawY / scaleFactor) - offsetY;
 
@@ -238,8 +343,76 @@ public class DrawingView extends View {
         return true;
     }
 
+    public void addImageToCanvas(Bitmap bitmap, String uriStr) {
+        if (bitmap == null) return;
+
+        float startX = 80f;
+        float startY = -offsetY + 150f;
+
+        float targetWidth = 400f;
+        float aspectRatio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
+        float targetHeight = targetWidth * aspectRatio;
+
+        ImageObject img = new ImageObject(startX, startY, targetWidth, targetHeight, bitmap, uriStr);
+        images.add(img);
+        invalidate();
+
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
+    public TableCellClickResult checkTableCellClick(float touchX, float touchY) {
+        for (TableObject table : tables) {
+            float totalWidth = table.cols * table.cellWidth;
+            float totalHeight = table.rows * table.cellHeight;
+
+            if (touchX >= table.startX && touchX <= table.startX + totalWidth &&
+                    touchY >= table.startY && touchY <= table.startY + totalHeight) {
+
+                int col = (int) ((touchX - table.startX) / table.cellWidth);
+                int row = (int) ((touchY - table.startY) / table.cellHeight);
+
+                return new TableCellClickResult(table, row, col);
+            }
+        }
+        return null;
+    }
+
+    public void updateTableCellText(TableObject table, int row, int col, String newText) {
+        for (TableCell cell : table.cells) {
+            if (cell.row == row && cell.col == col) {
+                cell.text = newText;
+                invalidate();
+                if (onDrawingChangeListener != null) {
+                    onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+                }
+                return;
+            }
+        }
+        table.cells.add(new TableCell(row, col, newText));
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
+    public void addTableToCanvas(int rows, int cols) {
+        float startX = 80f;
+        float startY = -offsetY + 150f;
+        TableObject newTable = new TableObject(startX, startY, rows, cols);
+        tables.add(newTable);
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
     public String getDrawingJson() {
         try {
+            JSONObject mainObj = new JSONObject();
+
+            // Çizimler
             JSONArray pathsArray = new JSONArray();
             for (DrawPath dp : paths) {
                 JSONObject pathObj = new JSONObject();
@@ -256,7 +429,44 @@ public class DrawingView extends View {
                 pathObj.put("points", pointsArray);
                 pathsArray.put(pathObj);
             }
-            return pathsArray.toString();
+            mainObj.put("paths", pathsArray);
+
+            // Tablolar
+            JSONArray tablesArray = new JSONArray();
+            for (TableObject table : tables) {
+                JSONObject tableObj = new JSONObject();
+                tableObj.put("startX", table.startX);
+                tableObj.put("startY", table.startY);
+                tableObj.put("rows", table.rows);
+                tableObj.put("cols", table.cols);
+
+                JSONArray cellsArray = new JSONArray();
+                for (TableCell cell : table.cells) {
+                    JSONObject cellObj = new JSONObject();
+                    cellObj.put("row", cell.row);
+                    cellObj.put("col", cell.col);
+                    cellObj.put("text", cell.text);
+                    cellsArray.put(cellObj);
+                }
+                tableObj.put("cells", cellsArray);
+                tablesArray.put(tableObj);
+            }
+            mainObj.put("tables", tablesArray);
+
+            // Görseller
+            JSONArray imagesArray = new JSONArray();
+            for (ImageObject img : images) {
+                JSONObject imgObj = new JSONObject();
+                imgObj.put("x", img.x);
+                imgObj.put("y", img.y);
+                imgObj.put("width", img.width);
+                imgObj.put("height", img.height);
+                imgObj.put("uri", img.imageUriStr);
+                imagesArray.put(imgObj);
+            }
+            mainObj.put("images", imagesArray);
+
+            return mainObj.toString();
         } catch (Exception e) {
             e.printStackTrace();
             return "";
@@ -267,38 +477,63 @@ public class DrawingView extends View {
         if (jsonStr == null || jsonStr.isEmpty()) return;
         try {
             paths.clear();
-            JSONArray pathsArray = new JSONArray(jsonStr);
+            tables.clear();
+            images.clear();
 
-            for (int i = 0; i < pathsArray.length(); i++) {
-                JSONObject pathObj = pathsArray.getJSONObject(i);
-                int color = pathObj.getInt("color");
-                float strokeWidth = (float) pathObj.getDouble("strokeWidth");
+            if (!jsonStr.startsWith("{")) {
+                JSONArray pathsArray = new JSONArray(jsonStr);
+                parsePathsJson(pathsArray);
+                return;
+            }
 
-                Paint paint = new Paint();
-                paint.setAntiAlias(true);
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeJoin(Paint.Join.ROUND);
-                paint.setStrokeCap(Paint.Cap.ROUND);
-                paint.setColor(color);
-                paint.setStrokeWidth(strokeWidth);
+            JSONObject mainObj = new JSONObject(jsonStr);
+            if (mainObj.has("paths")) {
+                parsePathsJson(mainObj.getJSONArray("paths"));
+            }
 
-                JSONArray pointsArray = pathObj.getJSONArray("points");
-                Path path = new Path();
-                List<Point> points = new ArrayList<>();
+            if (mainObj.has("tables")) {
+                JSONArray tablesArray = mainObj.getJSONArray("tables");
+                for (int i = 0; i < tablesArray.length(); i++) {
+                    JSONObject tableObj = tablesArray.getJSONObject(i);
+                    float startX = (float) tableObj.getDouble("startX");
+                    float startY = (float) tableObj.getDouble("startY");
+                    int rows = tableObj.getInt("rows");
+                    int cols = tableObj.getInt("cols");
 
-                for (int j = 0; j < pointsArray.length(); j++) {
-                    JSONObject pointObj = pointsArray.getJSONObject(j);
-                    float x = (float) pointObj.getDouble("x");
-                    float y = (float) pointObj.getDouble("y");
-                    points.add(new Point(x, y));
+                    TableObject table = new TableObject(startX, startY, rows, cols);
 
-                    if (j == 0) {
-                        path.moveTo(x, y);
-                    } else {
-                        path.lineTo(x, y);
+                    if (tableObj.has("cells")) {
+                        JSONArray cellsArray = tableObj.getJSONArray("cells");
+                        for (int j = 0; j < cellsArray.length(); j++) {
+                            JSONObject cellObj = cellsArray.getJSONObject(j);
+                            int row = cellObj.getInt("row");
+                            int col = cellObj.getInt("col");
+                            String text = cellObj.getString("text");
+                            table.cells.add(new TableCell(row, col, text));
+                        }
+                    }
+                    tables.add(table);
+                }
+            }
+
+            if (mainObj.has("images")) {
+                JSONArray imagesArray = mainObj.getJSONArray("images");
+                for (int i = 0; i < imagesArray.length(); i++) {
+                    JSONObject imgObj = imagesArray.getJSONObject(i);
+                    float x = (float) imgObj.getDouble("x");
+                    float y = (float) imgObj.getDouble("y");
+                    float w = (float) imgObj.getDouble("width");
+                    float h = (float) imgObj.getDouble("height");
+                    String uriStr = imgObj.getString("uri");
+
+                    try {
+                        android.net.Uri uri = android.net.Uri.parse(uriStr);
+                        Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), uri);
+                        images.add(new ImageObject(x, y, w, h, bitmap, uriStr));
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
-                paths.add(new DrawPath(path, paint, points));
             }
 
             invalidate();
@@ -306,6 +541,43 @@ public class DrawingView extends View {
             e.printStackTrace();
         }
     }
+
+    private void parsePathsJson(JSONArray pathsArray) throws Exception {
+        for (int i = 0; i < pathsArray.length(); i++) {
+            JSONObject pathObj = pathsArray.getJSONObject(i);
+            int color = pathObj.getInt("color");
+            float strokeWidth = (float) pathObj.getDouble("strokeWidth");
+
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setColor(color);
+            paint.setStrokeWidth(strokeWidth);
+
+            JSONArray pointsArray = pathObj.getJSONArray("points");
+            Path path = new Path();
+            List<Point> points = new ArrayList<>();
+
+            for (int j = 0; j < pointsArray.length(); j++) {
+                JSONObject pointObj = pointsArray.getJSONObject(j);
+                float x = (float) pointObj.getDouble("x");
+                float y = (float) pointObj.getDouble("y");
+                points.add(new Point(x, y));
+
+                if (j == 0) {
+                    path.moveTo(x, y);
+                } else {
+                    path.lineTo(x, y);
+                }
+            }
+            paths.add(new DrawPath(path, paint, points));
+        }
+    }
+
+    public float getScaleFactor() { return scaleFactor; }
+    public float getOffsetY() { return offsetY; }
 
     public void setToolMode(ToolMode mode) {
         this.currentTool = mode;
@@ -350,58 +622,11 @@ public class DrawingView extends View {
     public void clearCanvas() {
         paths.clear();
         undonePaths.clear();
+        tables.clear();
+        images.clear();
         if (currentPath != null) currentPath.reset();
         offsetY = 0f;
         scaleFactor = 1.0f;
-        invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-        }
-    }
-
-    public void addTableToCanvas(int rows, int cols) {
-        float startX = 100f;
-        float startY = -offsetY + 200f; // O an ekranda görünen yerin üst kısmına koyar
-        float cellWidth = 150f;
-        float cellHeight = 80f;
-
-        float totalWidth = cols * cellWidth;
-        float totalHeight = rows * cellHeight;
-
-        Paint tablePaint = new Paint();
-        tablePaint.setAntiAlias(true);
-        tablePaint.setStyle(Paint.Style.STROKE);
-        tablePaint.setColor(0xFF334155); // Koyu gri tablo çizgileri
-        tablePaint.setStrokeWidth(4f);
-
-        // Yatay Çizgiler
-        for (int i = 0; i <= rows; i++) {
-            Path yPath = new Path();
-            float y = startY + (i * cellHeight);
-            yPath.moveTo(startX, y);
-            yPath.lineTo(startX + totalWidth, y);
-
-            List<Point> points = new ArrayList<>();
-            points.add(new Point(startX, y));
-            points.add(new Point(startX + totalWidth, y));
-
-            paths.add(new DrawPath(yPath, new Paint(tablePaint), points));
-        }
-
-        // Dikey Çizgiler
-        for (int j = 0; j <= cols; j++) {
-            Path xPath = new Path();
-            float x = startX + (j * cellWidth);
-            xPath.moveTo(x, startY);
-            xPath.lineTo(x, startY + totalHeight);
-
-            List<Point> points = new ArrayList<>();
-            points.add(new Point(x, startY));
-            points.add(new Point(x, startY + totalHeight));
-
-            paths.add(new DrawPath(xPath, new Paint(tablePaint), points));
-        }
-
         invalidate();
         if (onDrawingChangeListener != null) {
             onDrawingChangeListener.onDrawingChanged(getDrawingJson());

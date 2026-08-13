@@ -150,7 +150,7 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- Notlar Listesi (RecyclerView) -->
+    <!-- Notlar Listesi (RecyclerView - Alt Hiza 'parent' Yapıldı) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvNotes"
         android:layout_width="0dp"
@@ -160,25 +160,11 @@
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_note_card"
         app:layout_constraintTop_toBottomOf="@id/headerContainer"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Alt Gezinme Barı (Bottom Navigation) -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:background="#FFFFFF"
-        app:elevation="8dp"
-        app:menu="@menu/bottom_nav_menu"
-        app:itemIconTint="@color/nav_active"
-        app:itemTextColor="@color/nav_active"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Kahve Ismarlama / Bağış Butonu (Küçük FAB) - (+) Simgesinin Solunda -->
+    <!-- Kahve Ismarlama / Bağış Butonu (Küçük FAB) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabDonateCoffee"
         android:layout_width="wrap_content"
@@ -196,13 +182,13 @@
         app:layout_constraintTop_toTopOf="@id/fabAddNote"
         app:layout_constraintEnd_toStartOf="@id/fabAddNote" />
 
-    <!-- Yüzen Ekleme Butonu (FAB) -->
+    <!-- Yüzen Ekleme Butonu (FAB - Alt Marjin 24dp Yapıldı) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="24dp"
         android:src="@drawable/ic_plus"
         app:tint="#FFFFFF"
         app:backgroundTint="#0284C7"
