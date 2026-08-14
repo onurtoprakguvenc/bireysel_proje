@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Çizilecek Şekli Seçin"
+        android:text="@string/cizilecek_sekli_secin"
         android:textStyle="bold"
         android:textSize="16sp"
         android:textColor="#0F172A"
@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Dikdörtgen"
+            android:text="@string/dikdortgen"
             android:backgroundTint="#0284C7"
             android:layout_marginEnd="8dp" />
 
@@ -37,7 +37,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Daire"
+            android:text="@string/daire"
             android:backgroundTint="#0284C7"
             android:layout_marginEnd="8dp" />
 
@@ -47,7 +47,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Düz Çizgi"
+            android:text="@string/duz_cizgi"
             android:backgroundTint="#0284C7" />
     </LinearLayout>
 </LinearLayout>

@@ -69,7 +69,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:text="Tamam"
+        android:text="@string/tamam"
         android:textColor="#0284C7"
         android:layout_marginTop="12dp" />
 </LinearLayout>

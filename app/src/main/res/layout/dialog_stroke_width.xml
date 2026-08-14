@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Fırça Kalınlığı"
+        android:text="@string/firca_kalinligi"
         android:textStyle="bold"
         android:textSize="16sp"
         android:textColor="#0F172A"
@@ -35,7 +35,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="İnce"
+            android:text="@string/nce"
             android:textSize="12sp" />
 
         <Button
@@ -45,7 +45,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginHorizontal="8dp"
-            android:text="Orta"
+            android:text="@string/orta"
             android:textSize="12sp" />
 
         <Button
@@ -54,7 +54,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Kalın"
+            android:text="@string/kal_n"
             android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

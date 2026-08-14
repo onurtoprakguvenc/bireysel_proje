@@ -181,4 +181,25 @@
     <string name="tablo">+ Tablo</string>
     <string name="yazmaya_basla">yazmaya başla</string>
     <string name="basliksiz_not">baslıksız not</string>
+    <string name="tamam">Tamam</string>
+    <string name="duz_cizgi">Düz Çizgi</string>
+    <string name="daire">Daire</string>
+    <string name="dikdortgen">Dikdörtgen</string>
+    <string name="cizilecek_sekli_secin">Çizilecek Şekli Seçin</string>
+    <string name="firca_kalinligi">Fırça Kalınlığı</string>
+    <string name="orta">Orta</string>
+    <string name="nce">İnce</string>
+    <string name="kal_n">Kalın</string>
+    <string name="tablo_boyutu_secin">Tablo Boyutu Seçin</string>
+    <string name="satir_ornek_3">Satır (Örn: 3)</string>
+    <string name="x">x</string>
+    <string name="sutun_ornek_5">Sütun (Örn: 5)</string>
+    <string name="tabloyu_ekle">Tabloyu Ekle</string>
+    <string name="onemli_bilgilendirme">Önemli Bilgilendirme</string>
+    <string name="uyarı_giris_sayfa_pop_up">Bu uygulamada yer alan nörolojik, biyolojik ve psikolojik kavramlar ile metinler yalnızca genel bilgilendirme ve farkındalık amacı taşımaktadır. Tıbbi/klinik bir teşhis, tedavi veya profesyonel sağlık tavsiyesi niteliği taşımaz. Kesin değerlendirme ve eksiksiz bilgi için lütfen bir tıp uzmanına veya hekime danışınız.</string>
+    <string name="anladım_ve_kabul_ediyorum">Anladım ve Kabul Ediyorum</string>
+    <string name="arac_adı">Araç Adı</string>
+    <string name="not_baslıgı">Not Başlığı</string>
+    <string name="tarih">tarih</string>
+    <string name="not_icerigi_burada_gorunecek">Not içeriği burada görünecek...</string>
 </resources>
