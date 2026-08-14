@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFC"
+    android:fitsSystemWindows="true"
     tools:context=".model.MainActivity">
 
     <!-- Üst Bar & Arama Alanı Kapsayıcısı -->
@@ -61,13 +62,14 @@
                 <!-- KÖPRÜ: Zihinsel Kütüphaneye Geçiş Butonu -->
                 <ImageButton
                     android:id="@+id/btnLibraryBridge"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_brain"
                     app:tint="#0284C7"
                     android:contentDescription="@string/kutuphane_koprusu"
-                    android:layout_marginEnd="8dp" />
+                    android:layout_marginEnd="4dp" />
 
                 <!-- Görünüm Değiştirme (Grid/List) -->
                 <ImageButton

@@ -58,13 +58,13 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         setupClickListeners();
         setupSearchListener();
-        setupCategoryChips();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         loadNotesFromDatabase();
+        loadDynamicCategoryChips(); // ARTIK CANLI ÇAĞRILIYOR
     }
 
     private void initViews() {
@@ -109,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
         rvNotes.setAdapter(noteAdapter);
     }
 
-    // VERİTABANINDAN VERİLERİ ARKA PLANDA ÇEKER
     private void loadNotesFromDatabase() {
         if (noteDao == null) return;
 
@@ -150,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 Toast.makeText(MainActivity.this, "Not silindi", Toast.LENGTH_SHORT).show();
                 loadNotesFromDatabase();
+                loadDynamicCategoryChips(); // Silindikten sonra kategorileri güncelle
             });
         });
     }
@@ -281,28 +281,106 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void setupCategoryChips() {
-        if (categoryChipContainer == null) return;
+    // DİNAMİK ÇİPLERİ ÜRETEN VE TIKLANABİLİR YAPAN METOD
+    private void loadDynamicCategoryChips() {
+        if (categoryChipContainer == null || noteDao == null) return;
 
-        for (int i = 0; i < categoryChipContainer.getChildCount(); i++) {
-            View child = categoryChipContainer.getChildAt(i);
-            if (child instanceof TextView) {
-                TextView chip = (TextView) child;
-                chip.setOnClickListener(v -> {
-                    resetChipStyles();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<notentity> allNotes = noteDao.getAllNotes();
+            List<String> dynamicCategories = new ArrayList<>();
 
-                    chip.setBackgroundResource(R.drawable.bg_chip_active);
-                    chip.setTextColor(getResources().getColor(android.R.color.white));
+            // Temel varsayılan kategoriler
+            dynamicCategories.add("Tümü");
+            dynamicCategories.add("Kişisel");
+            dynamicCategories.add("Geçici");
 
-                    String categoryText = chip.getText().toString();
-                    if (categoryText.equalsIgnoreCase("Tümü") || categoryText.equalsIgnoreCase("All")) {
-                        loadNotesFromDatabase();
-                    } else {
-                        filterNotesFromDatabase(categoryText);
+            // Kullanıcının oluşturduğu ek kategorileri veritabanından çekip ekler
+            for (notentity note : allNotes) {
+                if (note.category != null && !note.category.trim().isEmpty()) {
+                    String cat = note.category.trim();
+                    if (!dynamicCategories.contains(cat)) {
+                        dynamicCategories.add(cat);
                     }
-                });
+                }
             }
-        }
+
+            runOnUiThread(() -> {
+                categoryChipContainer.removeAllViews(); // XML'deki cansız dummy çipler silinir
+
+                for (String categoryName : dynamicCategories) {
+                    TextView chip = new TextView(this);
+                    chip.setText(categoryName);
+                    chip.setTextSize(12f);
+                    chip.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
+
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                    );
+                    params.setMargins(0, 0, dpToPx(8), 0);
+                    chip.setLayoutParams(params);
+
+                    if (categoryName.equalsIgnoreCase("Tümü")) {
+                        chip.setBackgroundResource(R.drawable.bg_chip_active);
+                        chip.setTextColor(getResources().getColor(android.R.color.white));
+                    } else {
+                        chip.setBackgroundResource(R.drawable.bg_chip_inactive);
+                        chip.setTextColor(getResources().getColor(R.color.text_secondary));
+                    }
+
+                    // TIKLAMA VE FİLTRELEME OLAYI
+                    chip.setOnClickListener(v -> {
+                        resetChipStyles();
+                        chip.setBackgroundResource(R.drawable.bg_chip_active);
+                        chip.setTextColor(getResources().getColor(android.R.color.white));
+
+                        if (categoryName.equalsIgnoreCase("Tümü")) {
+                            loadNotesFromDatabase();
+                        } else {
+                            filterNotesByCategory(categoryName);
+                        }
+                    });
+
+                    categoryChipContainer.addView(chip);
+                }
+            });
+        });
+    }
+
+    private void filterNotesByCategory(String category) {
+        if (noteDao == null) return;
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<notentity> dbEntities = noteDao.getAllNotes();
+            List<NoteModel> filteredList = new ArrayList<>();
+
+            for (notentity entity : dbEntities) {
+                if (entity.category != null && entity.category.equalsIgnoreCase(category)) {
+                    filteredList.add(new NoteModel(
+                            entity.id,
+                            entity.title,
+                            entity.content,
+                            entity.timestamp,
+                            entity.category,
+                            entity.isPinned
+                    ));
+                }
+            }
+
+            runOnUiThread(() -> {
+                noteList.clear();
+                noteList.addAll(filteredList);
+                if (noteAdapter != null) {
+                    noteAdapter.updateList(noteList);
+                }
+                updateNoteCount(noteList.size());
+            });
+        });
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round((float) dp * density);
     }
 
     private void resetChipStyles() {

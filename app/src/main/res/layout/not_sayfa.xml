@@ -135,7 +135,7 @@
                     app:tint="#475569" />
             </LinearLayout>
 
-            <!-- 2. Katman: Kalem Çizim Modu, Fosforlu Kalem, Renkler ve Temizleme -->
+            <!-- 2. Katman: Kalem, Fosforlu Kalem, Metin (T), Renkler ve Temizleme -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
@@ -175,6 +175,28 @@
                         android:contentDescription="@string/app_name"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         app:tint="#475569" />
+                </FrameLayout>
+
+                <!-- Metin Yazma Modu (T) -->
+                <FrameLayout
+                    android:id="@+id/frameToolText"
+                    android:layout_width="44dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_chip_inactive">
+
+                    <TextView
+                        android:id="@+id/btnToolText"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="T"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:textColor="#475569"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </FrameLayout>
 
                 <!-- Renk Paleti (Yatay Kaydırılabilir) -->
@@ -293,22 +315,7 @@
                 app:iconSize="14dp"
                 app:cornerRadius="8dp" />
 
-            <Button
-                android:id="@+id/btnRecordVoice"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="@string/ses_kaydi"
-                android:textSize="11sp"
-                android:textColor="#334155"
-                android:backgroundTint="#F1F5F9"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                app:icon="@drawable/ic_mic"
-                app:iconTint="#334155"
-                app:iconSize="14dp"
-                app:cornerRadius="8dp" />
+
         </LinearLayout>
     </LinearLayout>
 

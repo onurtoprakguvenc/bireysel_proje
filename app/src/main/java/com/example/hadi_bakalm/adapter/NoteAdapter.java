@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -48,23 +49,32 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         if (position < filteredList.size()) {
             NoteModel note = filteredList.get(position);
-            holder.tvTitle.setText(note.getTitle());
-            holder.tvContent.setText(note.getContent());
-            holder.tvDate.setText(note.getDate());
+
+            // DOĞRU DEĞİŞKEN İSİMLERİ İLE BAĞLAMA:
+            holder.tvNoteTitle.setText(note.getTitle());
+            holder.tvNoteContent.setText(note.getContent());
+            holder.tvNoteDate.setText(note.getDate());
+
+            // Sabitleme rozeti (iğne) görünürlüğü
+            if (note.isPinned()) {
+                holder.ivPinBadge.setVisibility(View.VISIBLE);
+            } else {
+                holder.ivPinBadge.setVisibility(View.GONE);
+            }
 
             // Normal Tıklama
             holder.itemView.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onItemClick(note, position);
+                    listener.onItemClick(note, holder.getAdapterPosition());
                 }
             });
 
-            // BASILI TUTMA (LONG CLICK) - SİLME İÇİN
+            // Basılı Tutma (Long Click) - Silme İçin
             holder.itemView.setOnLongClickListener(v -> {
                 if (listener != null) {
-                    listener.onItemLongClick(note, position);
+                    listener.onItemLongClick(note, holder.getAdapterPosition());
                 }
-                return true; // Tıklama olayını tüketir
+                return true;
             });
         }
     }
@@ -97,13 +107,15 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     }
 
     public static class NoteViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTitle, tvContent, tvDate;
+        TextView tvNoteTitle, tvNoteContent, tvNoteDate;
+        ImageView ivPinBadge; // 1. BURAYA TANIMLA
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitle = itemView.findViewById(R.id.tvNoteTitle);
-            tvContent = itemView.findViewById(R.id.tvNoteContent);
-            tvDate = itemView.findViewById(R.id.tvNoteDate);
+            tvNoteTitle = itemView.findViewById(R.id.tvNoteTitle);
+            tvNoteContent = itemView.findViewById(R.id.tvNoteContent);
+            tvNoteDate = itemView.findViewById(R.id.tvNoteDate);
+            ivPinBadge = itemView.findViewById(R.id.ivPinBadge); // 2. BURADA BAĞLA
         }
     }
 }

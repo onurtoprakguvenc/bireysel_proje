@@ -10,16 +10,29 @@
     app:cardElevation="2dp"
     app:strokeWidth="0dp">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
+
+        <!-- Sabitleme Rozeti (İğne İkonu) -->
+        <ImageView
+            android:id="@+id/ivPinBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:src="@drawable/ic_pin"
+            android:visibility="gone"
+            app:tint="#EAB308"
+            android:contentDescription="@string/app_name" />
 
         <TextView
             android:id="@+id/tvNoteTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/ivPinBadge"
+            android:layout_marginEnd="8dp"
             android:text="Not Başlığı"
             android:textColor="@color/text_primary"
             android:textSize="16sp"
@@ -29,6 +42,7 @@
             android:id="@+id/tvNoteContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@id/tvNoteTitle"
             android:layout_marginTop="6dp"
             android:ellipsize="end"
             android:maxLines="2"
@@ -40,11 +54,12 @@
             android:id="@+id/tvNoteDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_below="@id/tvNoteContent"
             android:layout_marginTop="8dp"
             android:text="11 Ağu 2026"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
 
-    </LinearLayout>
+    </RelativeLayout>
 
 </com.google.android.material.card.MaterialCardView>

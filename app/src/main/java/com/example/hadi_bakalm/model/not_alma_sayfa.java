@@ -15,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -42,7 +43,8 @@ public class not_alma_sayfa extends AppCompatActivity {
     private DrawingView globalDrawingCanvas;
     private LinearLayout drawingToolBar;
 
-    private FrameLayout frameToolPen, frameToolHighlighter;
+    private FrameLayout frameToolPen, frameToolHighlighter, frameToolText;
+    private TextView btnToolText;
     private List<NoteBlockModel> blockList;
 
     private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser;
@@ -50,17 +52,16 @@ public class not_alma_sayfa extends AppCompatActivity {
     private ImageButton btnColorPicker, btnClearCanvas;
 
     private ImageView colorBlack, colorBlue, colorRed, colorGreen;
-    private Button btnAddTable, btnAddImage, btnRecordVoice;
+    private Button btnAddTable, btnAddImage;
 
     private boolean isPinned = false;
-    private boolean isVoiceRecording = false;
     private int currentNoteId = -1;
     private float currentStrokeWidth = 8f;
     private DrawingView.ToolMode activeMode = DrawingView.ToolMode.PEN;
 
+    private String currentCategory = "Kişisel";
     private notdao noteDao;
 
-    // GALERİ SEÇİCİ LAUNCHER
     private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
@@ -71,7 +72,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         noteDao = not_app_database.getInstance(this).noteDao();
         blockList = new ArrayList<>();
 
-        // Galeri Dinleyicisini Başlat
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -92,11 +92,16 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
-        setupTableTouchListener();
+        setupCanvasTouchListener();
 
         if (getIntent() != null) {
             currentNoteId = getIntent().getIntExtra("EXTRA_NOTE_ID", -1);
             String incomingTitle = getIntent().getStringExtra("EXTRA_NOTE_TITLE");
+
+            String incomingCategory = getIntent().getStringExtra("EXTRA_NOTE_CATEGORY");
+            if (incomingCategory != null && !incomingCategory.trim().isEmpty()) {
+                currentCategory = incomingCategory.trim();
+            }
 
             if (incomingTitle != null && etNoteTitle != null) {
                 etNoteTitle.setText(incomingTitle);
@@ -104,10 +109,20 @@ public class not_alma_sayfa extends AppCompatActivity {
 
             if (currentNoteId != -1 && noteDao != null) {
                 notentity existingNote = noteDao.getNoteById(currentNoteId);
-                if (existingNote != null && existingNote.blocks != null) {
-                    for (NoteBlockModel block : existingNote.blocks) {
-                        if (block.getType() == NoteBlockModel.BlockType.DRAWING && globalDrawingCanvas != null) {
-                            globalDrawingCanvas.loadDrawingFromJson(block.getContent());
+                if (existingNote != null) {
+                    isPinned = existingNote.isPinned;
+                    if (btnPinNote != null) {
+                        btnPinNote.setColorFilter(isPinned ? 0xFFEAB308 : 0xFF94A3B8);
+                    }
+
+                    if (existingNote.category != null) {
+                        currentCategory = existingNote.category;
+                    }
+                    if (existingNote.blocks != null && globalDrawingCanvas != null) {
+                        for (NoteBlockModel block : existingNote.blocks) {
+                            if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
+                                globalDrawingCanvas.loadDrawingFromJson(block.getContent());
+                            }
                         }
                     }
                 }
@@ -122,6 +137,12 @@ public class not_alma_sayfa extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        autoSaveNote();
+    }
+
     private void initViews() {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
@@ -132,6 +153,8 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         frameToolPen = findViewById(R.id.frameToolPen);
         frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
+        frameToolText = findViewById(R.id.frameToolText);
+        btnToolText = findViewById(R.id.btnToolText);
 
         btnToolScroll = findViewById(R.id.btnToolScroll);
         btnToolPen = findViewById(R.id.btnToolPen);
@@ -151,11 +174,10 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         btnAddTable = findViewById(R.id.btnAddTable);
         btnAddImage = findViewById(R.id.btnAddImage);
-        btnRecordVoice = findViewById(R.id.btnRecordVoice);
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void setupTableTouchListener() {
+    private void setupCanvasTouchListener() {
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -167,10 +189,68 @@ public class not_alma_sayfa extends AppCompatActivity {
                         showCellTextInputDialog(result);
                         return true;
                     }
+
+                    if (activeMode == DrawingView.ToolMode.TEXT) {
+                        DrawingView.TextObject clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
+                        if (clickedText != null) {
+                            showEditTextDialog(clickedText);
+                        } else {
+                            showFreeTextInputDialog(touchX, touchY);
+                        }
+                        return true;
+                    }
                 }
                 return false;
             });
         }
+    }
+
+    private void showEditTextDialog(DrawingView.TextObject textObj) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Metni Düzenle");
+
+        final EditText input = new EditText(this);
+        input.setText(textObj.text);
+        input.setSelection(textObj.text.length());
+        input.setPadding(40, 32, 40, 32);
+        builder.setView(input);
+
+        builder.setPositiveButton("Güncelle", (dialog, which) -> {
+            String newText = input.getText().toString().trim();
+            if (newText.isEmpty()) {
+                globalDrawingCanvas.removeTextObject(textObj);
+            } else {
+                globalDrawingCanvas.updateTextObject(textObj, newText);
+            }
+        });
+
+        builder.setNeutralButton("Sil", (dialog, which) -> {
+            globalDrawingCanvas.removeTextObject(textObj);
+            Toast.makeText(this, "Metin silindi", Toast.LENGTH_SHORT).show();
+        });
+
+        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    private void showFreeTextInputDialog(float x, float y) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Metin Ekle");
+
+        final EditText input = new EditText(this);
+        input.setHint("Notunuzu buraya yazın...");
+        input.setPadding(40, 32, 40, 32);
+        builder.setView(input);
+
+        builder.setPositiveButton("Ekle", (dialog, which) -> {
+            String text = input.getText().toString().trim();
+            if (!text.isEmpty() && globalDrawingCanvas != null) {
+                globalDrawingCanvas.addTextToCanvas(x, y, text, 0xFF0F172A);
+            }
+        });
+
+        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 
     private void showCellTextInputDialog(DrawingView.TableCellClickResult result) {
@@ -238,6 +318,15 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
+        if (btnToolText != null) {
+            btnToolText.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.TEXT;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Metin Modu: Tuvalde istediğiniz yere dokunun", Toast.LENGTH_SHORT).show();
+            });
+        }
+
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.ERASER;
@@ -263,7 +352,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnToolShapes.setOnClickListener(v -> showShapePickerDialog());
         }
 
-        // RENK SEÇME PALETİ DIALOG'UNU ÇAĞIRAN BUTON
         if (btnColorPicker != null) {
             btnColorPicker.setOnClickListener(v -> showColorPickerDialog());
         }
@@ -296,7 +384,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnAddTable.setOnClickListener(v -> showTableCreationDialog());
         }
 
-        // GÖRSEL BUTONUNA BASILINCA GALERİYİ AÇAR
         if (btnAddImage != null) {
             btnAddImage.setOnClickListener(v -> {
                 if (imagePickerLauncher != null) {
@@ -304,16 +391,8 @@ public class not_alma_sayfa extends AppCompatActivity {
                 }
             });
         }
-
-        if (btnRecordVoice != null) {
-            btnRecordVoice.setOnClickListener(v -> {
-                isVoiceRecording = !isVoiceRecording;
-                btnRecordVoice.setText(isVoiceRecording ? "Duraklat" : "Ses Kaydı");
-            });
-        }
     }
 
-    // ÖZEL RENK PALETİ DIALOG PENCERESİ
     private void showColorPickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_color_picker, null);
@@ -513,7 +592,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
-    private void saveNoteAndExit() {
+    private void autoSaveNote() {
         String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
         if (TextUtils.isEmpty(title)) {
             title = "Başlıksız Not";
@@ -528,7 +607,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             blockList.add(drawingBlock);
         }
 
-        notentity note = new notentity(title, "Çizim Notu", "Kişisel", "#0284C7", currentTime);
+        notentity note = new notentity(title, "Çizim Notu", currentCategory, "#0284C7", currentTime);
         note.isPinned = isPinned;
         note.blocks = blockList;
 
@@ -536,13 +615,15 @@ public class not_alma_sayfa extends AppCompatActivity {
             if (currentNoteId != -1) {
                 note.id = currentNoteId;
                 noteDao.updateNote(note);
-                Toast.makeText(this, "Not Güncellendi", Toast.LENGTH_SHORT).show();
             } else {
-                noteDao.insertNote(note);
-                Toast.makeText(this, "Yeni Not Kaydedildi", Toast.LENGTH_SHORT).show();
+                long newId = noteDao.insertNote(note);
+                currentNoteId = (int) newId;
             }
         }
+    }
 
+    private void saveNoteAndExit() {
+        autoSaveNote();
         finish();
     }
 
@@ -560,6 +641,14 @@ public class not_alma_sayfa extends AppCompatActivity {
             frameToolHighlighter.setBackgroundResource(isHighlighter ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
             if (btnToolHighlighter != null) {
                 btnToolHighlighter.setColorFilter(isHighlighter ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+
+        if (frameToolText != null) {
+            boolean isText = (mode == DrawingView.ToolMode.TEXT);
+            frameToolText.setBackgroundResource(isText ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolText != null) {
+                btnToolText.setTextColor(isText ? 0xFF0284C7 : 0xFF475569);
             }
         }
     }

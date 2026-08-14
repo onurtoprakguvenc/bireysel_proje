@@ -21,7 +21,7 @@ import java.util.List;
 
 public class DrawingView extends View {
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, CIRCLE, LINE }
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, CIRCLE, LINE, TEXT }
 
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
@@ -86,6 +86,22 @@ public class DrawingView extends View {
         }
     }
 
+    // --- SERBEST METİN NESNESİ MODELİ ---
+    public static class TextObject {
+        public float x, y;
+        public String text;
+        public int color;
+        public float textSize;
+
+        public TextObject(float x, float y, String text, int color, float textSize) {
+            this.x = x;
+            this.y = y;
+            this.text = text;
+            this.color = color;
+            this.textSize = textSize;
+        }
+    }
+
     public static class Point {
         public float x, y;
         public Point(float x, float y) { this.x = x; this.y = y; }
@@ -107,10 +123,12 @@ public class DrawingView extends View {
     private final List<DrawPath> undonePaths = new ArrayList<>();
     private final List<TableObject> tables = new ArrayList<>();
     private final List<ImageObject> images = new ArrayList<>();
+    private final List<TextObject> textObjects = new ArrayList<>();
 
     private Path currentPath;
     private Paint currentPaint;
     private Paint textPaint;
+    private Paint freeTextPaint;
     private List<Point> currentPoints;
 
     private int currentColor = 0xFF09090B;
@@ -150,6 +168,10 @@ public class DrawingView extends View {
         textPaint.setColor(0xFF0F172A);
         textPaint.setTextSize(32f);
         textPaint.setTextAlign(Paint.Align.CENTER);
+
+        freeTextPaint = new Paint();
+        freeTextPaint.setAntiAlias(true);
+        freeTextPaint.setTextAlign(Paint.Align.LEFT);
     }
 
     private void initNewStroke() {
@@ -194,19 +216,22 @@ public class DrawingView extends View {
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
 
-        // 1. Görselleri Çiz (En alt katmanda dursun)
+        // 1. Görselleri Çiz
         drawImages(canvas);
 
-        // 2. Serbest Çizimleri Çiz
+        // 2. Serbest Metinleri Çiz
+        drawFreeTexts(canvas);
+
+        // 3. Çizimleri Çiz
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
 
-        if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL) {
+        if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL && currentTool != ToolMode.TEXT) {
             canvas.drawPath(currentPath, currentPaint);
         }
 
-        // 3. Vektörel Tabloları Çiz
+        // 4. Vektörel Tabloları Çiz
         drawTables(canvas);
 
         canvas.restore();
@@ -217,6 +242,17 @@ public class DrawingView extends View {
             if (img.bitmap != null && !img.bitmap.isRecycled()) {
                 RectF dst = new RectF(img.x, img.y, img.x + img.width, img.y + img.height);
                 canvas.drawBitmap(img.bitmap, null, dst, null);
+            }
+        }
+    }
+
+    private void drawFreeTexts(Canvas canvas) {
+        if (freeTextPaint == null) initTextPaint();
+        for (TextObject t : textObjects) {
+            if (t.text != null && !t.text.isEmpty()) {
+                freeTextPaint.setColor(t.color);
+                freeTextPaint.setTextSize(t.textSize > 0 ? t.textSize : 36f);
+                canvas.drawText(t.text, t.x, t.y, freeTextPaint);
             }
         }
     }
@@ -284,6 +320,11 @@ public class DrawingView extends View {
             return true;
         }
 
+        // TEXT modunda iken dokunma çizim üretmesin
+        if (currentTool == ToolMode.TEXT) {
+            return false;
+        }
+
         float rawX = event.getX();
         float rawY = event.getY();
 
@@ -341,6 +382,15 @@ public class DrawingView extends View {
         }
         invalidate();
         return true;
+    }
+
+    public void addTextToCanvas(float x, float y, String text, int color) {
+        if (text == null || text.trim().isEmpty()) return;
+        textObjects.add(new TextObject(x, y, text, color, 36f));
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
     }
 
     public void addImageToCanvas(Bitmap bitmap, String uriStr) {
@@ -466,6 +516,19 @@ public class DrawingView extends View {
             }
             mainObj.put("images", imagesArray);
 
+            // Serbest Metinler
+            JSONArray textsArray = new JSONArray();
+            for (TextObject t : textObjects) {
+                JSONObject tObj = new JSONObject();
+                tObj.put("x", t.x);
+                tObj.put("y", t.y);
+                tObj.put("text", t.text);
+                tObj.put("color", t.color);
+                tObj.put("textSize", t.textSize);
+                textsArray.put(tObj);
+            }
+            mainObj.put("texts", textsArray);
+
             return mainObj.toString();
         } catch (Exception e) {
             e.printStackTrace();
@@ -479,6 +542,7 @@ public class DrawingView extends View {
             paths.clear();
             tables.clear();
             images.clear();
+            textObjects.clear();
 
             if (!jsonStr.startsWith("{")) {
                 JSONArray pathsArray = new JSONArray(jsonStr);
@@ -533,6 +597,19 @@ public class DrawingView extends View {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                }
+            }
+
+            if (mainObj.has("texts")) {
+                JSONArray textsArray = mainObj.getJSONArray("texts");
+                for (int i = 0; i < textsArray.length(); i++) {
+                    JSONObject tObj = textsArray.getJSONObject(i);
+                    float x = (float) tObj.getDouble("x");
+                    float y = (float) tObj.getDouble("y");
+                    String text = tObj.getString("text");
+                    int color = tObj.getInt("color");
+                    float textSize = (float) tObj.getDouble("textSize");
+                    textObjects.add(new TextObject(x, y, text, color, textSize));
                 }
             }
 
@@ -624,9 +701,48 @@ public class DrawingView extends View {
         undonePaths.clear();
         tables.clear();
         images.clear();
+        textObjects.clear();
         if (currentPath != null) currentPath.reset();
         offsetY = 0f;
         scaleFactor = 1.0f;
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
+    // 1. Dokunulan yerde kayıtlı bir metin var mı kontrol eden metod (Hit-Test)
+    public TextObject checkTextClick(float touchX, float touchY) {
+        if (freeTextPaint == null) initTextPaint();
+
+        for (int i = textObjects.size() - 1; i >= 0; i--) {
+            TextObject t = textObjects.get(i);
+            float textWidth = freeTextPaint.measureText(t.text);
+            float textHeight = t.textSize > 0 ? t.textSize : 36f;
+
+            // Dokunma toleransı (Padding) ile birlikte metin sınırları kontrolü
+            if (touchX >= t.x - 20f && touchX <= t.x + textWidth + 20f &&
+                    touchY >= t.y - textHeight - 20f && touchY <= t.y + 20f) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    // 2. Mevcut metni güncelleme metodu
+    public void updateTextObject(TextObject textObj, String newText) {
+        if (textObj == null) return;
+        textObj.text = newText;
+        invalidate();
+        if (onDrawingChangeListener != null) {
+            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+        }
+    }
+
+    // 3. Metni silme metodu
+    public void removeTextObject(TextObject textObj) {
+        if (textObj == null) return;
+        textObjects.remove(textObj);
         invalidate();
         if (onDrawingChangeListener != null) {
             onDrawingChangeListener.onDrawingChanged(getDrawingJson());
