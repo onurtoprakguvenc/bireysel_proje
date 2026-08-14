@@ -395,7 +395,9 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.HIGHLIGHTER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Fosforlu Kalem Modu", Toast.LENGTH_SHORT).show();
+
+                // Fosforlu kalem kalınlık penceresi (10px - 60px arası)
+                showStrokeSizeDialog("Fosforlu Kalem Kalınlığı", 10f, 60f, 15f, 30f, 50f);
             });
         }
 
@@ -413,9 +415,13 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnToolEraser.setOnClickListener(v -> {
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.ERASER;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                if (globalDrawingCanvas != null) {
+                    globalDrawingCanvas.setToolMode(activeMode);
+                }
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Silgi Modu", Toast.LENGTH_SHORT).show();
+
+                // Silgi kalınlık seçme diyaloğunu aç
+                showEraserWidthDialog();
             });
         }
 
@@ -620,43 +626,47 @@ public class not_alma_sayfa extends AppCompatActivity {
         Button btnCircle = dialogView.findViewById(R.id.btnShapeCircle);
         Button btnLine = dialogView.findViewById(R.id.btnShapeLine);
 
+        // KARE
         if (btnSquare != null) {
             btnSquare.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.SQUARE;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kare çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                showStrokeSizeDialog("Kare Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
             });
         }
 
+        // DİKDÖRTGEN
         if (btnRectangle != null) {
             btnRectangle.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.RECTANGLE;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Dikdörtgen çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                showStrokeSizeDialog("Dikdörtgen Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
             });
         }
 
+        // DAİRE
         if (btnCircle != null) {
             btnCircle.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.CIRCLE;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Daire çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                showStrokeSizeDialog("Daire Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
             });
         }
 
+        // DÜZ ÇİZGİ
         if (btnLine != null) {
             btnLine.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.LINE;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Düz çizgi çizebilirsiniz", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                showStrokeSizeDialog("Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
             });
         }
 
@@ -830,6 +840,83 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnCloseEraserDialog != null) {
             btnCloseEraserDialog.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
+
+    private void showStrokeSizeDialog(String title, float minSize, float maxSize, float defaultThin, float defaultMedium, float defaultThick) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.silgi_kalinlik_ayarlama, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        TextView tvTitle = dialogView.findViewById(R.id.tvEraserSizePreview); // Üst başlık/önizleme
+        TextView tvMainTitle = (TextView) ((LinearLayout) dialogView).getChildAt(0); // İlk TextView başlık
+        if (tvMainTitle != null) {
+            tvMainTitle.setText(title);
+        }
+
+        SeekBar seekBarWidth = dialogView.findViewById(R.id.seekBarEraserWidth);
+        Button btnThin = dialogView.findViewById(R.id.btnEraserThin);
+        Button btnMedium = dialogView.findViewById(R.id.btnEraserMedium);
+        Button btnThick = dialogView.findViewById(R.id.btnEraserThick);
+        Button btnClose = dialogView.findViewById(R.id.btnCloseEraserDialog);
+
+        if (seekBarWidth != null) {
+            seekBarWidth.setMax((int) maxSize);
+            seekBarWidth.setProgress((int) currentStrokeWidth);
+            if (tvTitle != null) {
+                tvTitle.setText("Kalınlık: " + (int) currentStrokeWidth + " px");
+            }
+
+            seekBarWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    currentStrokeWidth = Math.max(minSize, progress);
+                    if (globalDrawingCanvas != null) {
+                        globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                    }
+                    if (tvTitle != null) {
+                        tvTitle.setText("Kalınlık: " + (int) currentStrokeWidth + " px");
+                    }
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {}
+            });
+        }
+
+        if (btnThin != null) {
+            btnThin.setOnClickListener(v -> {
+                currentStrokeWidth = defaultThin;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnMedium != null) {
+            btnMedium.setOnClickListener(v -> {
+                currentStrokeWidth = defaultMedium;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnThick != null) {
+            btnThick.setOnClickListener(v -> {
+                currentStrokeWidth = defaultThick;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> dialog.dismiss());
         }
 
         dialog.show();

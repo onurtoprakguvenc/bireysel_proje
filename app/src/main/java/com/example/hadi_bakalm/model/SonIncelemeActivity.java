@@ -188,18 +188,37 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
             new AlertDialog.Builder(SonIncelemeActivity.this)
                     .setTitle("Geçmişi Temizle")
-                    .setMessage("Tüm inceleme geçmişiniz silinecektir. Onaylıyor musunuz?")
+                    .setMessage("Tüm inceleme geçmişiniz temizlenecektir. Kaydedilen içerikleriniz silinmez. Onaylıyor musunuz?")
                     .setPositiveButton("Temizle", (dialog, which) -> {
                         new Thread(() -> {
                             if (db != null) {
-                                db.conceptDao_kavram().deleteAll();
-                                db.metinDao().deleteAll();
+                                // 1. Tüm Kavramların son inceleme zamanını sıfırla
+                                List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                                if (allConcepts != null) {
+                                    for (ConceptItem_kavram concept : allConcepts) {
+                                        if (concept.getLastViewedTime() > 0) {
+                                            concept.setLastViewedTime(0);
+                                            db.conceptDao_kavram().update(concept);
+                                        }
+                                    }
+                                }
+
+                                // 2. Tüm Metinlerin son inceleme zamanını sıfırla
+                                List<MetinItem> allMetinler = db.metinDao().getRecentMetinler();
+                                if (allMetinler != null) {
+                                    for (MetinItem metin : allMetinler) {
+                                        if (metin.getLastViewedTime() > 0) {
+                                            metin.setLastViewedTime(0);
+                                            db.metinDao().update(metin);
+                                        }
+                                    }
+                                }
                             }
 
                             runOnUiThread(() -> {
                                 tumListe.clear();
                                 applyFilterAndSearch();
-                                Toast.makeText(SonIncelemeActivity.this, "Geçmiş temizlendi.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(SonIncelemeActivity.this, "İnceleme geçmişi temizlendi.", Toast.LENGTH_SHORT).show();
                             });
                         }).start();
                     })

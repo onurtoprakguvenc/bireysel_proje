@@ -6,12 +6,14 @@
     android:layout_height="match_parent"
     android:background="@color/bg_main">
 
-    <!-- ÜST İÇERİK ALANI (Scroll Olabilir Yapı) -->
-    <ScrollView
+    <!-- ÜST İÇERİK ALANI (Pürüzsüz NestedScrollView) -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigation"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -20,21 +22,64 @@
             android:paddingStart="20dp"
             android:paddingTop="36dp"
             android:paddingEnd="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="40dp">
 
-            <!-- 1. Üst Başlık ve Temizle Butonu -->
-            <LinearLayout
+            <!-- 1. ÜST BAŞLIK VE TEMİZLE BUTONU (ÇAKIŞMASIZ HİZALAMA) -->
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_marginBottom="16dp"/>
+
+            <!-- 1. ÜST BAŞLIK VE TEMİZLE BUTONU -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <!-- Sağ Taraf: Temizle Butonu (Net dokunma alanı) -->
+                <LinearLayout
+                    android:id="@+id/btnClearHistory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_clear_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingHorizontal="14dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="4dp"
+                        android:clickable="false"
+                        android:contentDescription="@null"
+                        android:duplicateParentState="true"
+                        android:focusable="false"
+                        android:src="@drawable/ic_trash"
+                        app:tint="#EF4444" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:duplicateParentState="true"
+                        android:focusable="false"
+                        android:text="@string/temizle"
+                        android:textColor="#EF4444"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <!-- Sol Taraf: Başlık -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="12dp"
+                    android:layout_toStartOf="@id/btnClearHistory"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -54,43 +99,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Sağ Taraf: Temizle Butonu -->
-                <LinearLayout
-                    android:id="@+id/btnClearHistory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_clear_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:paddingStart="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="8dp"
-                    tools:ignore="TouchTargetSizeCheck">
-
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginEnd="4dp"
-                        android:clickable="false"
-                        android:contentDescription="@null"
-                        android:focusable="false"
-                        android:src="@drawable/ic_trash"
-                        app:tint="#EF4444" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:text="@string/temizle"
-                        android:textColor="#EF4444"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-            </LinearLayout>
+            </RelativeLayout>
 
             <!-- 2. Arama Çubuğu -->
             <RelativeLayout
@@ -250,7 +259,7 @@
                 tools:listitem="@layout/item_son_inceleme_kart" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- ALT NAVİGASYON BARI -->
     <LinearLayout
