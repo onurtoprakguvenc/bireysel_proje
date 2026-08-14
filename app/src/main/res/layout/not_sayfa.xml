@@ -49,13 +49,33 @@
             app:tint="#94A3B8" />
     </LinearLayout>
 
-    <!-- TEK VE ÖZGÜR KATMAN: Tüm Ekranı Kaplayan Tuval -->
-    <com.example.hadi_bakalm.model.DrawingView
-        android:id="@+id/globalDrawingCanvas"
+    <!-- TUVAL VE CANLI (INLINE) METİN KATMANI -->
+    <FrameLayout
+        android:id="@+id/canvasContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/editorHeader"
-        android:layout_above="@id/editorFooterToolbar" />
+        android:layout_above="@id/editorFooterToolbar">
+
+        <com.example.hadi_bakalm.model.DrawingView
+            android:id="@+id/globalDrawingCanvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Tuval üstünde canlı yazı yazma kutusu (Penceresiz) -->
+        <EditText
+            android:id="@+id/inlineTextEditor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:textColor="#0F172A"
+            android:textSize="18sp"
+            android:minWidth="60dp"
+            android:visibility="gone"
+            android:imeOptions="actionDone"
+            android:inputType="textMultiLine"
+            android:padding="2dp" />
+    </FrameLayout>
 
     <!-- Alt Araç Çubuğu (Toolbar) -->
     <LinearLayout
@@ -190,7 +210,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:text="T"
+                        android:text="@string/t"
                         android:textStyle="bold"
                         android:textSize="18sp"
                         android:textColor="#475569"
@@ -199,7 +219,7 @@
                         android:focusable="true" />
                 </FrameLayout>
 
-                <!-- Renk Paleti (Yatay Kaydırılabilir) -->
+                <!-- Renk Paleti -->
                 <HorizontalScrollView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -314,7 +334,6 @@
                 app:iconTint="#334155"
                 app:iconSize="14dp"
                 app:cornerRadius="8dp" />
-
 
         </LinearLayout>
     </LinearLayout>

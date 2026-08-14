@@ -15,11 +15,21 @@
         android:textColor="#0F172A"
         android:layout_marginBottom="16dp" />
 
+    <!-- SATIR 1: KARE & DİKDÖRTGEN -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:orientation="horizontal">
+
+        <!-- KARE -->
+        <Button
+            android:id="@+id/btnShapeSquare"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Kare"
+            android:backgroundTint="#0284C7"
+            android:layout_marginEnd="8dp" />
 
         <!-- DİKDÖRTGEN -->
         <Button
@@ -28,10 +38,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/dikdortgen"
-            android:backgroundTint="#0284C7"
-            android:layout_marginEnd="8dp" />
+            android:backgroundTint="#0284C7" />
+    </LinearLayout>
 
-        <!-- DAİRE / ELİPS -->
+    <!-- SATIR 2: DAİRE & DÜZ ÇİZGİ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <!-- DAİRE -->
         <Button
             android:id="@+id/btnShapeCircle"
             android:layout_width="0dp"
@@ -41,7 +58,7 @@
             android:backgroundTint="#0284C7"
             android:layout_marginEnd="8dp" />
 
-        <!-- ÇİZGİ -->
+        <!-- DÜZ ÇİZGİ -->
         <Button
             android:id="@+id/btnShapeLine"
             android:layout_width="0dp"

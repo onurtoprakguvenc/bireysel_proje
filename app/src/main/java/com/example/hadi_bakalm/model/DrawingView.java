@@ -21,7 +21,7 @@ import java.util.List;
 
 public class DrawingView extends View {
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, CIRCLE, LINE, TEXT }
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
 
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
@@ -141,6 +141,12 @@ public class DrawingView extends View {
     private float scaleFactor = 1.0f;
     private ScaleGestureDetector scaleGestureDetector;
 
+    // --- SİLGİ İMLECİ VE PİKSEL KAZIMA DEĞİŞKENLERİ ---
+    private float eraserTouchX = -1f;
+    private float eraserTouchY = -1f;
+    private boolean isErasing = false;
+    private Paint eraserCirclePaint;
+
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setupDrawing();
@@ -150,6 +156,7 @@ public class DrawingView extends View {
         setLayerType(LAYER_TYPE_SOFTWARE, null);
         initNewStroke();
         initTextPaint();
+        initEraserPaint();
 
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
@@ -174,6 +181,14 @@ public class DrawingView extends View {
         freeTextPaint.setTextAlign(Paint.Align.LEFT);
     }
 
+    private void initEraserPaint() {
+        eraserCirclePaint = new Paint();
+        eraserCirclePaint.setAntiAlias(true);
+        eraserCirclePaint.setStyle(Paint.Style.STROKE);
+        eraserCirclePaint.setColor(0x8894A3B8);
+        eraserCirclePaint.setStrokeWidth(3f);
+    }
+
     private void initNewStroke() {
         currentPath = new Path();
         currentPaint = new Paint();
@@ -192,7 +207,8 @@ public class DrawingView extends View {
 
         if (currentTool == ToolMode.ERASER) {
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            paint.setStrokeWidth(currentStrokeWidth * 3);
+            paint.setColor(0x00000000);
+            paint.setStrokeWidth(currentStrokeWidth * 3f);
         } else if (currentTool == ToolMode.HIGHLIGHTER) {
             paint.setXfermode(null);
             int alphaColor = (currentColor & 0x00FFFFFF) | 0x66000000;
@@ -222,17 +238,25 @@ public class DrawingView extends View {
         // 2. Serbest Metinleri Çiz
         drawFreeTexts(canvas);
 
-        // 3. Çizimleri Çiz
+        // 3. Geçmiş Çizimleri ve Silgi Kazımalarını Çiz
         for (DrawPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
 
+        // Anlık çizilen çizgi veya silgi izi
         if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL && currentTool != ToolMode.TEXT) {
             canvas.drawPath(currentPath, currentPaint);
         }
 
         // 4. Vektörel Tabloları Çiz
         drawTables(canvas);
+
+        // 5. Silgi Görsel Gösterge Halkasını Çiz
+        if (currentTool == ToolMode.ERASER && isErasing && eraserTouchX >= 0 && eraserTouchY >= 0) {
+            if (eraserCirclePaint == null) initEraserPaint();
+            float eraserRadius = (currentStrokeWidth * 3f) / 2f;
+            canvas.drawCircle(eraserTouchX, eraserTouchY, eraserRadius, eraserCirclePaint);
+        }
 
         canvas.restore();
     }
@@ -320,7 +344,7 @@ public class DrawingView extends View {
             return true;
         }
 
-        // TEXT modunda iken dokunma çizim üretmesin
+        // TEXT modunda dokunma çizim üretmesin
         if (currentTool == ToolMode.TEXT) {
             return false;
         }
@@ -331,10 +355,20 @@ public class DrawingView extends View {
         float touchX = rawX / scaleFactor;
         float touchY = (rawY / scaleFactor) - offsetY;
 
+        // Silgi konumunu güncelle
+        if (currentTool == ToolMode.ERASER) {
+            eraserTouchX = touchX;
+            eraserTouchY = touchY;
+        }
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 startX = touchX;
                 startY = touchY;
+
+                if (currentTool == ToolMode.ERASER) {
+                    isErasing = true;
+                }
 
                 initNewStroke();
                 currentPath.moveTo(touchX, touchY);
@@ -342,24 +376,55 @@ public class DrawingView extends View {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (currentTool == ToolMode.RECTANGLE) {
+                float maxCanvasWidth = getWidth() / scaleFactor;
+                float clampedTouchX = Math.max(0f, Math.min(touchX, maxCanvasWidth));
+                float clampedTouchY = touchY;
+
+                if (currentTool == ToolMode.ERASER) {
+                    // Silgi sadece değdiği yeri kazır, tüm şekli silmez
+                    currentPath.lineTo(touchX, touchY);
+                    currentPoints.add(new Point(touchX, touchY));
+
+                } else if (currentTool == ToolMode.RECTANGLE) {
                     currentPath.reset();
-                    float left = Math.min(startX, touchX);
-                    float top = Math.min(startY, touchY);
-                    float right = Math.max(startX, touchX);
-                    float bottom = Math.max(startY, touchY);
+                    float left = Math.min(startX, clampedTouchX);
+                    float top = Math.min(startY, clampedTouchY);
+                    float right = Math.max(startX, clampedTouchX);
+                    float bottom = Math.max(startY, clampedTouchY);
                     currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
+
+                } else if (currentTool == ToolMode.SQUARE) {
+                    currentPath.reset();
+                    float dx = clampedTouchX - startX;
+                    float dy = clampedTouchY - startY;
+                    float side = Math.max(Math.abs(dx), Math.abs(dy));
+
+                    if (dx >= 0 && (startX + side) > maxCanvasWidth) {
+                        side = maxCanvasWidth - startX;
+                    } else if (dx < 0 && (startX - side) < 0) {
+                        side = startX;
+                    }
+
+                    float left = (dx < 0) ? startX - side : startX;
+                    float top = (dy < 0) ? startY - side : startY;
+                    float right = left + side;
+                    float bottom = top + side;
+
+                    currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
+
                 } else if (currentTool == ToolMode.CIRCLE) {
                     currentPath.reset();
-                    float left = Math.min(startX, touchX);
-                    float top = Math.min(startY, touchY);
-                    float right = Math.max(startX, touchX);
-                    float bottom = Math.max(startY, touchY);
+                    float left = Math.min(startX, clampedTouchX);
+                    float top = Math.min(startY, clampedTouchY);
+                    float right = Math.max(startX, clampedTouchX);
+                    float bottom = Math.max(startY, clampedTouchY);
                     currentPath.addOval(left, top, right, bottom, Path.Direction.CW);
+
                 } else if (currentTool == ToolMode.LINE) {
                     currentPath.reset();
                     currentPath.moveTo(startX, startY);
-                    currentPath.lineTo(touchX, touchY);
+                    currentPath.lineTo(clampedTouchX, clampedTouchY);
+
                 } else {
                     currentPath.lineTo(touchX, touchY);
                     currentPoints.add(new Point(touchX, touchY));
@@ -368,6 +433,12 @@ public class DrawingView extends View {
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                if (currentTool == ToolMode.ERASER) {
+                    isErasing = false;
+                    eraserTouchX = -1f;
+                    eraserTouchY = -1f;
+                }
+
                 undonePaths.clear();
                 paths.add(new DrawPath(currentPath, new Paint(currentPaint), currentPoints));
                 currentPath = new Path();
@@ -462,12 +533,13 @@ public class DrawingView extends View {
         try {
             JSONObject mainObj = new JSONObject();
 
-            // Çizimler
+            // Çizimler ve Silgi Kazımaları
             JSONArray pathsArray = new JSONArray();
             for (DrawPath dp : paths) {
                 JSONObject pathObj = new JSONObject();
                 pathObj.put("color", dp.paint.getColor());
                 pathObj.put("strokeWidth", dp.paint.getStrokeWidth());
+                pathObj.put("isEraser", dp.paint.getXfermode() != null);
 
                 JSONArray pointsArray = new JSONArray();
                 for (Point p : dp.points) {
@@ -624,14 +696,22 @@ public class DrawingView extends View {
             JSONObject pathObj = pathsArray.getJSONObject(i);
             int color = pathObj.getInt("color");
             float strokeWidth = (float) pathObj.getDouble("strokeWidth");
+            boolean isEraser = pathObj.optBoolean("isEraser", false);
 
             Paint paint = new Paint();
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeJoin(Paint.Join.ROUND);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setColor(color);
             paint.setStrokeWidth(strokeWidth);
+
+            if (isEraser) {
+                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                paint.setColor(0x00000000);
+            } else {
+                paint.setXfermode(null);
+                paint.setColor(color);
+            }
 
             JSONArray pointsArray = pathObj.getJSONArray("points");
             Path path = new Path();
@@ -711,7 +791,6 @@ public class DrawingView extends View {
         }
     }
 
-    // 1. Dokunulan yerde kayıtlı bir metin var mı kontrol eden metod (Hit-Test)
     public TextObject checkTextClick(float touchX, float touchY) {
         if (freeTextPaint == null) initTextPaint();
 
@@ -720,7 +799,6 @@ public class DrawingView extends View {
             float textWidth = freeTextPaint.measureText(t.text);
             float textHeight = t.textSize > 0 ? t.textSize : 36f;
 
-            // Dokunma toleransı (Padding) ile birlikte metin sınırları kontrolü
             if (touchX >= t.x - 20f && touchX <= t.x + textWidth + 20f &&
                     touchY >= t.y - textHeight - 20f && touchY <= t.y + 20f) {
                 return t;
@@ -729,7 +807,6 @@ public class DrawingView extends View {
         return null;
     }
 
-    // 2. Mevcut metni güncelleme metodu
     public void updateTextObject(TextObject textObj, String newText) {
         if (textObj == null) return;
         textObj.text = newText;
@@ -739,7 +816,6 @@ public class DrawingView extends View {
         }
     }
 
-    // 3. Metni silme metodu
     public void removeTextObject(TextObject textObj) {
         if (textObj == null) return;
         textObjects.remove(textObj);

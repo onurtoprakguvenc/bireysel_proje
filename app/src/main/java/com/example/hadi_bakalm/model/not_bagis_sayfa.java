@@ -36,7 +36,7 @@ public class not_bagis_sayfa extends AppCompatActivity implements PurchasesUpdat
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.bagis_sayfa);
+        setContentView(R.layout.not_bagis_sayfa);
 
         initViews();
         setupClickListeners();

@@ -1,6 +1,7 @@
 package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -8,6 +9,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -41,7 +43,9 @@ public class not_alma_sayfa extends AppCompatActivity {
     private EditText etNoteTitle;
 
     private DrawingView globalDrawingCanvas;
-    private LinearLayout drawingToolBar;
+    private EditText inlineTextEditor;
+    private DrawingView.TextObject activeEditingTextObj = null;
+    private DrawingView.TableCellClickResult activeEditingTableCell = null;
 
     private FrameLayout frameToolPen, frameToolHighlighter, frameToolText;
     private TextView btnToolText;
@@ -93,6 +97,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         initViews();
         setupClickListeners();
         setupCanvasTouchListener();
+        setupInlineEditorListener();
 
         if (getIntent() != null) {
             currentNoteId = getIntent().getIntExtra("EXTRA_NOTE_ID", -1);
@@ -140,6 +145,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        commitInlineText();
         autoSaveNote();
     }
 
@@ -149,7 +155,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         etNoteTitle = findViewById(R.id.etNoteTitle);
 
         globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
-        drawingToolBar = findViewById(R.id.drawingToolBar);
+        inlineTextEditor = findViewById(R.id.inlineTextEditor);
 
         frameToolPen = findViewById(R.id.frameToolPen);
         frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
@@ -176,26 +182,171 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnAddImage = findViewById(R.id.btnAddImage);
     }
 
+    private void setupInlineEditorListener() {
+        if (inlineTextEditor == null) return;
+
+        inlineTextEditor.setOnEditorActionListener((v, actionId, event) -> {
+            commitInlineText();
+            return true;
+        });
+
+        inlineTextEditor.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                commitInlineText();
+            }
+        });
+    }
+
+    // 1. Serbest Metin İçin Tuval Üzerinde Canlı Editör Aç
+    private float pendingNewTextX = 0f;
+    private float pendingNewTextY = 0f;
+    private boolean isCreatingNewText = false;
+
+    // 1. Serbest Metin Editörünü Açma (Düzeltildi)
+    private void openInlineTextEditor(float x, float y, DrawingView.TextObject textObj) {
+        commitInlineText(); // Önceki varsa kaydet
+
+        activeEditingTableCell = null;
+
+        if (textObj != null) {
+            // Var olan metni düzenleme modu
+            isCreatingNewText = false;
+            activeEditingTextObj = textObj;
+            inlineTextEditor.setText(textObj.text);
+        } else {
+            // Tamamen yeni metin ekleme modu
+            isCreatingNewText = true;
+            activeEditingTextObj = null;
+            pendingNewTextX = x;
+            pendingNewTextY = y;
+            inlineTextEditor.setText("");
+        }
+
+        float scale = globalDrawingCanvas.getScaleFactor();
+        float screenX = x * scale;
+        float screenY = (y + globalDrawingCanvas.getOffsetY()) * scale;
+
+        inlineTextEditor.setX(screenX);
+        inlineTextEditor.setY(screenY);
+        if (inlineTextEditor.getText() != null) {
+            inlineTextEditor.setSelection(inlineTextEditor.getText().length());
+        }
+
+        inlineTextEditor.setVisibility(View.VISIBLE);
+        inlineTextEditor.requestFocus();
+
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(inlineTextEditor, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    // 2. Metni Tuvale İşleme (Düzeltildi)
+    private void commitInlineText() {
+        if (inlineTextEditor == null || inlineTextEditor.getVisibility() != View.VISIBLE) return;
+
+        String text = inlineTextEditor.getText().toString().trim();
+
+        if (isCreatingNewText) {
+            // Yeni metin ekleniyorsa ve boş değilse tuvale ekle
+            if (!text.isEmpty() && globalDrawingCanvas != null) {
+                globalDrawingCanvas.addTextToCanvas(pendingNewTextX, pendingNewTextY, text, 0xFF0F172A);
+            }
+        } else if (activeEditingTextObj != null) {
+            // Var olan metin düzenleniyorsa
+            if (text.isEmpty()) {
+                globalDrawingCanvas.removeTextObject(activeEditingTextObj);
+            } else {
+                globalDrawingCanvas.updateTextObject(activeEditingTextObj, text);
+            }
+        } else if (activeEditingTableCell != null) {
+            // Tablo hücresi
+            globalDrawingCanvas.updateTableCellText(activeEditingTableCell.table, activeEditingTableCell.row, activeEditingTableCell.col, text);
+        }
+
+        isCreatingNewText = false;
+        activeEditingTextObj = null;
+        activeEditingTableCell = null;
+        inlineTextEditor.setVisibility(View.GONE);
+
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(inlineTextEditor.getWindowToken(), 0);
+        }
+    }
+
+    // 3. Tuval Dokunma Dinleyicisi (Düzeltildi)
+    @SuppressLint("ClickableViewAccessibility")
+
+
+    // 2. Tablo Hücresi İçin Tuval Üzerinde Canlı Editör Aç
+    private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
+        commitInlineText();
+
+        activeEditingTableCell = result;
+        activeEditingTextObj = null;
+
+        float scale = globalDrawingCanvas.getScaleFactor();
+        float cellX = result.table.startX + (result.col * result.table.cellWidth);
+        float cellY = result.table.startY + (result.row * result.table.cellHeight);
+
+        float screenX = cellX * scale;
+        float screenY = (cellY + globalDrawingCanvas.getOffsetY()) * scale;
+
+        inlineTextEditor.setX(screenX + 8f);
+        inlineTextEditor.setY(screenY + 8f);
+
+        String currentText = "";
+        for (DrawingView.TableCell cell : result.table.cells) {
+            if (cell.row == result.row && cell.col == result.col) {
+                currentText = cell.text;
+                break;
+            }
+        }
+
+        inlineTextEditor.setText(currentText);
+        inlineTextEditor.setSelection(inlineTextEditor.getText().length());
+        inlineTextEditor.setVisibility(View.VISIBLE);
+        inlineTextEditor.requestFocus();
+
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(inlineTextEditor, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    // 3. Yazılan Metni Tuvale İşle ve Editörü Kapat
+
+
     @SuppressLint("ClickableViewAccessibility")
     private void setupCanvasTouchListener() {
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    // Önce açıkta düzenleme varsa bitir
+                    if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
+                        commitInlineText();
+                    }
+
                     float touchX = event.getX() / globalDrawingCanvas.getScaleFactor();
                     float touchY = (event.getY() / globalDrawingCanvas.getScaleFactor()) - globalDrawingCanvas.getOffsetY();
 
+                    // 1. Tablo Tıklama Kontrolü
                     DrawingView.TableCellClickResult result = globalDrawingCanvas.checkTableCellClick(touchX, touchY);
                     if (result != null) {
-                        showCellTextInputDialog(result);
+                        openInlineTableCellEditor(result);
                         return true;
                     }
 
+                    // 2. T (Metin) Modu Kontrolü
                     if (activeMode == DrawingView.ToolMode.TEXT) {
                         DrawingView.TextObject clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
                         if (clickedText != null) {
-                            showEditTextDialog(clickedText);
+                            // Var olan metne dokunulduysa -> düzenle
+                            openInlineTextEditor(clickedText.x, clickedText.y, clickedText);
                         } else {
-                            showFreeTextInputDialog(touchX, touchY);
+                            // Boş alana dokunulduysa -> doğrudan yeni metin aç (Sahte nesne eklemeden!)
+                            openInlineTextEditor(touchX, touchY, null);
                         }
                         return true;
                     }
@@ -203,79 +354,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 return false;
             });
         }
-    }
-
-    private void showEditTextDialog(DrawingView.TextObject textObj) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Metni Düzenle");
-
-        final EditText input = new EditText(this);
-        input.setText(textObj.text);
-        input.setSelection(textObj.text.length());
-        input.setPadding(40, 32, 40, 32);
-        builder.setView(input);
-
-        builder.setPositiveButton("Güncelle", (dialog, which) -> {
-            String newText = input.getText().toString().trim();
-            if (newText.isEmpty()) {
-                globalDrawingCanvas.removeTextObject(textObj);
-            } else {
-                globalDrawingCanvas.updateTextObject(textObj, newText);
-            }
-        });
-
-        builder.setNeutralButton("Sil", (dialog, which) -> {
-            globalDrawingCanvas.removeTextObject(textObj);
-            Toast.makeText(this, "Metin silindi", Toast.LENGTH_SHORT).show();
-        });
-
-        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
-        builder.show();
-    }
-
-    private void showFreeTextInputDialog(float x, float y) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Metin Ekle");
-
-        final EditText input = new EditText(this);
-        input.setHint("Notunuzu buraya yazın...");
-        input.setPadding(40, 32, 40, 32);
-        builder.setView(input);
-
-        builder.setPositiveButton("Ekle", (dialog, which) -> {
-            String text = input.getText().toString().trim();
-            if (!text.isEmpty() && globalDrawingCanvas != null) {
-                globalDrawingCanvas.addTextToCanvas(x, y, text, 0xFF0F172A);
-            }
-        });
-
-        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
-        builder.show();
-    }
-
-    private void showCellTextInputDialog(DrawingView.TableCellClickResult result) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Hücre Yazısı (" + (result.row + 1) + ". Satır, " + (result.col + 1) + ". Sütun)");
-
-        final EditText input = new EditText(this);
-        input.setPadding(32, 32, 32, 32);
-
-        for (DrawingView.TableCell cell : result.table.cells) {
-            if (cell.row == result.row && cell.col == result.col) {
-                input.setText(cell.text);
-                break;
-            }
-        }
-
-        builder.setView(input);
-
-        builder.setPositiveButton("Kaydet", (dialog, which) -> {
-            String text = input.getText().toString().trim();
-            globalDrawingCanvas.updateTableCellText(result.table, result.row, result.col, text);
-        });
-
-        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
-        builder.show();
     }
 
     private void setupClickListeners() {
@@ -293,6 +371,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolScroll != null) {
             btnToolScroll.setOnClickListener(v -> {
+                commitInlineText();
                 activeMode = DrawingView.ToolMode.SCROLL;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
@@ -302,6 +381,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolPen != null) {
             btnToolPen.setOnClickListener(v -> {
+                commitInlineText();
                 activeMode = DrawingView.ToolMode.PEN;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
@@ -311,6 +391,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolHighlighter != null) {
             btnToolHighlighter.setOnClickListener(v -> {
+                commitInlineText();
                 activeMode = DrawingView.ToolMode.HIGHLIGHTER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
@@ -320,15 +401,17 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolText != null) {
             btnToolText.setOnClickListener(v -> {
+                commitInlineText();
                 activeMode = DrawingView.ToolMode.TEXT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Metin Modu: Tuvalde istediğiniz yere dokunun", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Metin Modu: İstediğiniz yere dokunup yazın", Toast.LENGTH_SHORT).show();
             });
         }
 
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
+                commitInlineText();
                 activeMode = DrawingView.ToolMode.ERASER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
@@ -337,19 +420,31 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
 
         if (btnToolUndo != null && globalDrawingCanvas != null) {
-            btnToolUndo.setOnClickListener(v -> globalDrawingCanvas.undo());
+            btnToolUndo.setOnClickListener(v -> {
+                commitInlineText();
+                globalDrawingCanvas.undo();
+            });
         }
 
         if (btnToolRedo != null && globalDrawingCanvas != null) {
-            btnToolRedo.setOnClickListener(v -> globalDrawingCanvas.redo());
+            btnToolRedo.setOnClickListener(v -> {
+                commitInlineText();
+                globalDrawingCanvas.redo();
+            });
         }
 
         if (btnClearCanvas != null && globalDrawingCanvas != null) {
-            btnClearCanvas.setOnClickListener(v -> globalDrawingCanvas.clearCanvas());
+            btnClearCanvas.setOnClickListener(v -> {
+                commitInlineText();
+                globalDrawingCanvas.clearCanvas();
+            });
         }
 
         if (btnToolShapes != null) {
-            btnToolShapes.setOnClickListener(v -> showShapePickerDialog());
+            btnToolShapes.setOnClickListener(v -> {
+                commitInlineText();
+                showShapePickerDialog();
+            });
         }
 
         if (btnColorPicker != null) {
@@ -381,11 +476,15 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
 
         if (btnAddTable != null) {
-            btnAddTable.setOnClickListener(v -> showTableCreationDialog());
+            btnAddTable.setOnClickListener(v -> {
+                commitInlineText();
+                showTableCreationDialog();
+            });
         }
 
         if (btnAddImage != null) {
             btnAddImage.setOnClickListener(v -> {
+                commitInlineText();
                 if (imagePickerLauncher != null) {
                     imagePickerLauncher.launch("image/*");
                 }
@@ -516,9 +615,20 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
 
+        Button btnSquare = dialogView.findViewById(R.id.btnShapeSquare);
         Button btnRectangle = dialogView.findViewById(R.id.btnShapeRectangle);
         Button btnCircle = dialogView.findViewById(R.id.btnShapeCircle);
         Button btnLine = dialogView.findViewById(R.id.btnShapeLine);
+
+        if (btnSquare != null) {
+            btnSquare.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.SQUARE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Kare çizebilirsiniz", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
 
         if (btnRectangle != null) {
             btnRectangle.setOnClickListener(v -> {
@@ -585,7 +695,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 globalDrawingCanvas.addTableToCanvas(rows, cols);
             }
 
-            Toast.makeText(this, "Tablo tuvale eklendi. Hücreye tıklayarak yazı yazabilirsiniz.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Tablo eklendi. Hücreye tıklayarak doğrudan yazabilirsiniz.", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
@@ -623,6 +733,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void saveNoteAndExit() {
+        commitInlineText();
         autoSaveNote();
         finish();
     }
@@ -651,5 +762,76 @@ public class not_alma_sayfa extends AppCompatActivity {
                 btnToolText.setTextColor(isText ? 0xFF0284C7 : 0xFF475569);
             }
         }
+    }
+
+    private void showEraserWidthDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.silgi_kalinlik_ayarlama, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        SeekBar seekBarEraserWidth = dialogView.findViewById(R.id.seekBarEraserWidth);
+        TextView tvEraserSizePreview = dialogView.findViewById(R.id.tvEraserSizePreview);
+        Button btnEraserThin = dialogView.findViewById(R.id.btnEraserThin);
+        Button btnEraserMedium = dialogView.findViewById(R.id.btnEraserMedium);
+        Button btnEraserThick = dialogView.findViewById(R.id.btnEraserThick);
+        Button btnCloseEraserDialog = dialogView.findViewById(R.id.btnCloseEraserDialog);
+
+        if (seekBarEraserWidth != null) {
+            seekBarEraserWidth.setProgress((int) currentStrokeWidth);
+            if (tvEraserSizePreview != null) {
+                tvEraserSizePreview.setText("Boyut: " + (int) currentStrokeWidth + " px");
+            }
+
+            seekBarEraserWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    currentStrokeWidth = Math.max(6, progress);
+                    if (globalDrawingCanvas != null) {
+                        globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                    }
+                    if (tvEraserSizePreview != null) {
+                        tvEraserSizePreview.setText("Boyut: " + (int) currentStrokeWidth + " px");
+                    }
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {}
+            });
+        }
+
+        if (btnEraserThin != null) {
+            btnEraserThin.setOnClickListener(v -> {
+                currentStrokeWidth = 10f;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnEraserMedium != null) {
+            btnEraserMedium.setOnClickListener(v -> {
+                currentStrokeWidth = 26f;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnEraserThick != null) {
+            btnEraserThick.setOnClickListener(v -> {
+                currentStrokeWidth = 55f;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnCloseEraserDialog != null) {
+            btnCloseEraserDialog.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 }
