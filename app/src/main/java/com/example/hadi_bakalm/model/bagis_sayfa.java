@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.model;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -26,10 +27,7 @@ import java.util.List;
 
 public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedListener {
 
-    private ImageView btnBack;
     private Button btnSubmitDonate;
-    private LinearLayout card10, card20, card50, card100, card200, card500, card1000;
-
     private BillingClient billingClient;
     private String selectedProductId = "bagis_100"; // Varsayılan tutar: ₺100
 
@@ -44,22 +42,22 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
     }
 
     private void initViews() {
-        btnBack = findViewById(R.id.btnBack);
         btnSubmitDonate = findViewById(R.id.btnSubmitDonate);
-
-        card10 = findViewById(R.id.card10);
-        card20 = findViewById(R.id.card20);
-        card50 = findViewById(R.id.card50);
-        card100 = findViewById(R.id.card100);
-        card200 = findViewById(R.id.card200);
-        card500 = findViewById(R.id.card500);
-        card1000 = findViewById(R.id.card1000);
     }
 
     private void setupClickListeners() {
+        ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
+
+        LinearLayout card10 = findViewById(R.id.card10);
+        LinearLayout card20 = findViewById(R.id.card20);
+        LinearLayout card50 = findViewById(R.id.card50);
+        LinearLayout card100 = findViewById(R.id.card100);
+        LinearLayout card200 = findViewById(R.id.card200);
+        LinearLayout card500 = findViewById(R.id.card500);
+        LinearLayout card1000 = findViewById(R.id.card1000);
 
         // Tutar Seçimleri ve İlgili Google Play Product ID Eşleştirmesi
         if (card10 != null) card10.setOnClickListener(v -> selectAmount("₺10", "bagis_10"));
@@ -76,6 +74,7 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void selectAmount(String displayAmount, String productId) {
         selectedProductId = productId;
         if (btnSubmitDonate != null) {
@@ -93,14 +92,12 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                    // Bağlantı başarılı
-                }
+                // Bağlantı hazır olduğunda gerekirse log basılabilir
             }
 
             @Override
             public void onBillingServiceDisconnected() {
-                // Bağlantı koparsa tekrar bağlanmayı deneyebilir
+                // Bağlantı koparsa servis tekrar bağlanmaya hazır bekler
             }
         });
     }
@@ -125,30 +122,26 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
                 .setProductList(productList)
                 .build();
 
-        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
-            // Arayüz işlemlerini ana ekrana (UI Thread) zorluyoruz
-            runOnUiThread(() -> {
-                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && productDetailsList != null && !productDetailsList.isEmpty()) {
-                    ProductDetails productDetails = productDetailsList.get(0);
+        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> runOnUiThread(() -> {
+            if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && !productDetailsList.isEmpty()) {
+                ProductDetails productDetails = productDetailsList.get(0);
 
-                    List<BillingFlowParams.ProductDetailsParams> flowProductDetailsParamsList = new ArrayList<>();
-                    flowProductDetailsParamsList.add(
-                            BillingFlowParams.ProductDetailsParams.newBuilder()
-                                    .setProductDetails(productDetails)
-                                    .build()
-                    );
+                List<BillingFlowParams.ProductDetailsParams> flowProductDetailsParamsList = new ArrayList<>();
+                flowProductDetailsParamsList.add(
+                        BillingFlowParams.ProductDetailsParams.newBuilder()
+                                .setProductDetails(productDetails)
+                                .build()
+                );
 
-                    BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
-                            .setProductDetailsParamsList(flowProductDetailsParamsList)
-                            .build();
+                BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
+                        .setProductDetailsParamsList(flowProductDetailsParamsList)
+                        .build();
 
-                    billingClient.launchBillingFlow(bagis_sayfa.this, billingFlowParams);
-                } else {
-                    // Hata kodunu ve mesajını ekrana basıyoruz
-                    Toast.makeText(bagis_sayfa.this, "Google Play Ürün Bulamadı! Kod: " + billingResult.getResponseCode(), Toast.LENGTH_LONG).show();
-                }
-            });
-        });
+                billingClient.launchBillingFlow(bagis_sayfa.this, billingFlowParams);
+            } else {
+                Toast.makeText(bagis_sayfa.this, "Google Play Ürün Bulamadı! Kod: " + billingResult.getResponseCode(), Toast.LENGTH_LONG).show();
+            }
+        }));
     }
 
     // 3. Ödeme Sonucu Dinleyicisi

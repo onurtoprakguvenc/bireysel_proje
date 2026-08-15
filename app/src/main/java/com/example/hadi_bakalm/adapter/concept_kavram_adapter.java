@@ -1,8 +1,8 @@
 package com.example.hadi_bakalm.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -21,7 +21,7 @@ import java.util.List;
 
 public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_adapter.RowViewHolder> {
 
-    private List<CategoryGroupModel> kategoriListesi;
+    private final List<CategoryGroupModel> kategoriListesi;
     private final RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
 
     public concept_kavram_adapter(List<CategoryGroupModel> kategoriListesi) {
@@ -57,6 +57,7 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
         RecyclerView recyclerViewHorizontal;
         InnerCardAdapter innerAdapter;
 
+        @SuppressLint("ClickableViewAccessibility")
         public RowViewHolder(@NonNull View itemView) {
             super(itemView);
             txtCategoryTitle = itemView.findViewById(R.id.txtCategoryTitle);
@@ -87,6 +88,7 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
             this.kavramlar = kavramlar;
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         public void updateData(List<concept_kavram_model> newKavramlar) {
             this.kavramlar = newKavramlar;
             notifyDataSetChanged();

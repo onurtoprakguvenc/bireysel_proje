@@ -16,6 +16,7 @@ import com.example.hadi_bakalm.noroplastite;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptViewHolder> {
 
     public static final String EXTRA_CONCEPT_NAME = "concept_name";
@@ -41,8 +42,8 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
         Concept concept = conceptList.get(position);
         if (concept == null) return;
 
-        if (holder.tvKavramAdi != null) {
-            holder.tvKavramAdi.setText(concept.getName() != null ? concept.getName() : "");
+        if (holder.tvConceptName != null) {
+            holder.tvConceptName.setText(concept.getName() != null ? concept.getName() : "");
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -62,11 +63,11 @@ public class ConceptAdapter extends RecyclerView.Adapter<ConceptAdapter.ConceptV
 
     public static class ConceptViewHolder extends RecyclerView.ViewHolder {
 
-        TextView tvKavramAdi;
+        TextView tvConceptName;
 
         public ConceptViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvKavramAdi = itemView.findViewById(R.id.txtCardTitle);
+            tvConceptName = itemView.findViewById(R.id.txtCardTitle);
         }
     }
 }

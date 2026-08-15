@@ -1,12 +1,13 @@
 package com.example.hadi_bakalm.model;
 
+@SuppressWarnings("unused")
 public class NoteModel {
     private int id; // Veritabanı ID'si
-    private String title;
-    private String content;
-    private String date;
-    private String category;
-    private boolean isPinned;
+    private final String title;
+    private final String content;
+    private final String date;
+    private final String category;
+    private final boolean isPinned;
 
     // 1. Standart/Eski Oluşturmalar İçin Kurucu Metot
     public NoteModel(String title, String content, String date, String category, boolean isPinned) {

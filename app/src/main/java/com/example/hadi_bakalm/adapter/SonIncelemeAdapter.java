@@ -19,7 +19,7 @@ import java.util.List;
 public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.ViewHolder> {
 
     private List<SonIncelemeModel> incelemeListesi;
-    private OnItemClickListener listener;
+    private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(SonIncelemeModel item);
@@ -51,6 +51,7 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
         notifyDataSetChanged();
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SonIncelemeModel item = incelemeListesi.get(position);
@@ -62,15 +63,17 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
         String tur = item.getTur() != null ? item.getTur().trim() : "";
 
-        // TÜR EŞLEŞTİRMESİ (TÜRKÇE KARAKTER VEYA BÜYÜK/KÜÇÜK HARF HASSASİYETİ SIFIRLANDI)
-        if ("KAVRAM".equalsIgnoreCase(tur) || "Kavram".equalsIgnoreCase(tur)) {
+        // Ortak rozet arka planı
+        if (holder.txtBadge != null) {
+            holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
+        }
+
+        if ("KAVRAM".equalsIgnoreCase(tur)) {
             if (holder.txtBadge != null) holder.txtBadge.setText("Kavram");
             if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
-            if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         } else {
             if (holder.txtBadge != null) holder.txtBadge.setText("Metin");
             if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_document);
-            if (holder.txtBadge != null) holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -85,6 +88,7 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
     }
 
     @SuppressLint("NotifyDataSetChanged")
+    @SuppressWarnings("unused")
     public void filterList(List<SonIncelemeModel> filteredList) {
         updateList(filteredList);
     }
@@ -105,6 +109,7 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
             txtTitle = itemView.findViewById(R.id.txtItemTitle);
             txtBadge = itemView.findViewById(R.id.txtItemBadge);
             txtDescription = itemView.findViewById(R.id.txtItemDescription);
+            txtTime = itemView.findViewById(R.id.txtReadTime);
         }
     }
 }

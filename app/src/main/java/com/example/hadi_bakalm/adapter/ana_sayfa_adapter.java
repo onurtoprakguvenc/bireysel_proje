@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.adapter;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +14,7 @@ import java.util.List;
 public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.ViewHolder> {
 
     private List<String> categories;
-    private OnItemClickListener listener;
+    private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(String categoryName);
@@ -35,17 +36,22 @@ public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String category = categories.get(position);
         holder.txtTitle.setText(category);
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(category));
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(category);
+            }
+        });
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void filterList(List<String> filteredList) {
-        this.categories = filteredList; // Liste değişken adın farklıysa onunla değiştir
+        this.categories = filteredList;
         notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return categories.size();
+        return categories != null ? categories.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -55,8 +61,8 @@ public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.Vi
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imgIcon = itemView.findViewById(R.id.imgCardIcon);
-            txtTitle = itemView.findViewById(R.id.txtCardTitle); // XML'deki başlık ID'si
-            txtDescription = itemView.findViewById(R.id.txtCardDescription); // XML'deki açıklama ID'si
+            txtTitle = itemView.findViewById(R.id.txtCardTitle);
+            txtDescription = itemView.findViewById(R.id.txtCardDescription);
         }
     }
 }

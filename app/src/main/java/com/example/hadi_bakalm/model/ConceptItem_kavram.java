@@ -4,6 +4,7 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "kavramlar")
+@SuppressWarnings("unused")
 public class ConceptItem_kavram {
 
     @PrimaryKey(autoGenerate = true)
@@ -15,9 +16,10 @@ public class ConceptItem_kavram {
     private String exampleDialogues;    // Örnek diyaloglar
     private String practicalImportance; // Pratik hayattaki önemi
     private boolean isSaved;            // Kaydedildi mi?
+    private long lastViewedTime = 0;    // 0 = Henüz incelenmedi
 
     public ConceptItem_kavram(String title, String description, String developerNote,
-                       String exampleDialogues, String practicalImportance, boolean isSaved) {
+                              String exampleDialogues, String practicalImportance, boolean isSaved) {
         this.title = title;
         this.description = description;
         this.developerNote = developerNote;
@@ -28,7 +30,6 @@ public class ConceptItem_kavram {
 
     // Getter ve Setter Metotları
     public int getId() { return id; }
-
     public void setId(int id) { this.id = id; }
 
     public String getTitle() { return title; }
@@ -40,17 +41,8 @@ public class ConceptItem_kavram {
     public String getDeveloperNote() { return developerNote; }
     public void setDeveloperNote(String developerNote) { this.developerNote = developerNote; }
 
-    // Sınıfın içine değişken olarak ekle:
-    private long lastViewedTime = 0; // 0 = Henüz incelenmedi
-
-    // Getter ve Setter metotları:
-    public long getLastViewedTime() {
-        return lastViewedTime;
-    }
-
-    public void setLastViewedTime(long lastViewedTime) {
-        this.lastViewedTime = lastViewedTime;
-    }
+    public long getLastViewedTime() { return lastViewedTime; }
+    public void setLastViewedTime(long lastViewedTime) { this.lastViewedTime = lastViewedTime; }
 
     public String getExampleDialogues() { return exampleDialogues; }
     public void setExampleDialogues(String exampleDialogues) { this.exampleDialogues = exampleDialogues; }

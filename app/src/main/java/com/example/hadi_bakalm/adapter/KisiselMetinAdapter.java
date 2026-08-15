@@ -15,12 +15,13 @@ import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapter.MetinViewHolder> {
 
-    private List<MetinItem> metinListesi;
+    private final List<MetinItem> metinList;
 
-    public KisiselMetinAdapter(List<MetinItem> metinListesi) {
-        this.metinListesi = metinListesi;
+    public KisiselMetinAdapter(List<MetinItem> metinList) {
+        this.metinList = metinList;
     }
 
     @NonNull
@@ -33,9 +34,9 @@ public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapte
 
     @Override
     public void onBindViewHolder(@NonNull MetinViewHolder holder, int position) {
-        if (metinListesi == null || position >= metinListesi.size()) return;
+        if (metinList == null || position >= metinList.size()) return;
 
-        MetinItem item = metinListesi.get(position);
+        MetinItem item = metinList.get(position);
         if (item == null) return;
 
         if (holder.txtTitle != null) {
@@ -43,23 +44,19 @@ public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapte
         }
 
         if (holder.txtDesc != null) {
-            String ozet = (item.getPersonalNote() != null && !item.getPersonalNote().trim().isEmpty())
+            String summary = (item.getPersonalNote() != null && !item.getPersonalNote().trim().isEmpty())
                     ? item.getPersonalNote()
                     : (item.getContent() != null ? item.getContent() : "");
-            holder.txtDesc.setText(ozet);
+            holder.txtDesc.setText(summary);
         }
 
-        // Tıklama ile Detay Sayfasına Geçiş
         holder.itemView.setOnClickListener(v -> {
             if (v.getContext() != null) {
                 Intent intent = new Intent(v.getContext(), kisisel_metin_okuma_sayfa.class);
-
-                // KRİTİK DÜZELTME: VERİTABANI İNCELEME ZAMANINI GÜNCELLEYEBİLMEK İÇİN ID ŞART!
                 intent.putExtra("METIN_ID", item.getId());
                 intent.putExtra("TITLE", item.getTitle());
                 intent.putExtra("CONTENT", item.getContent());
                 intent.putExtra("PERSONAL_NOTE", item.getPersonalNote());
-
                 v.getContext().startActivity(intent);
             }
         });
@@ -67,7 +64,7 @@ public class KisiselMetinAdapter extends RecyclerView.Adapter<KisiselMetinAdapte
 
     @Override
     public int getItemCount() {
-        return metinListesi != null ? metinListesi.size() : 0;
+        return metinList != null ? metinList.size() : 0;
     }
 
     public static class MetinViewHolder extends RecyclerView.ViewHolder {

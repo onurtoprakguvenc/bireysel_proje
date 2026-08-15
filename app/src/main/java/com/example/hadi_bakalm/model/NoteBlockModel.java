@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.model;
 
+@SuppressWarnings("unused")
 public class NoteBlockModel {
 
     public enum BlockType {
@@ -9,10 +10,10 @@ public class NoteBlockModel {
         VOICE
     }
 
-    private BlockType type;
+    private final BlockType type;
     private String content; // Metin bloğu için içerik
 
-    // Tablo bloğu için satır ve sütun değişkenleri (YENİ EKLENEN)
+    // Tablo bloğu için satır ve sütun değişkenleri
     private int rows = 3;
     private int cols = 3;
 
@@ -26,7 +27,7 @@ public class NoteBlockModel {
         this.content = content;
     }
 
-    // Tablo bloğu oluştururken satır ve sütun alan kurucu metot (YENİ EKLENEN)
+    // Tablo bloğu oluştururken satır ve sütun alan kurucu metot
     public NoteBlockModel(BlockType type, int rows, int cols) {
         this.type = type;
         this.content = "";
@@ -46,7 +47,7 @@ public class NoteBlockModel {
         this.content = content;
     }
 
-    // Tablo için Getter/Setter metotları (YENİ EKLENEN)
+    // Tablo için Getter/Setter metotları
     public int getRows() {
         return rows;
     }

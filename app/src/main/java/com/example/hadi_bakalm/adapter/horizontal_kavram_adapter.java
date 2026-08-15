@@ -14,12 +14,13 @@ import com.example.hadi_bakalm.noroplastite;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class horizontal_kavram_adapter extends RecyclerView.Adapter<horizontal_kavram_adapter.ViewHolder> {
 
-    private List<concept_kavram_model> liste;
+    private final List<concept_kavram_model> conceptList;
 
-    public horizontal_kavram_adapter(List<concept_kavram_model> liste) {
-        this.liste = liste;
+    public horizontal_kavram_adapter(List<concept_kavram_model> conceptList) {
+        this.conceptList = conceptList;
     }
 
     @NonNull
@@ -32,7 +33,7 @@ public class horizontal_kavram_adapter extends RecyclerView.Adapter<horizontal_k
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        concept_kavram_model item = liste.get(position);
+        concept_kavram_model item = conceptList.get(position);
         holder.txtConceptName.setText(item.getKavramAdi());
 
         holder.itemView.setOnClickListener(v -> {
@@ -44,7 +45,7 @@ public class horizontal_kavram_adapter extends RecyclerView.Adapter<horizontal_k
 
     @Override
     public int getItemCount() {
-        return liste != null ? liste.size() : 0;
+        return conceptList != null ? conceptList.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

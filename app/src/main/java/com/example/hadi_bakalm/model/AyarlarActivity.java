@@ -128,37 +128,39 @@ public class AyarlarActivity extends AppCompatActivity {
     private void setupClickListeners() {
         View btnReset = findViewById(R.id.btnResetAll);
         if (btnReset != null) {
-            btnReset.setOnClickListener(v -> {
-                new AlertDialog.Builder(this)
-                        .setTitle("Tüm Verileri Sıfırla")
-                        .setMessage("Kaydedilen tüm içerikler ve inceleme geçmişi kalıcı olarak silinecektir. Onaylıyor musunuz?")
-                        .setPositiveButton("Sıfırla", (dialog, which) -> {
-
-                            new Thread(() -> {
-                                if (db != null) {
-                                    List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-                                    if (allConcepts != null) {
-                                        for (ConceptItem_kavram concept : allConcepts) {
-                                            concept.setSaved(false);
-                                            concept.setLastViewedTime(0);
-                                            db.conceptDao_kavram().update(concept);
-                                        }
-                                    }
-                                }
-
-                                runOnUiThread(() -> {
-                                    sharedPreferences.edit().clear().apply();
-                                    spinnerTheme.setSelection(0);
-                                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-
-                                    Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
-                                });
-                            }).start();
-
-                        })
-                        .setNegativeButton("Vazgeç", null)
-                        .show();
-            });
+            btnReset.setOnClickListener(v -> showResetConfirmationDialog());
         }
+    }
+
+    private void showResetConfirmationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Tüm Verileri Sıfırla")
+                .setMessage("Kaydedilen tüm içerikler ve inceleme geçmişi kalıcı olarak silinecektir. Onaylıyor musunuz?")
+                .setPositiveButton("Sıfırla", (dialog, which) -> resetAllData())
+                .setNegativeButton("Vazgeç", null)
+                .show();
+    }
+
+    private void resetAllData() {
+        new Thread(() -> {
+            if (db != null) {
+                List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                if (allConcepts != null) {
+                    for (ConceptItem_kavram concept : allConcepts) {
+                        concept.setSaved(false);
+                        concept.setLastViewedTime(0);
+                        db.conceptDao_kavram().update(concept);
+                    }
+                }
+            }
+
+            runOnUiThread(() -> {
+                sharedPreferences.edit().clear().apply();
+                spinnerTheme.setSelection(0);
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
+                Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
+            });
+        }).start();
     }
 }

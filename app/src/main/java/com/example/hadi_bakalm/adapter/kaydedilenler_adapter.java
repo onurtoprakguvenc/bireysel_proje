@@ -1,8 +1,10 @@
 package com.example.hadi_bakalm.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,11 +23,13 @@ import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import com.example.hadi_bakalm.model.MetinItem;
 import com.example.hadi_bakalm.model.kaydedilenler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_adapter.SavedViewHolder> {
 
-    private Context context;
+    private static final String TAG = "kaydedilenler_adapter";
+    private final Context context;
     private List<kaydedilenler> itemList;
     private OnItemClickListener itemClickListener;
 
@@ -45,7 +49,6 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
     @NonNull
     @Override
     public SavedViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // R.layout.kaydedilen_sey_buton_iste TASARIMI BAĞLANDI
         View view = LayoutInflater.from(context).inflate(R.layout.kaydedilen_sey_buton_iste, parent, false);
         return new SavedViewHolder(view);
     }
@@ -61,15 +64,12 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
 
         updateBookmarkIconUI(holder.btnRemoveSave, item.isSaved());
 
-        // KARTIN TAMAMINA TIKLANDIĞINDA
         holder.itemView.setOnClickListener(v -> handleItemClick(item));
 
-        // 1. İNCELE BUTONUNA TIKLAMA OLAYI
         if (holder.btnInspect != null) {
             holder.btnInspect.setOnClickListener(v -> handleItemClick(item));
         }
 
-        // 2. PAYLAŞ BUTONUNA TIKLAMA OLAYI
         if (holder.btnShare != null) {
             holder.btnShare.setOnClickListener(v -> {
                 String shareBody = (item.getTitle() != null ? item.getTitle() : "") + "\n\n" +
@@ -84,7 +84,6 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
             });
         }
 
-        // 3. KAYDET / KAYDEDİLENDEN ÇIKAR
         if (holder.btnRemoveSave != null) {
             holder.btnRemoveSave.setOnClickListener(v -> {
                 boolean newSaveState = !item.isSaved();
@@ -97,20 +96,9 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
                     try {
                         String type = item.getType() != null ? item.getType().toUpperCase() : "";
 
-                        // A) KAVRAM İSE KAVRAM TABLOSUNU GÜNCELLE
                         if (type.contains("KAVRAM")) {
                             List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-                            ConceptItem_kavram matchedConcept = null;
-
-                            if (allConcepts != null) {
-                                for (ConceptItem_kavram concept : allConcepts) {
-                                    if (concept.getTitle() != null && item.getTitle() != null &&
-                                            concept.getTitle().equalsIgnoreCase(item.getTitle())) {
-                                        matchedConcept = concept;
-                                        break;
-                                    }
-                                }
-                            }
+                            ConceptItem_kavram matchedConcept = findMatchingConcept(allConcepts, item.getTitle());
 
                             if (matchedConcept != null) {
                                 matchedConcept.setSaved(newSaveState);
@@ -124,21 +112,9 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
                                 );
                                 db.conceptDao_kavram().insert(newConcept);
                             }
-                        }
-                        // B) METİN İSE METİNLER TABLOSUNU GÜNCELLE
-                        else {
+                        } else {
                             List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
-                            MetinItem matchedMetin = null;
-
-                            if (allMetinler != null) {
-                                for (MetinItem metin : allMetinler) {
-                                    if (metin.getTitle() != null && item.getTitle() != null &&
-                                            metin.getTitle().equalsIgnoreCase(item.getTitle())) {
-                                        matchedMetin = metin;
-                                        break;
-                                    }
-                                }
-                            }
+                            MetinItem matchedMetin = findMatchingMetin(allMetinler, item.getTitle());
 
                             if (matchedMetin != null) {
                                 matchedMetin.setSaved(newSaveState);
@@ -154,7 +130,7 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
                             }
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "Veritabanı güncelleme hatası", e);
                     }
                 }).start();
 
@@ -162,6 +138,26 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
             });
         }
+    }
+
+    private ConceptItem_kavram findMatchingConcept(List<ConceptItem_kavram> list, String title) {
+        if (list == null || title == null) return null;
+        for (ConceptItem_kavram concept : list) {
+            if (concept.getTitle() != null && concept.getTitle().equalsIgnoreCase(title)) {
+                return concept;
+            }
+        }
+        return null;
+    }
+
+    private MetinItem findMatchingMetin(List<MetinItem> list, String title) {
+        if (list == null || title == null) return null;
+        for (MetinItem metin : list) {
+            if (metin.getTitle() != null && metin.getTitle().equalsIgnoreCase(title)) {
+                return metin;
+            }
+        }
+        return null;
     }
 
     private void handleItemClick(kaydedilenler item) {
@@ -198,11 +194,12 @@ public class kaydedilenler_adapter extends RecyclerView.Adapter<kaydedilenler_ad
         return itemList != null ? itemList.size() : 0;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void filterList(List<kaydedilenler> filteredList) {
         if (filteredList != null) {
-            this.itemList = new java.util.ArrayList<>(filteredList);
+            this.itemList = new ArrayList<>(filteredList);
         } else {
-            this.itemList = new java.util.ArrayList<>();
+            this.itemList = new ArrayList<>();
         }
         notifyDataSetChanged();
     }

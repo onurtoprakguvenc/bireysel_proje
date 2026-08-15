@@ -20,7 +20,6 @@ import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
 import com.example.hadi_bakalm.model.MainActivity;
 import com.example.hadi_bakalm.model.NavigationHelper;
 import com.example.hadi_bakalm.model.bagis_sayfa;
-import com.example.hadi_bakalm.model.not_alma_sayfa;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -106,16 +105,13 @@ public class EskiMainActivity extends AppCompatActivity {
         kategoriListesi.add("Kavramlar");
         kategoriListesi.add("Kişisel Metinlerim");
 
-        adapter = new ana_sayfa_adapter(kategoriListesi, new ana_sayfa_adapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(String kategoriAdi) {
-                if (kategoriAdi.equals("Kavramlar")) {
-                    Intent intent = new Intent(EskiMainActivity.this, kavramlar_sayfa.class);
-                    startActivity(intent);
-                } else if (kategoriAdi.equals("Kişisel Metinlerim")) {
-                    Intent intent = new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class);
-                    startActivity(intent);
-                }
+        adapter = new ana_sayfa_adapter(kategoriListesi, kategoriAdi -> {
+            if ("Kavramlar".equals(kategoriAdi)) {
+                Intent intent = new Intent(EskiMainActivity.this, kavramlar_sayfa.class);
+                startActivity(intent);
+            } else if ("Kişisel Metinlerim".equals(kategoriAdi)) {
+                Intent intent = new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class);
+                startActivity(intent);
             }
         });
 

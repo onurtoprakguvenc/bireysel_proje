@@ -11,12 +11,11 @@ import java.util.List;
  * tıklanan kavramın detayını bulmak için buradan okur.
  * Veri sadece burada tanımlanır, başka hiçbir yerde tekrar yazılmaz.
  */
+@SuppressWarnings("unused")
 public class ConceptRepository {
 
-    //listeye oluştur zımbırtıları işte
     private static final List<Concept> ALL_CONCEPTS = buildConceptList();
 
-    //listeyi bana ver
     public static List<Concept> getAllConcepts() {
         return ALL_CONCEPTS;
     }
@@ -24,12 +23,10 @@ public class ConceptRepository {
     /**
      * Kavram adına göre arama yapar. Bulamazsa null döner.
      */
-
-    //eşleşirsek pozitif
     public static Concept getConceptByName(String name) {
         if (name == null) return null;
         for (Concept concept : ALL_CONCEPTS) {
-            if (concept.getName().equals(name)) {
+            if (concept != null && name.equals(concept.getName())) {
                 return concept;
             }
         }
@@ -39,19 +36,14 @@ public class ConceptRepository {
     private static List<Concept> buildConceptList() {
         List<Concept> list = new ArrayList<>();
 
-        // NOT: Şimdilik sadece isim dolduruldu.
-        // Açıklama / kişisel not / örnek diyalog / pratik önem / vücut etkisi
-        // alanlarını doldurmak için Concept(name, aciklama, kisiselNot,
-        // ornekDiyaloglar, pratikOnemi, vucutEtkisi) constructor'ını kullan.
-
         // Nörobiyolojik ve Fizyolojik Kavramlar
         list.add(new Concept(
                 "Amigdala",
-                "Amigdala, beyinde tehdit ve duygusal tepkileri yöneten badem şekilli yapıdır...",  // açıklama
-                "Bana göre amigdala...",                                                            // kişisel not
-                "Örnek: 'Aniden köpek gördüm ve kalbim hızlandı' — bu amigdalanın tepkisi",          // örnek diyaloglar
-                "Günlük hayatta ani tehlike anında hızlı tepki vermemizi sağlar",                    // pratik önemi
-                "Kortizol salgılanmasını tetikler, kalp atışını hızlandırır"                          // vücut etkisi
+                "Amigdala, beyinde tehdit ve duygusal tepkileri yöneten badem şekilli yapıdır...",
+                "Bana göre amigdala...",
+                "Örnek: 'Aniden köpek gördüm ve kalbim hızlandı' — bu amigdalanın tepkisi",
+                "Günlük hayatta ani tehlike anında hızlı tepki vermemizi sağlar",
+                "Kortizol salgılanmasını tetikler, kalp atışını hızlandırır"
         ));
         list.add(new Concept("Prefrontal Korteks / Mantık Korteksi (PFC)"));
         list.add(new Concept("Anterior Singulat Korteks (ACC)"));
@@ -110,8 +102,6 @@ public class ConceptRepository {
         list.add(new Concept("Amigdala Gaspı (Amygdala Hijack)"));
         list.add(new Concept("Stres Aşlaması (Stress Inoculation)"));
         list.add(new Concept("Antropomorfizm"));
-
-
 
         return list;
     }

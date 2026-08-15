@@ -1,8 +1,9 @@
 package com.example.hadi_bakalm.model;
 
+@SuppressWarnings("unused")
 public class KisiselMetin {
-    private String baslik;
-    private String aciklama;
+    private final String baslik;
+    private final String aciklama;
 
     public KisiselMetin(String baslik, String aciklama) {
         this.baslik = baslik;

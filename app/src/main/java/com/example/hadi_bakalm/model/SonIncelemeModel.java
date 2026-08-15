@@ -1,11 +1,11 @@
 package com.example.hadi_bakalm.model;
 
 public class SonIncelemeModel {
-    private long id; // int yerine long yapıldı (Room Entity uyumu için)
-    private String baslik;
-    private String aciklama;
-    private String zaman;
-    private String tur;
+    private final long id; // int yerine long yapıldı (Room Entity uyumu için)
+    private final String baslik;
+    private final String aciklama;
+    private final String zaman;
+    private final String tur;
 
     public SonIncelemeModel(long id, String baslik, String aciklama, String zaman, String tur) {
         this.id = id;

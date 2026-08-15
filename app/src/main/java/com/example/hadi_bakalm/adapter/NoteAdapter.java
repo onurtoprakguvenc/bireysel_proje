@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,18 +21,18 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     public interface OnItemClickListener {
         void onItemClick(NoteModel note, int position);
-        void onItemLongClick(NoteModel note, int position); // YENİ EKLENDİ
+        void onItemLongClick(NoteModel note, int position);
     }
 
-    private Context context;
+    private final Context context;
     private List<NoteModel> noteList;
     private List<NoteModel> filteredList;
     private OnItemClickListener listener;
 
     public NoteAdapter(Context context, List<NoteModel> noteList) {
         this.context = context;
-        this.noteList = noteList;
-        this.filteredList = new ArrayList<>(noteList);
+        this.noteList = noteList != null ? noteList : new ArrayList<>();
+        this.filteredList = new ArrayList<>(this.noteList);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
@@ -50,29 +51,31 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         if (position < filteredList.size()) {
             NoteModel note = filteredList.get(position);
 
-            // DOĞRU DEĞİŞKEN İSİMLERİ İLE BAĞLAMA:
             holder.tvNoteTitle.setText(note.getTitle());
             holder.tvNoteContent.setText(note.getContent());
             holder.tvNoteDate.setText(note.getDate());
 
-            // Sabitleme rozeti (iğne) görünürlüğü
             if (note.isPinned()) {
                 holder.ivPinBadge.setVisibility(View.VISIBLE);
             } else {
                 holder.ivPinBadge.setVisibility(View.GONE);
             }
 
-            // Normal Tıklama
             holder.itemView.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onItemClick(note, holder.getAdapterPosition());
+                    int pos = holder.getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) {
+                        listener.onItemClick(note, pos);
+                    }
                 }
             });
 
-            // Basılı Tutma (Long Click) - Silme İçin
             holder.itemView.setOnLongClickListener(v -> {
                 if (listener != null) {
-                    listener.onItemLongClick(note, holder.getAdapterPosition());
+                    int pos = holder.getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) {
+                        listener.onItemLongClick(note, pos);
+                    }
                 }
                 return true;
             });
@@ -81,18 +84,21 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @Override
     public int getItemCount() {
-        return filteredList.size();
+        return filteredList != null ? filteredList.size() : 0;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     public void updateList(List<NoteModel> newList) {
-        this.noteList = newList;
-        this.filteredList = new ArrayList<>(newList);
+        this.noteList = newList != null ? newList : new ArrayList<>();
+        this.filteredList = new ArrayList<>(this.noteList);
         notifyDataSetChanged();
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    @SuppressWarnings("unused")
     public void filter(String query) {
         filteredList.clear();
-        if (query.trim().isEmpty()) {
+        if (query == null || query.trim().isEmpty()) {
             filteredList.addAll(noteList);
         } else {
             String filterPattern = query.toLowerCase().trim();
@@ -108,14 +114,14 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     public static class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView tvNoteTitle, tvNoteContent, tvNoteDate;
-        ImageView ivPinBadge; // 1. BURAYA TANIMLA
+        ImageView ivPinBadge;
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);
             tvNoteTitle = itemView.findViewById(R.id.tvNoteTitle);
             tvNoteContent = itemView.findViewById(R.id.tvNoteContent);
             tvNoteDate = itemView.findViewById(R.id.tvNoteDate);
-            ivPinBadge = itemView.findViewById(R.id.ivPinBadge); // 2. BURADA BAĞLA
+            ivPinBadge = itemView.findViewById(R.id.ivPinBadge);
         }
     }
 }

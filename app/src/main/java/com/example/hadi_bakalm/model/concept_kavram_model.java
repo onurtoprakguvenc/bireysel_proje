@@ -1,9 +1,10 @@
 package com.example.hadi_bakalm.model;
 
+@SuppressWarnings("unused")
 public class concept_kavram_model {
     private String id;
-    private String kavramAdi;
-    private String aciklama;
+    private final String kavramAdi;
+    private final String aciklama;
     private String icerik; // JSON'daki "content" alanı için
 
     // Standart Kullanım Constructor

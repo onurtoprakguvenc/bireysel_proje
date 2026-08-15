@@ -1,5 +1,6 @@
 package com.example.hadi_bakalm.model;
 
+@SuppressWarnings("unused")
 public class Concept {
 
     private String name;

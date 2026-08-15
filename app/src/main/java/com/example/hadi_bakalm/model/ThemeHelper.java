@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatDelegate;
 
+@SuppressWarnings("unused")
 public class ThemeHelper {
 
     private static final String PREF_NAME = "ThemePrefs";

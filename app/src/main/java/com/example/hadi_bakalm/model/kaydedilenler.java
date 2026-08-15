@@ -2,6 +2,7 @@ package com.example.hadi_bakalm.model;
 
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class kaydedilenler {
     private String id;
     private String title;
