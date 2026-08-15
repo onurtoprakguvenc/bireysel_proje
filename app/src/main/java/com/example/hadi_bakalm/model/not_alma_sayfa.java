@@ -51,7 +51,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private TextView btnToolText;
     private List<NoteBlockModel> blockList;
 
-    private ImageButton btnToolScroll, btnToolSelect, btnToolPen, btnToolHighlighter, btnToolEraser;
+    private ImageButton btnToolScroll, btnToolSelect, btnToolLasso, btnToolPen, btnToolHighlighter, btnToolEraser;
     private ImageButton btnToolShapes, btnToolUndo, btnToolRedo;
     private ImageButton btnColorPicker, btnClearCanvas;
 
@@ -169,6 +169,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         btnToolScroll = findViewById(R.id.btnToolScroll);
         btnToolSelect = findViewById(R.id.btnToolSelect);
+        btnToolLasso = findViewById(R.id.btnToolLasso);
         btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
@@ -308,6 +309,15 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void setupCanvasTouchListener() {
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setOnTouchListener((v, event) -> {
+                if (activeMode != DrawingView.ToolMode.TEXT) {
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
+                            commitInlineText();
+                        }
+                    }
+                    return false;
+                }
+
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
                         commitInlineText();
@@ -316,25 +326,20 @@ public class not_alma_sayfa extends AppCompatActivity {
                     float touchX = event.getX() / globalDrawingCanvas.getScaleFactor();
                     float touchY = (event.getY() / globalDrawingCanvas.getScaleFactor()) - globalDrawingCanvas.getOffsetY();
 
-                    // Tablo Tıklama Kontrolü
                     DrawingView.TableCellClickResult result = globalDrawingCanvas.checkTableCellClick(touchX, touchY);
                     if (result != null) {
                         openInlineTableCellEditor(result);
                         return true;
                     }
 
-                    // T (Metin) Modu Kontrolü
-                    if (activeMode == DrawingView.ToolMode.TEXT) {
-                        DrawingView.TextItem clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
-                        if (clickedText != null) {
-                            openInlineTextEditor(clickedText.x, clickedText.y, clickedText);
-                        } else {
-                            openInlineTextEditor(touchX, touchY, null);
-                        }
-                        return true;
+                    DrawingView.TextItem clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
+                    if (clickedText != null) {
+                        openInlineTextEditor(clickedText.x, clickedText.y, clickedText);
+                    } else {
+                        openInlineTextEditor(touchX, touchY, null);
                     }
+                    return true;
                 }
-                // Diğer tüm modlarda (SELECT, PEN, ERASER, SCROLL vb.) DrawingView kendi onTouchEvent'ini yönetsin
                 return false;
             });
         }
@@ -353,6 +358,28 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
+        // 1. TEKİL SEÇİM (CURSOR) BUTONU
+        if (btnToolSelect != null) {
+            btnToolSelect.setOnClickListener(v -> {
+                commitInlineText();
+                activeMode = DrawingView.ToolMode.SELECT;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Seçim Modu: Düzenlemek veya silmek için nesneye dokunun", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // 2. ÇOKLU KEMENT (LASSO) BUTONU
+        if (btnToolLasso != null) {
+            btnToolLasso.setOnClickListener(v -> {
+                commitInlineText();
+                activeMode = DrawingView.ToolMode.LASSO;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Kement Modu: Seçmek istediğiniz alanı parmağınızla çizin", Toast.LENGTH_SHORT).show();
+            });
+        }
+
         if (btnToolScroll != null) {
             btnToolScroll.setOnClickListener(v -> {
                 commitInlineText();
@@ -360,16 +387,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
                 Toast.makeText(this, "Kaydırma Modu", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnToolSelect != null) {
-            btnToolSelect.setOnClickListener(v -> {
-                commitInlineText();
-                activeMode = DrawingView.ToolMode.SELECT;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Seçim Modu: Taşımak veya silmek için nesneye dokunun", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -518,9 +535,16 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnToolScroll.setColorFilter(isScroll ? 0xFF0284C7 : 0xFF475569);
         }
 
+        // Tekil Seçim (Cursor) Vurgusu
         if (btnToolSelect != null) {
             boolean isSelect = (mode == DrawingView.ToolMode.SELECT);
             btnToolSelect.setColorFilter(isSelect ? 0xFF0284C7 : 0xFF475569);
+        }
+
+        // Çoklu Kement (Lasso) Vurgusu
+        if (btnToolLasso != null) {
+            boolean isLasso = (mode == DrawingView.ToolMode.LASSO);
+            btnToolLasso.setColorFilter(isLasso ? 0xFF0284C7 : 0xFF475569);
         }
 
         if (btnToolEraser != null) {

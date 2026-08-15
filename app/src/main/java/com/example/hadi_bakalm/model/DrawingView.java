@@ -10,6 +10,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Region;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -23,7 +24,7 @@ import java.util.List;
 
 public class DrawingView extends View {
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, SELECT, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, SELECT, LASSO, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
 
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
@@ -59,9 +60,16 @@ public class DrawingView extends View {
             this.strokeWidth = strokeWidth;
             this.isEraser = isEraser;
         }
+
+        public void offset(float dx, float dy) {
+            path.offset(dx, dy);
+            for (Point p : points) {
+                p.x += dx;
+                p.y += dy;
+            }
+        }
     }
 
-    // Bağımsız ve Seçilebilir Şekil Modeli
     public static class ShapeItem {
         public ToolMode shapeType;
         public float startX, startY, endX, endY;
@@ -85,6 +93,11 @@ public class DrawingView extends View {
             float maxY = Math.max(startY, endY);
             float pad = Math.max(strokeWidth / 2f, 15f);
             return new RectF(minX - pad, minY - pad, maxX + pad, maxY + pad);
+        }
+
+        public RectF getResizeHandle() {
+            RectF b = getBounds();
+            return new RectF(b.right - 30f, b.bottom - 30f, b.right + 30f, b.bottom + 30f);
         }
 
         public void offset(float dx, float dy) {
@@ -116,6 +129,11 @@ public class DrawingView extends View {
         public RectF getResizeHandle() {
             return new RectF(x + width - 40f, y + height - 40f, x + width + 20f, y + height + 20f);
         }
+
+        public void offset(float dx, float dy) {
+            x += dx;
+            y += dy;
+        }
     }
 
     public static class TextItem {
@@ -129,6 +147,11 @@ public class DrawingView extends View {
             this.text = text;
             this.color = color;
             this.textSize = textSize;
+        }
+
+        public void offset(float dx, float dy) {
+            x += dx;
+            y += dy;
         }
     }
 
@@ -178,10 +201,18 @@ public class DrawingView extends View {
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
-    private Object selectedItem = null; // ShapeItem, ImageItem veya TextItem
+    // Tekil Seçim
+    private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
     private final RectF menuSizeUpBounds = new RectF();
     private final RectF menuSizeDownBounds = new RectF();
+
+    // Kement Çoklu Seçim
+    private final List<Object> selectedGroup = new ArrayList<>();
+    private final RectF groupBounds = new RectF();
+    private Path lassoPath = null;
+    private boolean isDraggingGroup = false;
+    private float groupDragStartX, groupDragStartY;
 
     private int currentColor = 0xFF09090B;
     private float currentStrokeWidth = 8f;
@@ -201,6 +232,7 @@ public class DrawingView extends View {
     private Paint menuTextPaint;
     private Paint eraserCursorPaint;
     private Paint shapeRenderPaint;
+    private Paint lassoPaint;
 
     // =========================================================================
     // 3. BAŞLANGIÇ YAPILANDIRMASI
@@ -257,6 +289,12 @@ public class DrawingView extends View {
         eraserCursorPaint.setColor(0x8894A3B8);
         eraserCursorPaint.setStrokeWidth(3f);
 
+        lassoPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        lassoPaint.setStyle(Paint.Style.STROKE);
+        lassoPaint.setColor(0xFF0284C7);
+        lassoPaint.setStrokeWidth(3f);
+        lassoPaint.setPathEffect(new DashPathEffect(new float[]{10, 10}, 0));
+
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(ScaleGestureDetector detector) {
@@ -269,7 +307,7 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 4. RENDER DÖNGÜSÜ (ON DRAW)
+    // 4. RENDER DÖNGÜSÜ
     // =========================================================================
 
     @Override
@@ -280,34 +318,41 @@ public class DrawingView extends View {
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
 
-        // 1. Serbest Çizimler
+        // Serbest Çizimler
         for (StrokeItem stroke : strokes) {
             canvas.drawPath(stroke.path, stroke.paint);
         }
 
-        // 2. Sabit Vektör Şekilleri
+        // Şekiller
         renderShapes(canvas);
 
-        // 3. Anlık Çizilen Çizgi / Şekil Önizlemesi
-        if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL && currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.TEXT) {
+        // Anlık Çizim / Önizleme
+        if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL &&
+                currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
         }
 
-        // 4. Tablolar
+        // Tablolar, Görseller, Metinler
         renderTables(canvas);
-
-        // 5. Görseller
         renderImages(canvas);
-
-        // 6. Serbest Metinler
         renderTexts(canvas);
 
-        // 7. Seçim Çerçevesi ve Yüzen Hızlı Menü (En Üst Katman)
-        if (currentToolMode == ToolMode.SELECT && selectedItem != null) {
+        // Kement İzi
+        if (lassoPath != null) {
+            canvas.drawPath(lassoPath, lassoPaint);
+        }
+
+        // Çoklu Grup Seçim Kutusu
+        if (!selectedGroup.isEmpty()) {
+            renderGroupSelectionAndMenu(canvas);
+        }
+
+        // Tekil Seçim Çerçevesi (SELECT modunda)
+        if (currentToolMode == ToolMode.SELECT && selectedItem != null && selectedGroup.isEmpty()) {
             renderSelectionAndFloatingMenu(canvas);
         }
 
-        // 8. Silgi İz Göstergesi
+        // Silgi Göstergesi
         if (currentToolMode == ToolMode.ERASER && isErasing && eraserX >= 0 && eraserY >= 0) {
             float radius = (currentStrokeWidth * 3f) / 2f;
             canvas.drawCircle(eraserX, eraserY, radius, eraserCursorPaint);
@@ -382,6 +427,25 @@ public class DrawingView extends View {
         }
     }
 
+    private void renderGroupSelectionAndMenu(Canvas canvas) {
+        canvas.drawRect(groupBounds, selectionBoxPaint);
+
+        float menuW = 120f;
+        float menuH = 64f;
+        float menuX = groupBounds.left + (groupBounds.width() - menuW) / 2f;
+        float menuY = groupBounds.top - menuH - 20f;
+
+        if (menuY < -offsetY + 10f) {
+            menuY = groupBounds.bottom + 20f;
+        }
+
+        menuSizeDownBounds.setEmpty();
+        menuSizeUpBounds.setEmpty();
+        menuDeleteBounds.set(menuX, menuY, menuX + menuW, menuY + menuH);
+        canvas.drawRoundRect(menuDeleteBounds, 32f, 32f, menuBgPaint);
+        canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 40f, menuTextPaint);
+    }
+
     private void renderSelectionAndFloatingMenu(Canvas canvas) {
         RectF bounds = new RectF();
         boolean isText = (selectedItem instanceof TextItem);
@@ -396,6 +460,7 @@ public class DrawingView extends View {
             bounds.set(t.x - 8f, t.y - textH - 8f, t.x + textW + 8f, t.y + 12f);
         } else if (selectedItem instanceof ShapeItem) {
             bounds = ((ShapeItem) selectedItem).getBounds();
+            canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
         }
 
         canvas.drawRect(bounds, selectionBoxPaint);
@@ -430,7 +495,7 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 5. DETERMINISTIK DOKUNMA YÖNETİMİ
+    // 5. DOKUNMA YÖNETİMİ
     // =========================================================================
 
     private Path activePath;
@@ -473,7 +538,14 @@ public class DrawingView extends View {
                     return true;
                 }
 
+                if (currentToolMode == ToolMode.LASSO) {
+                    handleLassoDown(touchX, touchY);
+                    return true;
+                }
+
                 selectedItem = null;
+                selectedGroup.clear();
+                groupBounds.setEmpty();
                 startStroke(touchX, touchY);
                 break;
 
@@ -483,6 +555,11 @@ public class DrawingView extends View {
 
                 if (currentToolMode == ToolMode.SELECT) {
                     handleSelectMove(touchX, touchY);
+                    return true;
+                }
+
+                if (currentToolMode == ToolMode.LASSO) {
+                    handleLassoMove(touchX, touchY);
                     return true;
                 }
 
@@ -496,6 +573,11 @@ public class DrawingView extends View {
                     return true;
                 }
 
+                if (currentToolMode == ToolMode.LASSO) {
+                    handleLassoUp();
+                    return true;
+                }
+
                 finishStroke();
                 break;
         }
@@ -504,7 +586,11 @@ public class DrawingView extends View {
         return true;
     }
 
+    // --- TEKİL SEÇİM (CURSOR) METOTLARI ---
     private void handleSelectDown(float x, float y) {
+        selectedGroup.clear();
+        groupBounds.setEmpty();
+
         // 1. Menü Tıklamaları
         if (selectedItem != null) {
             if (menuDeleteBounds.contains(x, y)) {
@@ -533,7 +619,7 @@ public class DrawingView extends View {
             }
         }
 
-        // 2. Görsel Boyutlandırma Tutamacı
+        // 2. Tutamaç Kontrolleri
         if (selectedItem instanceof ImageItem) {
             ImageItem img = (ImageItem) selectedItem;
             if (img.getResizeHandle().contains(x, y)) {
@@ -542,7 +628,15 @@ public class DrawingView extends View {
             }
         }
 
-        // 3. Şekil Dokunma Kontrolü
+        if (selectedItem instanceof ShapeItem) {
+            ShapeItem s = (ShapeItem) selectedItem;
+            if (s.getResizeHandle().contains(x, y)) {
+                isResizingImage = true;
+                return;
+            }
+        }
+
+        // 3. Şekil Tıklaması
         for (int i = shapes.size() - 1; i >= 0; i--) {
             ShapeItem s = shapes.get(i);
             if (s.getBounds().contains(x, y)) {
@@ -555,7 +649,7 @@ public class DrawingView extends View {
             }
         }
 
-        // 4. Görsel Dokunma Kontrolü
+        // 4. Görsel Tıklaması
         for (int i = images.size() - 1; i >= 0; i--) {
             ImageItem img = images.get(i);
             if (img.getBounds().contains(x, y)) {
@@ -568,7 +662,7 @@ public class DrawingView extends View {
             }
         }
 
-        // 5. Metin Dokunma Kontrolü
+        // 5. Metin Tıklaması
         for (int i = texts.size() - 1; i >= 0; i--) {
             TextItem t = texts.get(i);
             float w = freeTextPaint.measureText(t.text);
@@ -583,18 +677,26 @@ public class DrawingView extends View {
             }
         }
 
+        // Boşluğa dokunuldu -> Seçimi kaldır
         selectedItem = null;
         invalidate();
     }
 
     private void handleSelectMove(float x, float y) {
-        if (isResizingImage && selectedItem instanceof ImageItem) {
-            ImageItem img = (ImageItem) selectedItem;
-            float newW = Math.max(80f, x - img.x);
-            float ratio = (float) img.bitmap.getHeight() / (float) img.bitmap.getWidth();
-            img.width = newW;
-            img.height = newW * ratio;
-            invalidate();
+        if (isResizingImage && selectedItem != null) {
+            if (selectedItem instanceof ImageItem) {
+                ImageItem img = (ImageItem) selectedItem;
+                float newW = Math.max(80f, x - img.x);
+                float ratio = (float) img.bitmap.getHeight() / (float) img.bitmap.getWidth();
+                img.width = newW;
+                img.height = newW * ratio;
+                invalidate();
+            } else if (selectedItem instanceof ShapeItem) {
+                ShapeItem s = (ShapeItem) selectedItem;
+                s.endX = x;
+                s.endY = y;
+                invalidate();
+            }
         } else if (isDraggingObject && selectedItem != null) {
             if (selectedItem instanceof ShapeItem) {
                 ShapeItem s = (ShapeItem) selectedItem;
@@ -622,6 +724,167 @@ public class DrawingView extends View {
             isResizingImage = false;
             notifyChange();
         }
+    }
+
+    // --- ÇOKLU KEMENT (LASSO) METOTLARI ---
+    private void handleLassoDown(float x, float y) {
+        selectedItem = null;
+
+        if (!selectedGroup.isEmpty()) {
+            if (menuDeleteBounds.contains(x, y)) {
+                for (Object obj : selectedGroup) {
+                    strokes.remove(obj);
+                    shapes.remove(obj);
+                    images.remove(obj);
+                    texts.remove(obj);
+                }
+                selectedGroup.clear();
+                groupBounds.setEmpty();
+                notifyChange();
+                invalidate();
+                return;
+            }
+
+            if (groupBounds.contains(x, y)) {
+                isDraggingGroup = true;
+                groupDragStartX = x;
+                groupDragStartY = y;
+                return;
+            }
+
+            selectedGroup.clear();
+            groupBounds.setEmpty();
+        }
+
+        lassoPath = new Path();
+        lassoPath.moveTo(x, y);
+        invalidate();
+    }
+
+    private void handleLassoMove(float x, float y) {
+        if (isDraggingGroup) {
+            float dx = x - groupDragStartX;
+            float dy = y - groupDragStartY;
+
+            for (Object obj : selectedGroup) {
+                if (obj instanceof StrokeItem) ((StrokeItem) obj).offset(dx, dy);
+                else if (obj instanceof ShapeItem) ((ShapeItem) obj).offset(dx, dy);
+                else if (obj instanceof ImageItem) ((ImageItem) obj).offset(dx, dy);
+                else if (obj instanceof TextItem) ((TextItem) obj).offset(dx, dy);
+            }
+
+            groupBounds.offset(dx, dy);
+            groupDragStartX = x;
+            groupDragStartY = y;
+            invalidate();
+            return;
+        }
+
+        if (lassoPath != null) {
+            lassoPath.lineTo(x, y);
+            invalidate();
+        }
+    }
+
+    private void handleLassoUp() {
+        if (isDraggingGroup) {
+            isDraggingGroup = false;
+            notifyChange();
+            return;
+        }
+
+        if (lassoPath != null) {
+            calculateLassoSelection();
+        }
+    }
+
+    private void calculateLassoSelection() {
+        if (lassoPath == null) return;
+
+        selectedGroup.clear();
+        lassoPath.close();
+
+        RectF lassoRect = new RectF();
+        lassoPath.computeBounds(lassoRect, true);
+
+        Region clipRegion = new Region((int) lassoRect.left, (int) lassoRect.top, (int) lassoRect.right, (int) lassoRect.bottom);
+        Region lassoRegion = new Region();
+        lassoRegion.setPath(lassoPath, clipRegion);
+
+        for (StrokeItem stroke : strokes) {
+            for (Point p : stroke.points) {
+                if (lassoRegion.contains((int) p.x, (int) p.y)) {
+                    selectedGroup.add(stroke);
+                    break;
+                }
+            }
+        }
+
+        for (ShapeItem shape : shapes) {
+            RectF b = shape.getBounds();
+            if (lassoRegion.contains((int) b.centerX(), (int) b.centerY())) {
+                selectedGroup.add(shape);
+            }
+        }
+
+        for (ImageItem img : images) {
+            RectF b = img.getBounds();
+            if (lassoRegion.contains((int) b.centerX(), (int) b.centerY())) {
+                selectedGroup.add(img);
+            }
+        }
+
+        for (TextItem txt : texts) {
+            if (lassoRegion.contains((int) txt.x, (int) txt.y)) {
+                selectedGroup.add(txt);
+            }
+        }
+
+        calculateGroupBounds();
+        lassoPath = null;
+        invalidate();
+    }
+
+    private void calculateGroupBounds() {
+        if (selectedGroup.isEmpty()) {
+            groupBounds.setEmpty();
+            return;
+        }
+
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+
+        for (Object obj : selectedGroup) {
+            if (obj instanceof StrokeItem) {
+                for (Point p : ((StrokeItem) obj).points) {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x);
+                    maxY = Math.max(maxY, p.y);
+                }
+            } else if (obj instanceof ShapeItem) {
+                RectF b = ((ShapeItem) obj).getBounds();
+                minX = Math.min(minX, b.left);
+                minY = Math.min(minY, b.top);
+                maxX = Math.max(maxX, b.right);
+                maxY = Math.max(maxY, b.bottom);
+            } else if (obj instanceof ImageItem) {
+                RectF b = ((ImageItem) obj).getBounds();
+                minX = Math.min(minX, b.left);
+                minY = Math.min(minY, b.top);
+                maxX = Math.max(maxX, b.right);
+                maxY = Math.max(maxY, b.bottom);
+            } else if (obj instanceof TextItem) {
+                TextItem t = (TextItem) obj;
+                float w = freeTextPaint.measureText(t.text);
+                minX = Math.min(minX, t.x);
+                minY = Math.min(minY, t.y - t.textSize);
+                maxX = Math.max(maxX, t.x + w);
+                maxY = Math.max(maxY, t.y);
+            }
+        }
+
+        groupBounds.set(minX - 16f, minY - 16f, maxX + 16f, maxY + 16f);
     }
 
     private void handleScrollTouch(MotionEvent event) {
@@ -744,12 +1007,15 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 6. KAMUYA AÇIK YÖNETİM METOTLARI (PUBLIC API)
+    // 6. KAMUYA AÇIK METOTLAR
     // =========================================================================
 
     public void setToolMode(ToolMode mode) {
         this.currentToolMode = mode;
         this.selectedItem = null;
+        this.selectedGroup.clear();
+        this.groupBounds.setEmpty();
+        this.lassoPath = null;
         this.activePath = null;
         invalidate();
     }
@@ -799,6 +1065,9 @@ public class DrawingView extends View {
         texts.clear();
         tables.clear();
         selectedItem = null;
+        selectedGroup.clear();
+        groupBounds.setEmpty();
+        lassoPath = null;
         activePath = null;
         offsetY = 0f;
         scaleFactor = 1.0f;
@@ -897,7 +1166,7 @@ public class DrawingView extends View {
     public float getOffsetY() { return offsetY; }
 
     // =========================================================================
-    // 7. JSON SERİLEŞTİRME (IMPORT / EXPORT)
+    // 7. JSON SERİLEŞTİRME
     // =========================================================================
 
     public String getDrawingJson() {
