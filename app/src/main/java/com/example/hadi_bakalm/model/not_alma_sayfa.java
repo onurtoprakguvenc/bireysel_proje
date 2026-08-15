@@ -44,14 +44,14 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private DrawingView globalDrawingCanvas;
     private EditText inlineTextEditor;
-    private DrawingView.TextObject activeEditingTextObj = null;
+    private DrawingView.TextItem activeEditingTextObj = null;
     private DrawingView.TableCellClickResult activeEditingTableCell = null;
 
     private FrameLayout frameToolPen, frameToolHighlighter, frameToolText;
     private TextView btnToolText;
     private List<NoteBlockModel> blockList;
 
-    private ImageButton btnToolScroll, btnToolPen, btnToolHighlighter, btnToolEraser;
+    private ImageButton btnToolScroll, btnToolSelect, btnToolPen, btnToolHighlighter, btnToolEraser;
     private ImageButton btnToolShapes, btnToolUndo, btnToolRedo;
     private ImageButton btnColorPicker, btnClearCanvas;
 
@@ -60,6 +60,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private boolean isPinned = false;
     private int currentNoteId = -1;
+
     private float currentStrokeWidth = 8f;
     private DrawingView.ToolMode activeMode = DrawingView.ToolMode.PEN;
 
@@ -67,6 +68,10 @@ public class not_alma_sayfa extends AppCompatActivity {
     private notdao noteDao;
 
     private ActivityResultLauncher<String> imagePickerLauncher;
+
+    private float pendingNewTextX = 0f;
+    private float pendingNewTextY = 0f;
+    private boolean isCreatingNewText = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +168,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnToolText = findViewById(R.id.btnToolText);
 
         btnToolScroll = findViewById(R.id.btnToolScroll);
+        btnToolSelect = findViewById(R.id.btnToolSelect);
         btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
@@ -197,24 +203,16 @@ public class not_alma_sayfa extends AppCompatActivity {
         });
     }
 
-    // 1. Serbest Metin İçin Tuval Üzerinde Canlı Editör Aç
-    private float pendingNewTextX = 0f;
-    private float pendingNewTextY = 0f;
-    private boolean isCreatingNewText = false;
-
-    // 1. Serbest Metin Editörünü Açma (Düzeltildi)
-    private void openInlineTextEditor(float x, float y, DrawingView.TextObject textObj) {
-        commitInlineText(); // Önceki varsa kaydet
+    private void openInlineTextEditor(float x, float y, DrawingView.TextItem textObj) {
+        commitInlineText();
 
         activeEditingTableCell = null;
 
         if (textObj != null) {
-            // Var olan metni düzenleme modu
             isCreatingNewText = false;
             activeEditingTextObj = textObj;
             inlineTextEditor.setText(textObj.text);
         } else {
-            // Tamamen yeni metin ekleme modu
             isCreatingNewText = true;
             activeEditingTextObj = null;
             pendingNewTextX = x;
@@ -241,26 +239,22 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
-    // 2. Metni Tuvale İşleme (Düzeltildi)
     private void commitInlineText() {
         if (inlineTextEditor == null || inlineTextEditor.getVisibility() != View.VISIBLE) return;
 
         String text = inlineTextEditor.getText().toString().trim();
 
         if (isCreatingNewText) {
-            // Yeni metin ekleniyorsa ve boş değilse tuvale ekle
             if (!text.isEmpty() && globalDrawingCanvas != null) {
                 globalDrawingCanvas.addTextToCanvas(pendingNewTextX, pendingNewTextY, text, 0xFF0F172A);
             }
         } else if (activeEditingTextObj != null) {
-            // Var olan metin düzenleniyorsa
             if (text.isEmpty()) {
                 globalDrawingCanvas.removeTextObject(activeEditingTextObj);
             } else {
                 globalDrawingCanvas.updateTextObject(activeEditingTextObj, text);
             }
         } else if (activeEditingTableCell != null) {
-            // Tablo hücresi
             globalDrawingCanvas.updateTableCellText(activeEditingTableCell.table, activeEditingTableCell.row, activeEditingTableCell.col, text);
         }
 
@@ -275,11 +269,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
-    // 3. Tuval Dokunma Dinleyicisi (Düzeltildi)
-    @SuppressLint("ClickableViewAccessibility")
-
-
-    // 2. Tablo Hücresi İçin Tuval Üzerinde Canlı Editör Aç
     private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
         commitInlineText();
 
@@ -315,15 +304,11 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
-    // 3. Yazılan Metni Tuvale İşle ve Editörü Kapat
-
-
     @SuppressLint("ClickableViewAccessibility")
     private void setupCanvasTouchListener() {
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    // Önce açıkta düzenleme varsa bitir
                     if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
                         commitInlineText();
                     }
@@ -331,26 +316,25 @@ public class not_alma_sayfa extends AppCompatActivity {
                     float touchX = event.getX() / globalDrawingCanvas.getScaleFactor();
                     float touchY = (event.getY() / globalDrawingCanvas.getScaleFactor()) - globalDrawingCanvas.getOffsetY();
 
-                    // 1. Tablo Tıklama Kontrolü
+                    // Tablo Tıklama Kontrolü
                     DrawingView.TableCellClickResult result = globalDrawingCanvas.checkTableCellClick(touchX, touchY);
                     if (result != null) {
                         openInlineTableCellEditor(result);
                         return true;
                     }
 
-                    // 2. T (Metin) Modu Kontrolü
+                    // T (Metin) Modu Kontrolü
                     if (activeMode == DrawingView.ToolMode.TEXT) {
-                        DrawingView.TextObject clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
+                        DrawingView.TextItem clickedText = globalDrawingCanvas.checkTextClick(touchX, touchY);
                         if (clickedText != null) {
-                            // Var olan metne dokunulduysa -> düzenle
                             openInlineTextEditor(clickedText.x, clickedText.y, clickedText);
                         } else {
-                            // Boş alana dokunulduysa -> doğrudan yeni metin aç (Sahte nesne eklemeden!)
                             openInlineTextEditor(touchX, touchY, null);
                         }
                         return true;
                     }
                 }
+                // Diğer tüm modlarda (SELECT, PEN, ERASER, SCROLL vb.) DrawingView kendi onTouchEvent'ini yönetsin
                 return false;
             });
         }
@@ -375,7 +359,17 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.SCROLL;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kaydırma Modu (Dikey kaydırın)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Kaydırma Modu", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        if (btnToolSelect != null) {
+            btnToolSelect.setOnClickListener(v -> {
+                commitInlineText();
+                activeMode = DrawingView.ToolMode.SELECT;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                Toast.makeText(this, "Seçim Modu: Taşımak veya silmek için nesneye dokunun", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -395,8 +389,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.HIGHLIGHTER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-
-                // Fosforlu kalem kalınlık penceresi (10px - 60px arası)
                 showStrokeSizeDialog("Fosforlu Kalem Kalınlığı", 10f, 60f, 15f, 30f, 50f);
             });
         }
@@ -419,8 +411,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                     globalDrawingCanvas.setToolMode(activeMode);
                 }
                 updateActiveToolUI(activeMode);
-
-                // Silgi kalınlık seçme diyaloğunu aç
                 showEraserWidthDialog();
             });
         }
@@ -495,6 +485,47 @@ public class not_alma_sayfa extends AppCompatActivity {
                     imagePickerLauncher.launch("image/*");
                 }
             });
+        }
+    }
+
+    private void updateActiveToolUI(DrawingView.ToolMode mode) {
+        if (frameToolPen != null) {
+            boolean isPen = (mode == DrawingView.ToolMode.PEN);
+            frameToolPen.setBackgroundResource(isPen ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolPen != null) {
+                btnToolPen.setColorFilter(isPen ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+
+        if (frameToolHighlighter != null) {
+            boolean isHighlighter = (mode == DrawingView.ToolMode.HIGHLIGHTER);
+            frameToolHighlighter.setBackgroundResource(isHighlighter ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolHighlighter != null) {
+                btnToolHighlighter.setColorFilter(isHighlighter ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+
+        if (frameToolText != null) {
+            boolean isText = (mode == DrawingView.ToolMode.TEXT);
+            frameToolText.setBackgroundResource(isText ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+            if (btnToolText != null) {
+                btnToolText.setTextColor(isText ? 0xFF0284C7 : 0xFF475569);
+            }
+        }
+
+        if (btnToolScroll != null) {
+            boolean isScroll = (mode == DrawingView.ToolMode.SCROLL);
+            btnToolScroll.setColorFilter(isScroll ? 0xFF0284C7 : 0xFF475569);
+        }
+
+        if (btnToolSelect != null) {
+            boolean isSelect = (mode == DrawingView.ToolMode.SELECT);
+            btnToolSelect.setColorFilter(isSelect ? 0xFF0284C7 : 0xFF475569);
+        }
+
+        if (btnToolEraser != null) {
+            boolean isEraser = (mode == DrawingView.ToolMode.ERASER);
+            btnToolEraser.setColorFilter(isEraser ? 0xFF0284C7 : 0xFF475569);
         }
     }
 
@@ -626,7 +657,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         Button btnCircle = dialogView.findViewById(R.id.btnShapeCircle);
         Button btnLine = dialogView.findViewById(R.id.btnShapeLine);
 
-        // KARE
         if (btnSquare != null) {
             btnSquare.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.SQUARE;
@@ -637,7 +667,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // DİKDÖRTGEN
         if (btnRectangle != null) {
             btnRectangle.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.RECTANGLE;
@@ -648,7 +677,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // DAİRE
         if (btnCircle != null) {
             btnCircle.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.CIRCLE;
@@ -659,7 +687,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // DÜZ ÇİZGİ
         if (btnLine != null) {
             btnLine.setOnClickListener(v -> {
                 activeMode = DrawingView.ToolMode.LINE;
@@ -748,32 +775,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         finish();
     }
 
-    private void updateActiveToolUI(DrawingView.ToolMode mode) {
-        if (frameToolPen != null) {
-            boolean isPen = (mode == DrawingView.ToolMode.PEN);
-            frameToolPen.setBackgroundResource(isPen ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
-            if (btnToolPen != null) {
-                btnToolPen.setColorFilter(isPen ? 0xFF0284C7 : 0xFF475569);
-            }
-        }
-
-        if (frameToolHighlighter != null) {
-            boolean isHighlighter = (mode == DrawingView.ToolMode.HIGHLIGHTER);
-            frameToolHighlighter.setBackgroundResource(isHighlighter ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
-            if (btnToolHighlighter != null) {
-                btnToolHighlighter.setColorFilter(isHighlighter ? 0xFF0284C7 : 0xFF475569);
-            }
-        }
-
-        if (frameToolText != null) {
-            boolean isText = (mode == DrawingView.ToolMode.TEXT);
-            frameToolText.setBackgroundResource(isText ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
-            if (btnToolText != null) {
-                btnToolText.setTextColor(isText ? 0xFF0284C7 : 0xFF475569);
-            }
-        }
-    }
-
     private void showEraserWidthDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.silgi_kalinlik_ayarlama, null);
@@ -852,8 +853,8 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
 
-        TextView tvTitle = dialogView.findViewById(R.id.tvEraserSizePreview); // Üst başlık/önizleme
-        TextView tvMainTitle = (TextView) ((LinearLayout) dialogView).getChildAt(0); // İlk TextView başlık
+        TextView tvTitle = dialogView.findViewById(R.id.tvEraserSizePreview);
+        TextView tvMainTitle = (TextView) ((LinearLayout) dialogView).getChildAt(0);
         if (tvMainTitle != null) {
             tvMainTitle.setText(title);
         }

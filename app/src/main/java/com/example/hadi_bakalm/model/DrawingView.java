@@ -3,6 +3,8 @@ package com.example.hadi_bakalm.model;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -21,19 +23,115 @@ import java.util.List;
 
 public class DrawingView extends View {
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
+    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, SELECT, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
 
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
     }
 
     private OnDrawingChangeListener onDrawingChangeListener;
-
     public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
         this.onDrawingChangeListener = listener;
     }
 
-    // --- TABLO VERİ MODELLERİ ---
+    // =========================================================================
+    // 1. SAHNE NESNELERİ (SCENE GRAPH ITEMS)
+    // =========================================================================
+
+    public static class Point {
+        public float x, y;
+        public Point(float x, float y) { this.x = x; this.y = y; }
+    }
+
+    public static class StrokeItem {
+        public Path path;
+        public Paint paint;
+        public List<Point> points;
+        public int color;
+        public float strokeWidth;
+        public boolean isEraser;
+
+        public StrokeItem(Path path, Paint paint, List<Point> points, int color, float strokeWidth, boolean isEraser) {
+            this.path = path;
+            this.paint = paint;
+            this.points = points;
+            this.color = color;
+            this.strokeWidth = strokeWidth;
+            this.isEraser = isEraser;
+        }
+    }
+
+    // Bağımsız ve Seçilebilir Şekil Modeli
+    public static class ShapeItem {
+        public ToolMode shapeType;
+        public float startX, startY, endX, endY;
+        public int color;
+        public float strokeWidth;
+
+        public ShapeItem(ToolMode shapeType, float startX, float startY, float endX, float endY, int color, float strokeWidth) {
+            this.shapeType = shapeType;
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+            this.color = color;
+            this.strokeWidth = strokeWidth;
+        }
+
+        public RectF getBounds() {
+            float minX = Math.min(startX, endX);
+            float maxX = Math.max(startX, endX);
+            float minY = Math.min(startY, endY);
+            float maxY = Math.max(startY, endY);
+            float pad = Math.max(strokeWidth / 2f, 15f);
+            return new RectF(minX - pad, minY - pad, maxX + pad, maxY + pad);
+        }
+
+        public void offset(float dx, float dy) {
+            startX += dx;
+            startY += dy;
+            endX += dx;
+            endY += dy;
+        }
+    }
+
+    public static class ImageItem {
+        public float x, y, width, height;
+        public Bitmap bitmap;
+        public String uriStr;
+
+        public ImageItem(float x, float y, float width, float height, Bitmap bitmap, String uriStr) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.bitmap = bitmap;
+            this.uriStr = uriStr;
+        }
+
+        public RectF getBounds() {
+            return new RectF(x, y, x + width, y + height);
+        }
+
+        public RectF getResizeHandle() {
+            return new RectF(x + width - 40f, y + height - 40f, x + width + 20f, y + height + 20f);
+        }
+    }
+
+    public static class TextItem {
+        public float x, y, textSize;
+        public String text;
+        public int color;
+
+        public TextItem(float x, float y, String text, int color, float textSize) {
+            this.x = x;
+            this.y = y;
+            this.text = text;
+            this.color = color;
+            this.textSize = textSize;
+        }
+    }
+
     public static class TableCell {
         public int row, col;
         public String text;
@@ -44,14 +142,13 @@ public class DrawingView extends View {
         }
     }
 
-    public static class TableObject {
+    public static class TableItem {
         public float startX, startY;
-        public float cellWidth = 160f;
-        public float cellHeight = 90f;
+        public float cellWidth = 160f, cellHeight = 90f;
         public int rows, cols;
         public List<TableCell> cells = new ArrayList<>();
 
-        public TableObject(float startX, float startY, int rows, int cols) {
+        public TableItem(float startX, float startY, int rows, int cols) {
             this.startX = startX;
             this.startY = startY;
             this.rows = rows;
@@ -60,103 +157,105 @@ public class DrawingView extends View {
     }
 
     public static class TableCellClickResult {
-        public TableObject table;
+        public TableItem table;
         public int row, col;
-        public TableCellClickResult(TableObject table, int row, int col) {
+        public TableCellClickResult(TableItem table, int row, int col) {
             this.table = table;
             this.row = row;
             this.col = col;
         }
     }
 
-    // --- GÖRSEL NESNESİ MODELİ ---
-    public static class ImageObject {
-        public float x, y;
-        public float width, height;
-        public Bitmap bitmap;
-        public String imageUriStr;
+    // =========================================================================
+    // 2. TUVAL VERİ HAVUZU (CANVAS REPOSITORY)
+    // =========================================================================
 
-        public ImageObject(float x, float y, float width, float height, Bitmap bitmap, String imageUriStr) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-            this.bitmap = bitmap;
-            this.imageUriStr = imageUriStr;
-        }
-    }
+    private final List<StrokeItem> strokes = new ArrayList<>();
+    private final List<StrokeItem> undoneStrokes = new ArrayList<>();
+    private final List<ShapeItem> shapes = new ArrayList<>();
+    private final List<ShapeItem> undoneShapes = new ArrayList<>();
+    private final List<ImageItem> images = new ArrayList<>();
+    private final List<TextItem> texts = new ArrayList<>();
+    private final List<TableItem> tables = new ArrayList<>();
 
-    // --- SERBEST METİN NESNESİ MODELİ ---
-    public static class TextObject {
-        public float x, y;
-        public String text;
-        public int color;
-        public float textSize;
-
-        public TextObject(float x, float y, String text, int color, float textSize) {
-            this.x = x;
-            this.y = y;
-            this.text = text;
-            this.color = color;
-            this.textSize = textSize;
-        }
-    }
-
-    public static class Point {
-        public float x, y;
-        public Point(float x, float y) { this.x = x; this.y = y; }
-    }
-
-    private static class DrawPath {
-        Path path;
-        Paint paint;
-        List<Point> points;
-
-        DrawPath(Path path, Paint paint, List<Point> points) {
-            this.path = path;
-            this.paint = paint;
-            this.points = points;
-        }
-    }
-
-    private final List<DrawPath> paths = new ArrayList<>();
-    private final List<DrawPath> undonePaths = new ArrayList<>();
-    private final List<TableObject> tables = new ArrayList<>();
-    private final List<ImageObject> images = new ArrayList<>();
-    private final List<TextObject> textObjects = new ArrayList<>();
-
-    private Path currentPath;
-    private Paint currentPaint;
-    private Paint textPaint;
-    private Paint freeTextPaint;
-    private List<Point> currentPoints;
+    private Object selectedItem = null; // ShapeItem, ImageItem veya TextItem
+    private final RectF menuDeleteBounds = new RectF();
+    private final RectF menuSizeUpBounds = new RectF();
+    private final RectF menuSizeDownBounds = new RectF();
 
     private int currentColor = 0xFF09090B;
     private float currentStrokeWidth = 8f;
-    private ToolMode currentTool = ToolMode.PEN;
+    private ToolMode currentToolMode = ToolMode.PEN;
 
-    private float startX, startY;
+    private float scaleFactor = 1.0f;
     private float offsetY = 0f;
     private float lastTouchY;
-    private float scaleFactor = 1.0f;
     private ScaleGestureDetector scaleGestureDetector;
 
-    // --- SİLGİ İMLECİ VE PİKSEL KAZIMA DEĞİŞKENLERİ ---
-    private float eraserTouchX = -1f;
-    private float eraserTouchY = -1f;
-    private boolean isErasing = false;
-    private Paint eraserCirclePaint;
+    private Paint textPaint;
+    private Paint freeTextPaint;
+    private Paint tablePaint;
+    private Paint selectionBoxPaint;
+    private Paint handlePaint;
+    private Paint menuBgPaint;
+    private Paint menuTextPaint;
+    private Paint eraserCursorPaint;
+    private Paint shapeRenderPaint;
+
+    // =========================================================================
+    // 3. BAŞLANGIÇ YAPILANDIRMASI
+    // =========================================================================
 
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        setupDrawing();
+        initCanvas();
     }
 
-    private void setupDrawing() {
+    private void initCanvas() {
         setLayerType(LAYER_TYPE_SOFTWARE, null);
-        initNewStroke();
-        initTextPaint();
-        initEraserPaint();
+
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(0xFF0F172A);
+        textPaint.setTextSize(32f);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        freeTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        freeTextPaint.setTextAlign(Paint.Align.LEFT);
+
+        tablePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        tablePaint.setStyle(Paint.Style.STROKE);
+        tablePaint.setColor(0xFF334155);
+        tablePaint.setStrokeWidth(4f);
+
+        shapeRenderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shapeRenderPaint.setStyle(Paint.Style.STROKE);
+        shapeRenderPaint.setStrokeJoin(Paint.Join.ROUND);
+        shapeRenderPaint.setStrokeCap(Paint.Cap.ROUND);
+
+        selectionBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        selectionBoxPaint.setStyle(Paint.Style.STROKE);
+        selectionBoxPaint.setColor(0xFF0284C7);
+        selectionBoxPaint.setStrokeWidth(3f);
+        selectionBoxPaint.setPathEffect(new DashPathEffect(new float[]{12, 8}, 0));
+
+        handlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        handlePaint.setStyle(Paint.Style.FILL);
+        handlePaint.setColor(0xFF0284C7);
+
+        menuBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        menuBgPaint.setColor(0xFF1E293B);
+        menuBgPaint.setStyle(Paint.Style.FILL);
+        menuBgPaint.setShadowLayer(6f, 0, 3f, 0x44000000);
+
+        menuTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        menuTextPaint.setColor(Color.WHITE);
+        menuTextPaint.setTextSize(26f);
+        menuTextPaint.setTextAlign(Paint.Align.CENTER);
+
+        eraserCursorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        eraserCursorPaint.setStyle(Paint.Style.STROKE);
+        eraserCursorPaint.setColor(0x8894A3B8);
+        eraserCursorPaint.setStrokeWidth(3f);
 
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
@@ -169,60 +268,9 @@ public class DrawingView extends View {
         });
     }
 
-    private void initTextPaint() {
-        textPaint = new Paint();
-        textPaint.setAntiAlias(true);
-        textPaint.setColor(0xFF0F172A);
-        textPaint.setTextSize(32f);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-
-        freeTextPaint = new Paint();
-        freeTextPaint.setAntiAlias(true);
-        freeTextPaint.setTextAlign(Paint.Align.LEFT);
-    }
-
-    private void initEraserPaint() {
-        eraserCirclePaint = new Paint();
-        eraserCirclePaint.setAntiAlias(true);
-        eraserCirclePaint.setStyle(Paint.Style.STROKE);
-        eraserCirclePaint.setColor(0x8894A3B8);
-        eraserCirclePaint.setStrokeWidth(3f);
-    }
-
-    private void initNewStroke() {
-        currentPath = new Path();
-        currentPaint = new Paint();
-        currentPoints = new ArrayList<>();
-
-        currentPaint.setAntiAlias(true);
-        currentPaint.setStyle(Paint.Style.STROKE);
-        currentPaint.setStrokeJoin(Paint.Join.ROUND);
-        currentPaint.setStrokeCap(Paint.Cap.ROUND);
-
-        applyToolSettings(currentPaint);
-    }
-
-    private void applyToolSettings(Paint paint) {
-        if (paint == null) return;
-
-        if (currentTool == ToolMode.ERASER) {
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            paint.setColor(0x00000000);
-            paint.setStrokeWidth(currentStrokeWidth * 3f);
-        } else if (currentTool == ToolMode.HIGHLIGHTER) {
-            paint.setXfermode(null);
-            int alphaColor = (currentColor & 0x00FFFFFF) | 0x66000000;
-            if ((currentColor & 0x00FFFFFF) == 0x09090B || (currentColor & 0x00FFFFFF) == 0x000000) {
-                alphaColor = 0x66EAB308;
-            }
-            paint.setColor(alphaColor);
-            paint.setStrokeWidth(currentStrokeWidth * 3f);
-        } else {
-            paint.setXfermode(null);
-            paint.setColor(currentColor);
-            paint.setStrokeWidth(currentStrokeWidth);
-        }
-    }
+    // =========================================================================
+    // 4. RENDER DÖNGÜSÜ (ON DRAW)
+    // =========================================================================
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -232,47 +280,100 @@ public class DrawingView extends View {
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
 
-        // 1. Görselleri Çiz
-        drawImages(canvas);
-
-        // 2. Serbest Metinleri Çiz
-        drawFreeTexts(canvas);
-
-        // 3. Geçmiş Çizimleri ve Silgi Kazımalarını Çiz
-        for (DrawPath dp : paths) {
-            canvas.drawPath(dp.path, dp.paint);
+        // 1. Serbest Çizimler
+        for (StrokeItem stroke : strokes) {
+            canvas.drawPath(stroke.path, stroke.paint);
         }
 
-        // Anlık çizilen çizgi veya silgi izi
-        if (currentPath != null && currentPaint != null && currentTool != ToolMode.SCROLL && currentTool != ToolMode.TEXT) {
-            canvas.drawPath(currentPath, currentPaint);
+        // 2. Sabit Vektör Şekilleri
+        renderShapes(canvas);
+
+        // 3. Anlık Çizilen Çizgi / Şekil Önizlemesi
+        if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL && currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.TEXT) {
+            canvas.drawPath(activePath, activePaint);
         }
 
-        // 4. Vektörel Tabloları Çiz
-        drawTables(canvas);
+        // 4. Tablolar
+        renderTables(canvas);
 
-        // 5. Silgi Görsel Gösterge Halkasını Çiz
-        if (currentTool == ToolMode.ERASER && isErasing && eraserTouchX >= 0 && eraserTouchY >= 0) {
-            if (eraserCirclePaint == null) initEraserPaint();
-            float eraserRadius = (currentStrokeWidth * 3f) / 2f;
-            canvas.drawCircle(eraserTouchX, eraserTouchY, eraserRadius, eraserCirclePaint);
+        // 5. Görseller
+        renderImages(canvas);
+
+        // 6. Serbest Metinler
+        renderTexts(canvas);
+
+        // 7. Seçim Çerçevesi ve Yüzen Hızlı Menü (En Üst Katman)
+        if (currentToolMode == ToolMode.SELECT && selectedItem != null) {
+            renderSelectionAndFloatingMenu(canvas);
+        }
+
+        // 8. Silgi İz Göstergesi
+        if (currentToolMode == ToolMode.ERASER && isErasing && eraserX >= 0 && eraserY >= 0) {
+            float radius = (currentStrokeWidth * 3f) / 2f;
+            canvas.drawCircle(eraserX, eraserY, radius, eraserCursorPaint);
         }
 
         canvas.restore();
     }
 
-    private void drawImages(Canvas canvas) {
-        for (ImageObject img : images) {
-            if (img.bitmap != null && !img.bitmap.isRecycled()) {
-                RectF dst = new RectF(img.x, img.y, img.x + img.width, img.y + img.height);
-                canvas.drawBitmap(img.bitmap, null, dst, null);
+    private void renderShapes(Canvas canvas) {
+        for (ShapeItem s : shapes) {
+            shapeRenderPaint.setColor(s.color);
+            shapeRenderPaint.setStrokeWidth(s.strokeWidth);
+
+            if (s.shapeType == ToolMode.RECTANGLE) {
+                canvas.drawRect(Math.min(s.startX, s.endX), Math.min(s.startY, s.endY),
+                        Math.max(s.startX, s.endX), Math.max(s.startY, s.endY), shapeRenderPaint);
+            } else if (s.shapeType == ToolMode.SQUARE) {
+                float dx = s.endX - s.startX;
+                float dy = s.endY - s.startY;
+                float side = Math.max(Math.abs(dx), Math.abs(dy));
+                float left = (dx < 0) ? s.startX - side : s.startX;
+                float top = (dy < 0) ? s.startY - side : s.startY;
+                canvas.drawRect(left, top, left + side, top + side, shapeRenderPaint);
+            } else if (s.shapeType == ToolMode.CIRCLE) {
+                canvas.drawOval(new RectF(Math.min(s.startX, s.endX), Math.min(s.startY, s.endY),
+                        Math.max(s.startX, s.endX), Math.max(s.startY, s.endY)), shapeRenderPaint);
+            } else if (s.shapeType == ToolMode.LINE) {
+                canvas.drawLine(s.startX, s.startY, s.endX, s.endY, shapeRenderPaint);
             }
         }
     }
 
-    private void drawFreeTexts(Canvas canvas) {
-        if (freeTextPaint == null) initTextPaint();
-        for (TextObject t : textObjects) {
+    private void renderTables(Canvas canvas) {
+        for (TableItem table : tables) {
+            float totalW = table.cols * table.cellWidth;
+            float totalH = table.rows * table.cellHeight;
+
+            for (int i = 0; i <= table.rows; i++) {
+                float y = table.startY + (i * table.cellHeight);
+                canvas.drawLine(table.startX, y, table.startX + totalW, y, tablePaint);
+            }
+            for (int j = 0; j <= table.cols; j++) {
+                float x = table.startX + (j * table.cellWidth);
+                canvas.drawLine(x, table.startY, x, table.startY + totalH, tablePaint);
+            }
+
+            for (TableCell cell : table.cells) {
+                if (cell.text != null && !cell.text.isEmpty()) {
+                    float cx = table.startX + (cell.col * table.cellWidth) + (table.cellWidth / 2f);
+                    float cy = table.startY + (cell.row * table.cellHeight) + (table.cellHeight / 2f) + 10f;
+                    canvas.drawText(cell.text, cx, cy, textPaint);
+                }
+            }
+        }
+    }
+
+    private void renderImages(Canvas canvas) {
+        for (ImageItem img : images) {
+            if (img.bitmap != null && !img.bitmap.isRecycled()) {
+                canvas.drawBitmap(img.bitmap, null, img.getBounds(), null);
+            }
+        }
+    }
+
+    private void renderTexts(Canvas canvas) {
+        for (TextItem t : texts) {
             if (t.text != null && !t.text.isEmpty()) {
                 freeTextPaint.setColor(t.color);
                 freeTextPaint.setTextSize(t.textSize > 0 ? t.textSize : 36f);
@@ -281,268 +382,537 @@ public class DrawingView extends View {
         }
     }
 
-    private void drawTables(Canvas canvas) {
-        Paint gridPaint = new Paint();
-        gridPaint.setAntiAlias(true);
-        gridPaint.setStyle(Paint.Style.STROKE);
-        gridPaint.setColor(0xFF334155);
-        gridPaint.setStrokeWidth(4f);
+    private void renderSelectionAndFloatingMenu(Canvas canvas) {
+        RectF bounds = new RectF();
+        boolean isText = (selectedItem instanceof TextItem);
 
-        for (TableObject table : tables) {
-            float totalWidth = table.cols * table.cellWidth;
-            float totalHeight = table.rows * table.cellHeight;
+        if (selectedItem instanceof ImageItem) {
+            bounds = ((ImageItem) selectedItem).getBounds();
+            canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
+        } else if (selectedItem instanceof TextItem) {
+            TextItem t = (TextItem) selectedItem;
+            float textW = freeTextPaint.measureText(t.text);
+            float textH = t.textSize > 0 ? t.textSize : 36f;
+            bounds.set(t.x - 8f, t.y - textH - 8f, t.x + textW + 8f, t.y + 12f);
+        } else if (selectedItem instanceof ShapeItem) {
+            bounds = ((ShapeItem) selectedItem).getBounds();
+        }
 
-            for (int i = 0; i <= table.rows; i++) {
-                float y = table.startY + (i * table.cellHeight);
-                canvas.drawLine(table.startX, y, table.startX + totalWidth, y, gridPaint);
-            }
-            for (int j = 0; j <= table.cols; j++) {
-                float x = table.startX + (j * table.cellWidth);
-                canvas.drawLine(x, table.startY, x, table.startY + totalHeight, gridPaint);
-            }
+        canvas.drawRect(bounds, selectionBoxPaint);
 
-            if (textPaint == null) initTextPaint();
-            for (TableCell cell : table.cells) {
-                if (cell.text != null && !cell.text.isEmpty()) {
-                    float cellCenterX = table.startX + (cell.col * table.cellWidth) + (table.cellWidth / 2f);
-                    float cellCenterY = table.startY + (cell.row * table.cellHeight) + (table.cellHeight / 2f) + 10f;
-                    canvas.drawText(cell.text, cellCenterX, cellCenterY, textPaint);
-                }
-            }
+        float menuW = isText ? 240f : 120f;
+        float menuH = 64f;
+        float menuX = bounds.left + (bounds.width() - menuW) / 2f;
+        float menuY = bounds.top - menuH - 20f;
+
+        if (menuY < -offsetY + 10f) {
+            menuY = bounds.bottom + 20f;
+        }
+
+        RectF menuRect = new RectF(menuX, menuY, menuX + menuW, menuY + menuH);
+        canvas.drawRoundRect(menuRect, 32f, 32f, menuBgPaint);
+
+        if (isText) {
+            menuSizeDownBounds.set(menuX, menuY, menuX + 80f, menuY + menuH);
+            canvas.drawText("A-", menuX + 40f, menuY + 40f, menuTextPaint);
+
+            menuSizeUpBounds.set(menuX + 80f, menuY, menuX + 160f, menuY + menuH);
+            canvas.drawText("A+", menuX + 120f, menuY + 40f, menuTextPaint);
+
+            menuDeleteBounds.set(menuX + 160f, menuY, menuX + 240f, menuY + menuH);
+            canvas.drawText("Sil", menuX + 200f, menuY + 40f, menuTextPaint);
+        } else {
+            menuSizeDownBounds.setEmpty();
+            menuSizeUpBounds.setEmpty();
+            menuDeleteBounds.set(menuX, menuY, menuX + menuW, menuY + menuH);
+            canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 40f, menuTextPaint);
         }
     }
+
+    // =========================================================================
+    // 5. DETERMINISTIK DOKUNMA YÖNETİMİ
+    // =========================================================================
+
+    private Path activePath;
+    private Paint activePaint;
+    private List<Point> activePoints;
+    private float touchStartX, touchStartY;
+    private float lastMoveX, lastMoveY;
+    private boolean isErasing = false;
+    private float eraserX = -1f, eraserY = -1f;
+
+    private boolean isDraggingObject = false;
+    private boolean isResizingImage = false;
+    private float dragOffsetX, dragOffsetY;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         scaleGestureDetector.onTouchEvent(event);
 
-        int pointerCount = event.getPointerCount();
-
-        if (pointerCount > 1 || currentTool == ToolMode.SCROLL) {
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                case MotionEvent.ACTION_POINTER_DOWN:
-                    lastTouchY = event.getY();
-                    break;
-
-                case MotionEvent.ACTION_MOVE:
-                    if (!scaleGestureDetector.isInProgress()) {
-                        float newY = event.getY();
-                        float dy = (newY - lastTouchY) / scaleFactor;
-
-                        offsetY += dy;
-
-                        if (offsetY > 0) {
-                            offsetY = 0;
-                        }
-
-                        lastTouchY = newY;
-                        invalidate();
-                    }
-                    break;
-            }
+        if (event.getPointerCount() > 1 || currentToolMode == ToolMode.SCROLL) {
+            handleScrollTouch(event);
             return true;
         }
 
-        // TEXT modunda dokunma çizim üretmesin
-        if (currentTool == ToolMode.TEXT) {
+        if (currentToolMode == ToolMode.TEXT) {
             return false;
         }
 
-        float rawX = event.getX();
-        float rawY = event.getY();
-
-        float touchX = rawX / scaleFactor;
-        float touchY = (rawY / scaleFactor) - offsetY;
-
-        // Silgi konumunu güncelle
-        if (currentTool == ToolMode.ERASER) {
-            eraserTouchX = touchX;
-            eraserTouchY = touchY;
-        }
+        float touchX = event.getX() / scaleFactor;
+        float touchY = (event.getY() / scaleFactor) - offsetY;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                startX = touchX;
-                startY = touchY;
+                touchStartX = touchX;
+                touchStartY = touchY;
+                lastMoveX = touchX;
+                lastMoveY = touchY;
 
-                if (currentTool == ToolMode.ERASER) {
-                    isErasing = true;
+                if (currentToolMode == ToolMode.SELECT) {
+                    handleSelectDown(touchX, touchY);
+                    return true;
                 }
 
-                initNewStroke();
-                currentPath.moveTo(touchX, touchY);
-                currentPoints.add(new Point(touchX, touchY));
+                selectedItem = null;
+                startStroke(touchX, touchY);
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                float maxCanvasWidth = getWidth() / scaleFactor;
-                float clampedTouchX = Math.max(0f, Math.min(touchX, maxCanvasWidth));
-                float clampedTouchY = touchY;
+                lastMoveX = touchX;
+                lastMoveY = touchY;
 
-                if (currentTool == ToolMode.ERASER) {
-                    // Silgi sadece değdiği yeri kazır, tüm şekli silmez
-                    currentPath.lineTo(touchX, touchY);
-                    currentPoints.add(new Point(touchX, touchY));
-
-                } else if (currentTool == ToolMode.RECTANGLE) {
-                    currentPath.reset();
-                    float left = Math.min(startX, clampedTouchX);
-                    float top = Math.min(startY, clampedTouchY);
-                    float right = Math.max(startX, clampedTouchX);
-                    float bottom = Math.max(startY, clampedTouchY);
-                    currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
-
-                } else if (currentTool == ToolMode.SQUARE) {
-                    currentPath.reset();
-                    float dx = clampedTouchX - startX;
-                    float dy = clampedTouchY - startY;
-                    float side = Math.max(Math.abs(dx), Math.abs(dy));
-
-                    if (dx >= 0 && (startX + side) > maxCanvasWidth) {
-                        side = maxCanvasWidth - startX;
-                    } else if (dx < 0 && (startX - side) < 0) {
-                        side = startX;
-                    }
-
-                    float left = (dx < 0) ? startX - side : startX;
-                    float top = (dy < 0) ? startY - side : startY;
-                    float right = left + side;
-                    float bottom = top + side;
-
-                    currentPath.addRect(left, top, right, bottom, Path.Direction.CW);
-
-                } else if (currentTool == ToolMode.CIRCLE) {
-                    currentPath.reset();
-                    float left = Math.min(startX, clampedTouchX);
-                    float top = Math.min(startY, clampedTouchY);
-                    float right = Math.max(startX, clampedTouchX);
-                    float bottom = Math.max(startY, clampedTouchY);
-                    currentPath.addOval(left, top, right, bottom, Path.Direction.CW);
-
-                } else if (currentTool == ToolMode.LINE) {
-                    currentPath.reset();
-                    currentPath.moveTo(startX, startY);
-                    currentPath.lineTo(clampedTouchX, clampedTouchY);
-
-                } else {
-                    currentPath.lineTo(touchX, touchY);
-                    currentPoints.add(new Point(touchX, touchY));
+                if (currentToolMode == ToolMode.SELECT) {
+                    handleSelectMove(touchX, touchY);
+                    return true;
                 }
+
+                continueStroke(touchX, touchY);
                 break;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (currentTool == ToolMode.ERASER) {
-                    isErasing = false;
-                    eraserTouchX = -1f;
-                    eraserTouchY = -1f;
+                if (currentToolMode == ToolMode.SELECT) {
+                    handleSelectUp();
+                    return true;
                 }
 
-                undonePaths.clear();
-                paths.add(new DrawPath(currentPath, new Paint(currentPaint), currentPoints));
-                currentPath = new Path();
-
-                if (onDrawingChangeListener != null) {
-                    onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-                }
+                finishStroke();
                 break;
-
-            default:
-                return false;
         }
+
         invalidate();
         return true;
     }
 
-    public void addTextToCanvas(float x, float y, String text, int color) {
-        if (text == null || text.trim().isEmpty()) return;
-        textObjects.add(new TextObject(x, y, text, color, 36f));
+    private void handleSelectDown(float x, float y) {
+        // 1. Menü Tıklamaları
+        if (selectedItem != null) {
+            if (menuDeleteBounds.contains(x, y)) {
+                if (selectedItem instanceof ImageItem) images.remove((ImageItem) selectedItem);
+                else if (selectedItem instanceof TextItem) texts.remove((TextItem) selectedItem);
+                else if (selectedItem instanceof ShapeItem) shapes.remove((ShapeItem) selectedItem);
+                selectedItem = null;
+                notifyChange();
+                invalidate();
+                return;
+            }
+
+            if (selectedItem instanceof TextItem) {
+                TextItem t = (TextItem) selectedItem;
+                if (menuSizeUpBounds.contains(x, y)) {
+                    t.textSize += 6f;
+                    notifyChange();
+                    invalidate();
+                    return;
+                } else if (menuSizeDownBounds.contains(x, y)) {
+                    t.textSize = Math.max(16f, t.textSize - 6f);
+                    notifyChange();
+                    invalidate();
+                    return;
+                }
+            }
+        }
+
+        // 2. Görsel Boyutlandırma Tutamacı
+        if (selectedItem instanceof ImageItem) {
+            ImageItem img = (ImageItem) selectedItem;
+            if (img.getResizeHandle().contains(x, y)) {
+                isResizingImage = true;
+                return;
+            }
+        }
+
+        // 3. Şekil Dokunma Kontrolü
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            ShapeItem s = shapes.get(i);
+            if (s.getBounds().contains(x, y)) {
+                selectedItem = s;
+                isDraggingObject = true;
+                dragOffsetX = x;
+                dragOffsetY = y;
+                invalidate();
+                return;
+            }
+        }
+
+        // 4. Görsel Dokunma Kontrolü
+        for (int i = images.size() - 1; i >= 0; i--) {
+            ImageItem img = images.get(i);
+            if (img.getBounds().contains(x, y)) {
+                selectedItem = img;
+                isDraggingObject = true;
+                dragOffsetX = x - img.x;
+                dragOffsetY = y - img.y;
+                invalidate();
+                return;
+            }
+        }
+
+        // 5. Metin Dokunma Kontrolü
+        for (int i = texts.size() - 1; i >= 0; i--) {
+            TextItem t = texts.get(i);
+            float w = freeTextPaint.measureText(t.text);
+            float h = t.textSize > 0 ? t.textSize : 36f;
+            if (x >= t.x - 10f && x <= t.x + w + 10f && y >= t.y - h - 10f && y <= t.y + 10f) {
+                selectedItem = t;
+                isDraggingObject = true;
+                dragOffsetX = x - t.x;
+                dragOffsetY = y - t.y;
+                invalidate();
+                return;
+            }
+        }
+
+        selectedItem = null;
         invalidate();
+    }
+
+    private void handleSelectMove(float x, float y) {
+        if (isResizingImage && selectedItem instanceof ImageItem) {
+            ImageItem img = (ImageItem) selectedItem;
+            float newW = Math.max(80f, x - img.x);
+            float ratio = (float) img.bitmap.getHeight() / (float) img.bitmap.getWidth();
+            img.width = newW;
+            img.height = newW * ratio;
+            invalidate();
+        } else if (isDraggingObject && selectedItem != null) {
+            if (selectedItem instanceof ShapeItem) {
+                ShapeItem s = (ShapeItem) selectedItem;
+                float dx = x - dragOffsetX;
+                float dy = y - dragOffsetY;
+                s.offset(dx, dy);
+                dragOffsetX = x;
+                dragOffsetY = y;
+            } else if (selectedItem instanceof ImageItem) {
+                ImageItem img = (ImageItem) selectedItem;
+                img.x = x - dragOffsetX;
+                img.y = y - dragOffsetY;
+            } else if (selectedItem instanceof TextItem) {
+                TextItem t = (TextItem) selectedItem;
+                t.x = x - dragOffsetX;
+                t.y = y - dragOffsetY;
+            }
+            invalidate();
+        }
+    }
+
+    private void handleSelectUp() {
+        if (isDraggingObject || isResizingImage) {
+            isDraggingObject = false;
+            isResizingImage = false;
+            notifyChange();
+        }
+    }
+
+    private void handleScrollTouch(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                lastTouchY = event.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (!scaleGestureDetector.isInProgress()) {
+                    float newY = event.getY();
+                    float dy = (newY - lastTouchY) / scaleFactor;
+                    offsetY += dy;
+                    if (offsetY > 0) offsetY = 0;
+                    lastTouchY = newY;
+                    invalidate();
+                }
+                break;
+        }
+    }
+
+    private void startStroke(float x, float y) {
+        activePath = new Path();
+        activePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        activePaint.setStyle(Paint.Style.STROKE);
+        activePaint.setStrokeJoin(Paint.Join.ROUND);
+        activePaint.setStrokeCap(Paint.Cap.ROUND);
+        activePoints = new ArrayList<>();
+
+        if (currentToolMode == ToolMode.ERASER) {
+            isErasing = true;
+            eraserX = x;
+            eraserY = y;
+            activePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            activePaint.setColor(0x00000000);
+            activePaint.setStrokeWidth(currentStrokeWidth * 3f);
+        } else if (currentToolMode == ToolMode.HIGHLIGHTER) {
+            int alphaColor = (currentColor & 0x00FFFFFF) | 0x66000000;
+            if ((currentColor & 0x00FFFFFF) == 0x09090B || (currentColor & 0x00FFFFFF) == 0x000000) {
+                alphaColor = 0x66EAB308;
+            }
+            activePaint.setColor(alphaColor);
+            activePaint.setStrokeWidth(currentStrokeWidth * 3f);
+        } else {
+            activePaint.setColor(currentColor);
+            activePaint.setStrokeWidth(currentStrokeWidth);
+        }
+
+        activePath.moveTo(x, y);
+        activePoints.add(new Point(x, y));
+    }
+
+    private void continueStroke(float x, float y) {
+        if (activePath == null) return;
+
+        if (currentToolMode == ToolMode.ERASER) {
+            eraserX = x;
+            eraserY = y;
+            activePath.lineTo(x, y);
+            activePoints.add(new Point(x, y));
+        } else if (currentToolMode == ToolMode.RECTANGLE) {
+            activePath.reset();
+            activePath.addRect(Math.min(touchStartX, x), Math.min(touchStartY, y), Math.max(touchStartX, x), Math.max(touchStartY, y), Path.Direction.CW);
+        } else if (currentToolMode == ToolMode.SQUARE) {
+            activePath.reset();
+            float dx = x - touchStartX;
+            float dy = y - touchStartY;
+            float side = Math.max(Math.abs(dx), Math.abs(dy));
+            float left = (dx < 0) ? touchStartX - side : touchStartX;
+            float top = (dy < 0) ? touchStartY - side : touchStartY;
+            activePath.addRect(left, top, left + side, top + side, Path.Direction.CW);
+        } else if (currentToolMode == ToolMode.CIRCLE) {
+            activePath.reset();
+            activePath.addOval(Math.min(touchStartX, x), Math.min(touchStartY, y), Math.max(touchStartX, x), Math.max(touchStartY, y), Path.Direction.CW);
+        } else if (currentToolMode == ToolMode.LINE) {
+            activePath.reset();
+            activePath.moveTo(touchStartX, touchStartY);
+            activePath.lineTo(x, y);
+        } else {
+            activePath.lineTo(x, y);
+            activePoints.add(new Point(x, y));
+        }
+    }
+
+    private void finishStroke() {
+        if (currentToolMode == ToolMode.RECTANGLE || currentToolMode == ToolMode.SQUARE ||
+                currentToolMode == ToolMode.CIRCLE || currentToolMode == ToolMode.LINE) {
+            shapes.add(new ShapeItem(currentToolMode, touchStartX, touchStartY, lastMoveX, lastMoveY, currentColor, currentStrokeWidth));
+            undoneShapes.clear();
+            activePath = null;
+            activePaint = null;
+            activePoints = null;
+            notifyChange();
+            return;
+        }
+
+        if (activePath == null) return;
+
+        if (currentToolMode == ToolMode.ERASER) {
+            isErasing = false;
+            eraserX = -1f;
+            eraserY = -1f;
+        }
+
+        undoneStrokes.clear();
+        boolean isEraser = (currentToolMode == ToolMode.ERASER);
+        strokes.add(new StrokeItem(activePath, new Paint(activePaint), activePoints, activePaint.getColor(), activePaint.getStrokeWidth(), isEraser));
+
+        activePath = null;
+        activePaint = null;
+        activePoints = null;
+
+        notifyChange();
+    }
+
+    private void notifyChange() {
         if (onDrawingChangeListener != null) {
             onDrawingChangeListener.onDrawingChanged(getDrawingJson());
         }
+    }
+
+    // =========================================================================
+    // 6. KAMUYA AÇIK YÖNETİM METOTLARI (PUBLIC API)
+    // =========================================================================
+
+    public void setToolMode(ToolMode mode) {
+        this.currentToolMode = mode;
+        this.selectedItem = null;
+        this.activePath = null;
+        invalidate();
+    }
+
+    public void setColor(int color) {
+        this.currentColor = color;
+    }
+
+    public void setStrokeWidth(float width) {
+        this.currentStrokeWidth = width;
+    }
+
+    public void undo() {
+        if (!shapes.isEmpty()) {
+            undoneShapes.add(shapes.remove(shapes.size() - 1));
+            notifyChange();
+            invalidate();
+            return;
+        }
+        if (!strokes.isEmpty()) {
+            undoneStrokes.add(strokes.remove(strokes.size() - 1));
+            notifyChange();
+            invalidate();
+        }
+    }
+
+    public void redo() {
+        if (!undoneShapes.isEmpty()) {
+            shapes.add(undoneShapes.remove(undoneShapes.size() - 1));
+            notifyChange();
+            invalidate();
+            return;
+        }
+        if (!undoneStrokes.isEmpty()) {
+            strokes.add(undoneStrokes.remove(undoneStrokes.size() - 1));
+            notifyChange();
+            invalidate();
+        }
+    }
+
+    public void clearCanvas() {
+        strokes.clear();
+        undoneStrokes.clear();
+        shapes.clear();
+        undoneShapes.clear();
+        images.clear();
+        texts.clear();
+        tables.clear();
+        selectedItem = null;
+        activePath = null;
+        offsetY = 0f;
+        scaleFactor = 1.0f;
+        notifyChange();
+        invalidate();
     }
 
     public void addImageToCanvas(Bitmap bitmap, String uriStr) {
         if (bitmap == null) return;
-
         float startX = 80f;
         float startY = -offsetY + 150f;
-
         float targetWidth = 400f;
-        float aspectRatio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
-        float targetHeight = targetWidth * aspectRatio;
-
-        ImageObject img = new ImageObject(startX, startY, targetWidth, targetHeight, bitmap, uriStr);
-        images.add(img);
+        float ratio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
+        ImageItem item = new ImageItem(startX, startY, targetWidth, targetWidth * ratio, bitmap, uriStr);
+        images.add(item);
+        selectedItem = item;
+        currentToolMode = ToolMode.SELECT;
+        notifyChange();
         invalidate();
+    }
 
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+    public void addTextToCanvas(float x, float y, String text, int color) {
+        if (text == null || text.trim().isEmpty()) return;
+        TextItem t = new TextItem(x, y, text, color, 36f);
+        texts.add(t);
+        selectedItem = t;
+        notifyChange();
+        invalidate();
+    }
+
+    public void updateTextObject(TextItem item, String newText) {
+        if (item == null) return;
+        item.text = newText;
+        notifyChange();
+        invalidate();
+    }
+
+    public void removeTextObject(TextItem item) {
+        if (item == null) return;
+        texts.remove(item);
+        if (selectedItem == item) selectedItem = null;
+        notifyChange();
+        invalidate();
+    }
+
+    public TextItem checkTextClick(float touchX, float touchY) {
+        for (int i = texts.size() - 1; i >= 0; i--) {
+            TextItem t = texts.get(i);
+            float w = freeTextPaint.measureText(t.text);
+            float h = t.textSize > 0 ? t.textSize : 36f;
+            if (touchX >= t.x - 10f && touchX <= t.x + w + 10f && touchY >= t.y - h - 10f && touchY <= t.y + 10f) {
+                return t;
+            }
         }
+        return null;
+    }
+
+    public void addTableToCanvas(int rows, int cols) {
+        float startX = 80f;
+        float startY = -offsetY + 150f;
+        TableItem table = new TableItem(startX, startY, rows, cols);
+        tables.add(table);
+        notifyChange();
+        invalidate();
     }
 
     public TableCellClickResult checkTableCellClick(float touchX, float touchY) {
-        for (TableObject table : tables) {
-            float totalWidth = table.cols * table.cellWidth;
-            float totalHeight = table.rows * table.cellHeight;
-
-            if (touchX >= table.startX && touchX <= table.startX + totalWidth &&
-                    touchY >= table.startY && touchY <= table.startY + totalHeight) {
-
+        for (TableItem table : tables) {
+            float totalW = table.cols * table.cellWidth;
+            float totalH = table.rows * table.cellHeight;
+            if (touchX >= table.startX && touchX <= table.startX + totalW &&
+                    touchY >= table.startY && touchY <= table.startY + totalH) {
                 int col = (int) ((touchX - table.startX) / table.cellWidth);
                 int row = (int) ((touchY - table.startY) / table.cellHeight);
-
                 return new TableCellClickResult(table, row, col);
             }
         }
         return null;
     }
 
-    public void updateTableCellText(TableObject table, int row, int col, String newText) {
+    public void updateTableCellText(TableItem table, int row, int col, String newText) {
         for (TableCell cell : table.cells) {
             if (cell.row == row && cell.col == col) {
                 cell.text = newText;
+                notifyChange();
                 invalidate();
-                if (onDrawingChangeListener != null) {
-                    onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-                }
                 return;
             }
         }
         table.cells.add(new TableCell(row, col, newText));
+        notifyChange();
         invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-        }
     }
 
-    public void addTableToCanvas(int rows, int cols) {
-        float startX = 80f;
-        float startY = -offsetY + 150f;
-        TableObject newTable = new TableObject(startX, startY, rows, cols);
-        tables.add(newTable);
-        invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-        }
-    }
+    public float getScaleFactor() { return scaleFactor; }
+    public float getOffsetY() { return offsetY; }
+
+    // =========================================================================
+    // 7. JSON SERİLEŞTİRME (IMPORT / EXPORT)
+    // =========================================================================
 
     public String getDrawingJson() {
         try {
             JSONObject mainObj = new JSONObject();
 
-            // Çizimler ve Silgi Kazımaları
             JSONArray pathsArray = new JSONArray();
-            for (DrawPath dp : paths) {
+            for (StrokeItem stroke : strokes) {
                 JSONObject pathObj = new JSONObject();
-                pathObj.put("color", dp.paint.getColor());
-                pathObj.put("strokeWidth", dp.paint.getStrokeWidth());
-                pathObj.put("isEraser", dp.paint.getXfermode() != null);
+                pathObj.put("color", stroke.color);
+                pathObj.put("strokeWidth", stroke.strokeWidth);
+                pathObj.put("isEraser", stroke.isEraser);
 
                 JSONArray pointsArray = new JSONArray();
-                for (Point p : dp.points) {
+                for (Point p : stroke.points) {
                     JSONObject pointObj = new JSONObject();
                     pointObj.put("x", p.x);
                     pointObj.put("y", p.y);
@@ -553,9 +923,22 @@ public class DrawingView extends View {
             }
             mainObj.put("paths", pathsArray);
 
-            // Tablolar
+            JSONArray shapesArray = new JSONArray();
+            for (ShapeItem s : shapes) {
+                JSONObject shapeObj = new JSONObject();
+                shapeObj.put("type", s.shapeType.name());
+                shapeObj.put("startX", s.startX);
+                shapeObj.put("startY", s.startY);
+                shapeObj.put("endX", s.endX);
+                shapeObj.put("endY", s.endY);
+                shapeObj.put("color", s.color);
+                shapeObj.put("strokeWidth", s.strokeWidth);
+                shapesArray.put(shapeObj);
+            }
+            mainObj.put("shapes", shapesArray);
+
             JSONArray tablesArray = new JSONArray();
-            for (TableObject table : tables) {
+            for (TableItem table : tables) {
                 JSONObject tableObj = new JSONObject();
                 tableObj.put("startX", table.startX);
                 tableObj.put("startY", table.startY);
@@ -575,22 +958,20 @@ public class DrawingView extends View {
             }
             mainObj.put("tables", tablesArray);
 
-            // Görseller
             JSONArray imagesArray = new JSONArray();
-            for (ImageObject img : images) {
+            for (ImageItem img : images) {
                 JSONObject imgObj = new JSONObject();
                 imgObj.put("x", img.x);
                 imgObj.put("y", img.y);
                 imgObj.put("width", img.width);
                 imgObj.put("height", img.height);
-                imgObj.put("uri", img.imageUriStr);
+                imgObj.put("uri", img.uriStr);
                 imagesArray.put(imgObj);
             }
             mainObj.put("images", imagesArray);
 
-            // Serbest Metinler
             JSONArray textsArray = new JSONArray();
-            for (TextObject t : textObjects) {
+            for (TextItem t : texts) {
                 JSONObject tObj = new JSONObject();
                 tObj.put("x", t.x);
                 tObj.put("y", t.y);
@@ -611,41 +992,45 @@ public class DrawingView extends View {
     public void loadDrawingFromJson(String jsonStr) {
         if (jsonStr == null || jsonStr.isEmpty()) return;
         try {
-            paths.clear();
+            strokes.clear();
+            shapes.clear();
             tables.clear();
             images.clear();
-            textObjects.clear();
+            texts.clear();
 
             if (!jsonStr.startsWith("{")) {
-                JSONArray pathsArray = new JSONArray(jsonStr);
-                parsePathsJson(pathsArray);
+                parseStrokes(new JSONArray(jsonStr));
                 return;
             }
 
             JSONObject mainObj = new JSONObject(jsonStr);
-            if (mainObj.has("paths")) {
-                parsePathsJson(mainObj.getJSONArray("paths"));
+            if (mainObj.has("paths")) parseStrokes(mainObj.getJSONArray("paths"));
+
+            if (mainObj.has("shapes")) {
+                JSONArray shapesArray = mainObj.getJSONArray("shapes");
+                for (int i = 0; i < shapesArray.length(); i++) {
+                    JSONObject sObj = shapesArray.getJSONObject(i);
+                    ToolMode type = ToolMode.valueOf(sObj.getString("type"));
+                    float sx = (float) sObj.getDouble("startX");
+                    float sy = (float) sObj.getDouble("startY");
+                    float ex = (float) sObj.getDouble("endX");
+                    float ey = (float) sObj.getDouble("endY");
+                    int color = sObj.getInt("color");
+                    float width = (float) sObj.getDouble("strokeWidth");
+                    shapes.add(new ShapeItem(type, sx, sy, ex, ey, color, width));
+                }
             }
 
             if (mainObj.has("tables")) {
                 JSONArray tablesArray = mainObj.getJSONArray("tables");
                 for (int i = 0; i < tablesArray.length(); i++) {
-                    JSONObject tableObj = tablesArray.getJSONObject(i);
-                    float startX = (float) tableObj.getDouble("startX");
-                    float startY = (float) tableObj.getDouble("startY");
-                    int rows = tableObj.getInt("rows");
-                    int cols = tableObj.getInt("cols");
-
-                    TableObject table = new TableObject(startX, startY, rows, cols);
-
-                    if (tableObj.has("cells")) {
-                        JSONArray cellsArray = tableObj.getJSONArray("cells");
+                    JSONObject obj = tablesArray.getJSONObject(i);
+                    TableItem table = new TableItem((float) obj.getDouble("startX"), (float) obj.getDouble("startY"), obj.getInt("rows"), obj.getInt("cols"));
+                    if (obj.has("cells")) {
+                        JSONArray cellsArray = obj.getJSONArray("cells");
                         for (int j = 0; j < cellsArray.length(); j++) {
-                            JSONObject cellObj = cellsArray.getJSONObject(j);
-                            int row = cellObj.getInt("row");
-                            int col = cellObj.getInt("col");
-                            String text = cellObj.getString("text");
-                            table.cells.add(new TableCell(row, col, text));
+                            JSONObject c = cellsArray.getJSONObject(j);
+                            table.cells.add(new TableCell(c.getInt("row"), c.getInt("col"), c.getString("text")));
                         }
                     }
                     tables.add(table);
@@ -655,17 +1040,15 @@ public class DrawingView extends View {
             if (mainObj.has("images")) {
                 JSONArray imagesArray = mainObj.getJSONArray("images");
                 for (int i = 0; i < imagesArray.length(); i++) {
-                    JSONObject imgObj = imagesArray.getJSONObject(i);
-                    float x = (float) imgObj.getDouble("x");
-                    float y = (float) imgObj.getDouble("y");
-                    float w = (float) imgObj.getDouble("width");
-                    float h = (float) imgObj.getDouble("height");
-                    String uriStr = imgObj.getString("uri");
-
+                    JSONObject obj = imagesArray.getJSONObject(i);
+                    float x = (float) obj.getDouble("x");
+                    float y = (float) obj.getDouble("y");
+                    float w = (float) obj.getDouble("width");
+                    float h = (float) obj.getDouble("height");
+                    String uriStr = obj.getString("uri");
                     try {
-                        android.net.Uri uri = android.net.Uri.parse(uriStr);
-                        Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), uri);
-                        images.add(new ImageObject(x, y, w, h, bitmap, uriStr));
+                        Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), android.net.Uri.parse(uriStr));
+                        images.add(new ImageItem(x, y, w, h, bitmap, uriStr));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -675,13 +1058,8 @@ public class DrawingView extends View {
             if (mainObj.has("texts")) {
                 JSONArray textsArray = mainObj.getJSONArray("texts");
                 for (int i = 0; i < textsArray.length(); i++) {
-                    JSONObject tObj = textsArray.getJSONObject(i);
-                    float x = (float) tObj.getDouble("x");
-                    float y = (float) tObj.getDouble("y");
-                    String text = tObj.getString("text");
-                    int color = tObj.getInt("color");
-                    float textSize = (float) tObj.getDouble("textSize");
-                    textObjects.add(new TextObject(x, y, text, color, textSize));
+                    JSONObject obj = textsArray.getJSONObject(i);
+                    texts.add(new TextItem((float) obj.getDouble("x"), (float) obj.getDouble("y"), obj.getString("text"), obj.getInt("color"), (float) obj.getDouble("textSize")));
                 }
             }
 
@@ -691,19 +1069,18 @@ public class DrawingView extends View {
         }
     }
 
-    private void parsePathsJson(JSONArray pathsArray) throws Exception {
+    private void parseStrokes(JSONArray pathsArray) throws Exception {
         for (int i = 0; i < pathsArray.length(); i++) {
-            JSONObject pathObj = pathsArray.getJSONObject(i);
-            int color = pathObj.getInt("color");
-            float strokeWidth = (float) pathObj.getDouble("strokeWidth");
-            boolean isEraser = pathObj.optBoolean("isEraser", false);
+            JSONObject obj = pathsArray.getJSONObject(i);
+            int color = obj.getInt("color");
+            float width = (float) obj.getDouble("strokeWidth");
+            boolean isEraser = obj.optBoolean("isEraser", false);
 
-            Paint paint = new Paint();
-            paint.setAntiAlias(true);
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeJoin(Paint.Join.ROUND);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(strokeWidth);
+            paint.setStrokeWidth(width);
 
             if (isEraser) {
                 paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
@@ -713,115 +1090,19 @@ public class DrawingView extends View {
                 paint.setColor(color);
             }
 
-            JSONArray pointsArray = pathObj.getJSONArray("points");
+            JSONArray pointsArray = obj.getJSONArray("points");
             Path path = new Path();
             List<Point> points = new ArrayList<>();
 
             for (int j = 0; j < pointsArray.length(); j++) {
-                JSONObject pointObj = pointsArray.getJSONObject(j);
-                float x = (float) pointObj.getDouble("x");
-                float y = (float) pointObj.getDouble("y");
-                points.add(new Point(x, y));
-
-                if (j == 0) {
-                    path.moveTo(x, y);
-                } else {
-                    path.lineTo(x, y);
-                }
+                JSONObject p = pointsArray.getJSONObject(j);
+                float px = (float) p.getDouble("x");
+                float py = (float) p.getDouble("y");
+                points.add(new Point(px, py));
+                if (j == 0) path.moveTo(px, py);
+                else path.lineTo(px, py);
             }
-            paths.add(new DrawPath(path, paint, points));
-        }
-    }
-
-    public float getScaleFactor() { return scaleFactor; }
-    public float getOffsetY() { return offsetY; }
-
-    public void setToolMode(ToolMode mode) {
-        this.currentTool = mode;
-        initNewStroke();
-        invalidate();
-    }
-
-    public void setColor(int newColor) {
-        this.currentColor = newColor;
-        initNewStroke();
-        invalidate();
-    }
-
-    public void setStrokeWidth(float width) {
-        this.currentStrokeWidth = width;
-        initNewStroke();
-        invalidate();
-    }
-
-    public void undo() {
-        if (!paths.isEmpty()) {
-            DrawPath lastPath = paths.remove(paths.size() - 1);
-            undonePaths.add(lastPath);
-            invalidate();
-            if (onDrawingChangeListener != null) {
-                onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-            }
-        }
-    }
-
-    public void redo() {
-        if (!undonePaths.isEmpty()) {
-            DrawPath pathToRestore = undonePaths.remove(undonePaths.size() - 1);
-            paths.add(pathToRestore);
-            invalidate();
-            if (onDrawingChangeListener != null) {
-                onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-            }
-        }
-    }
-
-    public void clearCanvas() {
-        paths.clear();
-        undonePaths.clear();
-        tables.clear();
-        images.clear();
-        textObjects.clear();
-        if (currentPath != null) currentPath.reset();
-        offsetY = 0f;
-        scaleFactor = 1.0f;
-        invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-        }
-    }
-
-    public TextObject checkTextClick(float touchX, float touchY) {
-        if (freeTextPaint == null) initTextPaint();
-
-        for (int i = textObjects.size() - 1; i >= 0; i--) {
-            TextObject t = textObjects.get(i);
-            float textWidth = freeTextPaint.measureText(t.text);
-            float textHeight = t.textSize > 0 ? t.textSize : 36f;
-
-            if (touchX >= t.x - 20f && touchX <= t.x + textWidth + 20f &&
-                    touchY >= t.y - textHeight - 20f && touchY <= t.y + 20f) {
-                return t;
-            }
-        }
-        return null;
-    }
-
-    public void updateTextObject(TextObject textObj, String newText) {
-        if (textObj == null) return;
-        textObj.text = newText;
-        invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
-        }
-    }
-
-    public void removeTextObject(TextObject textObj) {
-        if (textObj == null) return;
-        textObjects.remove(textObj);
-        invalidate();
-        if (onDrawingChangeListener != null) {
-            onDrawingChangeListener.onDrawingChanged(getDrawingJson());
+            strokes.add(new StrokeItem(path, paint, points, color, width, isEraser));
         }
     }
 }
