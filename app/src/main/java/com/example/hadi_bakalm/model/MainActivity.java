@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -27,21 +28,28 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final Locale TR_LOCALE = new Locale("tr", "TR");
+
     // Arayüz Elemanları
     private RecyclerView rvNotes;
     private EditText etSearch;
-    private ImageButton btnLibraryBridge, btnToggleLayout;
-    private FloatingActionButton fabAddNote, fabDonateCoffee;
+    private ImageButton btnLibraryBridge;
+    private ImageButton btnToggleLayout;
+    private FloatingActionButton fabAddNote;
+    private FloatingActionButton fabDonateCoffee;
     private TextView tvNoteCount;
     private LinearLayout categoryChipContainer;
 
     // Adaptör ve Veri Yönetimi
     private NoteAdapter noteAdapter;
-    private List<NoteModel> noteList;
+    private final List<NoteModel> noteList = new ArrayList<>();
     private boolean isGridMode = false;
 
     // Room Veritabanı
@@ -64,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadNotesFromDatabase();
-        loadDynamicCategoryChips(); // ARTIK CANLI ÇAĞRILIYOR
+        loadDynamicCategoryChips();
     }
 
     private void initViews() {
@@ -79,13 +87,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        noteList = new ArrayList<>();
-        // 'this' parametresi kaldırıldı, tek parametre gönderiliyor:
         noteAdapter = new NoteAdapter(noteList);
 
         noteAdapter.setOnItemClickListener(new NoteAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(NoteModel note, int position) {
+                if (note == null) return;
                 Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
                 intent.putExtra("EXTRA_NOTE_ID", note.getId());
                 intent.putExtra("EXTRA_NOTE_TITLE", note.getTitle());
@@ -95,55 +102,38 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onItemLongClick(NoteModel note, int position) {
+                if (note == null) return;
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle("Notu Sil")
                         .setMessage("\"" + note.getTitle() + "\" başlıklı notu silmek istediğinize emin misiniz?")
-                        .setPositiveButton("Sil", (dialog, which) -> {
-                            deleteNoteFromDatabase(note.getId());
-                        })
+                        .setPositiveButton("Sil", (dialog, which) -> deleteNoteFromDatabase(note.getId()))
                         .setNegativeButton("İptal", null)
                         .show();
             }
         });
 
-        rvNotes.setLayoutManager(new LinearLayoutManager(this));
-        rvNotes.setAdapter(noteAdapter);
+        if (rvNotes != null) {
+            rvNotes.setLayoutManager(new LinearLayoutManager(this));
+            rvNotes.setAdapter(noteAdapter);
+        }
     }
 
     private void loadNotesFromDatabase() {
         if (noteDao == null) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        DB_EXECUTOR.execute(() -> {
             List<notentity> dbEntities = noteDao.getAllNotes();
-            List<NoteModel> updatedList = new ArrayList<>();
+            List<NoteModel> updatedList = mapEntitiesToModels(dbEntities);
 
-            for (notentity entity : dbEntities) {
-                updatedList.add(new NoteModel(
-                        entity.id,
-                        entity.title,
-                        entity.content,
-                        entity.timestamp,
-                        entity.category,
-                        entity.isPinned
-                ));
-            }
-
-            runOnUiThread(() -> {
-                noteList.clear();
-                noteList.addAll(updatedList);
-                if (noteAdapter != null) {
-                    noteAdapter.updateList(noteList);
-                }
-                updateNoteCount(noteList.size());
-            });
+            runOnUiThread(() -> applyListUpdate(updatedList));
         });
     }
 
     private void deleteNoteFromDatabase(int noteId) {
         if (noteDao == null) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            noteDao.deleteNoteById(noteId); // <-- Doğrudan tek satırda ID ile siler
+        DB_EXECUTOR.execute(() -> {
+            noteDao.deleteNoteById(noteId);
 
             runOnUiThread(() -> {
                 Toast.makeText(MainActivity.this, "Not silindi", Toast.LENGTH_SHORT).show();
@@ -161,12 +151,14 @@ public class MainActivity extends AppCompatActivity {
         if (btnToggleLayout != null) {
             btnToggleLayout.setOnClickListener(v -> {
                 isGridMode = !isGridMode;
-                if (isGridMode) {
-                    rvNotes.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
-                    btnToggleLayout.setImageResource(R.drawable.ic_list);
-                } else {
-                    rvNotes.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                    btnToggleLayout.setImageResource(R.drawable.ic_grid);
+                if (rvNotes != null) {
+                    if (isGridMode) {
+                        rvNotes.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
+                        btnToggleLayout.setImageResource(R.drawable.ic_list);
+                    } else {
+                        rvNotes.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                        btnToggleLayout.setImageResource(R.drawable.ic_grid);
+                    }
                 }
             });
         }
@@ -187,40 +179,37 @@ public class MainActivity extends AppCompatActivity {
     private void showCategorySelectionDialog() {
         String[] categories = {"Kişisel", "Geçici", "İş / Okul", "+ Yeni Kategori Ekle"};
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Hangi kategori olsun?");
-        builder.setItems(categories, (dialog, which) -> {
-            if (which == categories.length - 1) {
-                showCustomCategoryInputDialog();
-            } else {
-                String selectedCategory = categories[which];
-                openNoteEditorWithCategory(selectedCategory);
-            }
-        });
-
-        builder.setNegativeButton("İptal", null);
-        builder.show();
+        new AlertDialog.Builder(this)
+                .setTitle("Hangi kategori olsun?")
+                .setItems(categories, (dialog, which) -> {
+                    if (which == categories.length - 1) {
+                        showCustomCategoryInputDialog();
+                    } else {
+                        String selectedCategory = categories[which];
+                        openNoteEditorWithCategory(selectedCategory);
+                    }
+                })
+                .setNegativeButton("İptal", null)
+                .show();
     }
 
     private void showCustomCategoryInputDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Yeni Kategori İsmi");
-
         final EditText input = new EditText(this);
         input.setHint("Kategori adını girin (Örn: Proje, Alışveriş)");
         input.setPadding(48, 32, 48, 32);
-        builder.setView(input);
 
-        builder.setPositiveButton("Oluştur ve Not Aç", (dialog, which) -> {
-            String customCategory = input.getText().toString().trim();
-            if (customCategory.isEmpty()) {
-                customCategory = "Genel";
-            }
-            openNoteEditorWithCategory(customCategory);
-        });
-
-        builder.setNegativeButton("İptal", (dialog, which) -> dialog.cancel());
-        builder.show();
+        new AlertDialog.Builder(this)
+                .setTitle("Yeni Kategori İsmi")
+                .setView(input)
+                .setPositiveButton("Oluştur ve Not Aç", (dialog, which) -> {
+                    String customCategory = input.getText().toString().trim();
+                    if (customCategory.isEmpty()) {
+                        customCategory = "Genel";
+                    }
+                    openNoteEditorWithCategory(customCategory);
+                })
+                .setNegativeButton("İptal", (dialog, which) -> dialog.cancel())
+                .show();
     }
 
     private void openNoteEditorWithCategory(String category) {
@@ -238,7 +227,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterNotesFromDatabase(s.toString());
+                String query = (s != null) ? s.toString() : "";
+                filterNotesFromDatabase(query);
             }
 
             @Override
@@ -249,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
     private void filterNotesFromDatabase(String query) {
         if (noteDao == null) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        DB_EXECUTOR.execute(() -> {
             List<notentity> dbEntities;
             if (query.trim().isEmpty()) {
                 dbEntities = noteDao.getAllNotes();
@@ -257,54 +247,20 @@ public class MainActivity extends AppCompatActivity {
                 dbEntities = noteDao.searchNotes(query);
             }
 
-            List<NoteModel> filteredList = new ArrayList<>();
-            for (notentity entity : dbEntities) {
-                filteredList.add(new NoteModel(
-                        entity.id,
-                        entity.title,
-                        entity.content,
-                        entity.timestamp,
-                        entity.category,
-                        entity.isPinned
-                ));
-            }
-
-            runOnUiThread(() -> {
-                noteList.clear();
-                noteList.addAll(filteredList);
-                if (noteAdapter != null) {
-                    noteAdapter.updateList(noteList);
-                }
-                updateNoteCount(noteList.size());
-            });
+            List<NoteModel> filteredList = mapEntitiesToModels(dbEntities);
+            runOnUiThread(() -> applyListUpdate(filteredList));
         });
     }
 
-    // DİNAMİK ÇİPLERİ ÜRETEN VE TIKLANABİLİR YAPAN METOD
     private void loadDynamicCategoryChips() {
         if (categoryChipContainer == null || noteDao == null) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        DB_EXECUTOR.execute(() -> {
             List<notentity> allNotes = noteDao.getAllNotes();
-            List<String> dynamicCategories = new ArrayList<>();
-
-            // Temel varsayılan kategoriler
-            dynamicCategories.add("Tümü");
-            dynamicCategories.add("Kişisel");
-            dynamicCategories.add("Geçici");
-
-            // Kullanıcının oluşturduğu ek kategorileri veritabanından çekip ekler
-            for (notentity note : allNotes) {
-                if (note.category != null && !note.category.trim().isEmpty()) {
-                    String cat = note.category.trim();
-                    if (!dynamicCategories.contains(cat)) {
-                        dynamicCategories.add(cat);
-                    }
-                }
-            }
+            List<String> dynamicCategories = extractDynamicCategories(allNotes);
 
             runOnUiThread(() -> {
-                categoryChipContainer.removeAllViews(); // XML'deki cansız dummy çipler silinir
+                categoryChipContainer.removeAllViews();
 
                 for (String categoryName : dynamicCategories) {
                     TextView chip = new TextView(this);
@@ -321,17 +277,16 @@ public class MainActivity extends AppCompatActivity {
 
                     if (categoryName.equalsIgnoreCase("Tümü")) {
                         chip.setBackgroundResource(R.drawable.bg_chip_active);
-                        chip.setTextColor(getResources().getColor(android.R.color.white));
+                        chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
                     } else {
                         chip.setBackgroundResource(R.drawable.bg_chip_inactive);
-                        chip.setTextColor(getResources().getColor(R.color.text_secondary));
+                        chip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
                     }
 
-                    // TIKLAMA VE FİLTRELEME OLAYI
                     chip.setOnClickListener(v -> {
                         resetChipStyles();
                         chip.setBackgroundResource(R.drawable.bg_chip_active);
-                        chip.setTextColor(getResources().getColor(android.R.color.white));
+                        chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
                         if (categoryName.equalsIgnoreCase("Tümü")) {
                             loadNotesFromDatabase();
@@ -346,33 +301,62 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private List<String> extractDynamicCategories(List<notentity> allNotes) {
+        List<String> dynamicCategories = new ArrayList<>();
+        dynamicCategories.add("Tümü");
+        dynamicCategories.add("Kişisel");
+        dynamicCategories.add("Geçici");
+
+        if (allNotes != null) {
+            for (notentity note : allNotes) {
+                if (note != null && note.category != null && !note.category.trim().isEmpty()) {
+                    String cat = note.category.trim();
+                    if (!dynamicCategories.contains(cat)) {
+                        dynamicCategories.add(cat);
+                    }
+                }
+            }
+        }
+        return dynamicCategories;
+    }
+
     private void filterNotesByCategory(String category) {
         if (noteDao == null) return;
 
-        Executors.newSingleThreadExecutor().execute(() -> {
-            List<notentity> dbEntities = noteDao.getNotesByCategory(category); // <-- Doğrudan veritabanı filtreler
-            List<NoteModel> filteredList = new ArrayList<>();
+        DB_EXECUTOR.execute(() -> {
+            List<notentity> dbEntities = noteDao.getNotesByCategory(category);
+            List<NoteModel> filteredList = mapEntitiesToModels(dbEntities);
 
-            for (notentity entity : dbEntities) {
-                filteredList.add(new NoteModel(
-                        entity.id,
-                        entity.title,
-                        entity.content,
-                        entity.timestamp,
-                        entity.category,
-                        entity.isPinned
-                ));
-            }
-
-            runOnUiThread(() -> {
-                noteList.clear();
-                noteList.addAll(filteredList);
-                if (noteAdapter != null) {
-                    noteAdapter.updateList(noteList);
-                }
-                updateNoteCount(noteList.size());
-            });
+            runOnUiThread(() -> applyListUpdate(filteredList));
         });
+    }
+
+    private List<NoteModel> mapEntitiesToModels(List<notentity> dbEntities) {
+        List<NoteModel> models = new ArrayList<>();
+        if (dbEntities != null) {
+            for (notentity entity : dbEntities) {
+                if (entity != null) {
+                    models.add(new NoteModel(
+                            entity.id,
+                            entity.title,
+                            entity.content,
+                            entity.timestamp,
+                            entity.category,
+                            entity.isPinned
+                    ));
+                }
+            }
+        }
+        return models;
+    }
+
+    private void applyListUpdate(List<NoteModel> newList) {
+        noteList.clear();
+        noteList.addAll(newList);
+        if (noteAdapter != null) {
+            noteAdapter.updateList(noteList);
+        }
+        updateNoteCount(noteList.size());
     }
 
     private int dpToPx(int dp) {
@@ -386,7 +370,7 @@ public class MainActivity extends AppCompatActivity {
             if (child instanceof TextView) {
                 TextView chip = (TextView) child;
                 chip.setBackgroundResource(R.drawable.bg_chip_inactive);
-                chip.setTextColor(getResources().getColor(R.color.text_secondary));
+                chip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
             }
         }
     }
@@ -399,7 +383,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateNoteCount(int count) {
         if (tvNoteCount != null) {
-            tvNoteCount.setText("Toplam " + count + " kayıtlı not");
+            tvNoteCount.setText(String.format(TR_LOCALE, "Toplam %d kayıtlı not", count));
         }
     }
 }

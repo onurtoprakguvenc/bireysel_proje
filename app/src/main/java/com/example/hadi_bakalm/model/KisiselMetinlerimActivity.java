@@ -8,6 +8,7 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,30 +17,35 @@ import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.kaydedilenler_adapter;
 import com.example.hadi_bakalm.data.AppDatabase;
 import com.example.hadi_bakalm.kisisel_metin_okuma_sayfa;
-import com.example.hadi_bakalm.model.MetinItem;
-import com.example.hadi_bakalm.model.kaydedilenler;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class KisiselMetinlerimActivity extends AppCompatActivity {
 
-    private TextView btnAll, btnPratikHayat, btnDisSeyler, btnZihinselMekanizma;
-    private List<TextView> categoryButtons;
+    private static final String JSON_FILE_NAME = "kisisel_metinler.json";
+    private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final Locale TR_LOCALE = new Locale("tr", "TR");
 
-    private RecyclerView recyclerView;
+    private TextView btnAll;
+    private TextView btnPratikHayat;
+    private TextView btnDisSeyler;
+    private TextView btnZihinselMekanizma;
+    private final List<TextView> categoryButtons = new ArrayList<>();
+
     private kaydedilenler_adapter adapter;
-    private List<kaydedilenler> masterList;
-    private List<kaydedilenler> displayList;
+    private final List<kaydedilenler> masterList = new ArrayList<>();
+    private final List<kaydedilenler> displayList = new ArrayList<>();
     private String currentSelectedCategory = "TÜMÜ";
-
-    // Arama Çubuğu Tanımlaması
-    private EditText searchEditText;
     private String currentSearchQuery = "";
 
     @Override
@@ -47,56 +53,10 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.ana_sayfa_kisisel_metinlerim);
 
-        ImageView btnBack = findViewById(R.id.btnBack);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
-
-        // Kategori Butonları
-        btnAll = findViewById(R.id.tumu);
-        btnPratikHayat = findViewById(R.id.kategori_2);
-        btnDisSeyler = findViewById(R.id.kategori_1);
-        btnZihinselMekanizma = findViewById(R.id.kategori_3);
-
-        categoryButtons = new ArrayList<>();
-        if (btnAll != null) categoryButtons.add(btnAll);
-        if (btnPratikHayat != null) categoryButtons.add(btnPratikHayat);
-        if (btnDisSeyler != null) categoryButtons.add(btnDisSeyler);
-        if (btnZihinselMekanizma != null) categoryButtons.add(btnZihinselMekanizma);
-
-        recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        displayList = new ArrayList<>();
-
-        // Arama Çubuğu Bağlantısı ve Dinleyicisi
-        searchEditText = findViewById(R.id.searchBar);
-        if (searchEditText != null) {
-            searchEditText.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    currentSearchQuery = s.toString();
-                    filterCategory(currentSelectedCategory, getButtonForCategory(currentSelectedCategory));
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {
-                }
-            });
-        }
-
-        // Tıklama Olayları
-        if (btnAll != null) btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
-        if (btnPratikHayat != null)
-            btnPratikHayat.setOnClickListener(v -> filterCategory("Pratik Hayat İçin Fayda", btnPratikHayat));
-        if (btnDisSeyler != null)
-            btnDisSeyler.setOnClickListener(v -> filterCategory("Dış Şeylere Karşı Savunma", btnDisSeyler));
-        if (btnZihinselMekanizma != null)
-            btnZihinselMekanizma.setOnClickListener(v -> filterCategory("Zihinsel Mekanizma & Mimari", btnZihinselMekanizma));
+        initViews();
+        setupRecyclerView();
+        setupClickListeners();
+        setupSearchListener();
     }
 
     @Override
@@ -105,102 +65,31 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         loadDataFromRoomDatabase();
     }
 
-    private void loadDataFromRoomDatabase() {
-        new Thread(() -> {
-            String jsonString = loadJSONFromAsset("kisisel_metinler.json");
-            List<kaydedilenler> rawList = new ArrayList<>();
+    private void initViews() {
+        ImageView btnBack = findViewById(R.id.btnBack);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
 
-            if (jsonString != null) {
-                Gson gson = new Gson();
-                Type listType = new TypeToken<List<kaydedilenler>>() {
-                }.getType();
-                rawList = gson.fromJson(jsonString, listType);
-            }
+        btnAll = findViewById(R.id.tumu);
+        btnPratikHayat = findViewById(R.id.kategori_2);
+        btnDisSeyler = findViewById(R.id.kategori_1);
+        btnZihinselMekanizma = findViewById(R.id.kategori_3);
 
-            // DOĞRUDAN KİŞİSEL METİNLER DAO'SU İLE EŞLEŞTİRME Yapılıyor:
-            AppDatabase db = AppDatabase.getInstance(KisiselMetinlerimActivity.this);
-            List<MetinItem> dbMetinler = db.metinDao().getAllMetinler();
-
-            if (dbMetinler != null && !dbMetinler.isEmpty() && rawList != null) {
-                for (kaydedilenler item : rawList) {
-                    if (item.getTitle() == null) continue;
-                    String cleanItemTitle = item.getTitle().replaceAll("\\s+", "").toLowerCase();
-
-                    for (MetinItem dbItem : dbMetinler) {
-                        if (dbItem.getTitle() != null) {
-                            String cleanDbTitle = dbItem.getTitle().replaceAll("\\s+", "").toLowerCase();
-                            if (cleanDbTitle.equals(cleanItemTitle)) {
-                                item.setSaved(dbItem.isSaved());
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            List<kaydedilenler> finalRawList = rawList;
-            runOnUiThread(() -> {
-                masterList = finalRawList;
-                filterCategory(currentSelectedCategory, getButtonForCategory(currentSelectedCategory));
-            });
-        }).start();
+        categoryButtons.clear();
+        if (btnAll != null) categoryButtons.add(btnAll);
+        if (btnPratikHayat != null) categoryButtons.add(btnPratikHayat);
+        if (btnDisSeyler != null) categoryButtons.add(btnDisSeyler);
+        if (btnZihinselMekanizma != null) categoryButtons.add(btnZihinselMekanizma);
     }
 
-    private void filterCategory(String categoryName, TextView selectedButton) {
-        currentSelectedCategory = categoryName;
-
-        for (TextView btn : categoryButtons) {
-            if (btn != null) {
-                btn.setBackgroundResource(R.drawable.bg_search_bar); // Seçili olmayan buton arka planı
-                btn.setTextColor(Color.parseColor("#CCCCCC")); // Aydınlık/Okunabilir Açık Gri
-            }
-        }
-
-        if (selectedButton != null) {
-            selectedButton.setBackgroundResource(R.drawable.bg_black_icon_box); // Seçili olan buton
-            selectedButton.setTextColor(Color.WHITE); // Tam Beyaz
-        }
-
-
-        if (masterList != null) {
-            displayList.clear();
-            java.util.Locale trLocale = new java.util.Locale("tr", "TR");
-            String cleanQuery = currentSearchQuery.toLowerCase(trLocale).trim();
-
-            for (kaydedilenler item : masterList) {
-                if (item != null) {
-                    // 1. Kategori Kontrolü
-                    boolean matchesCategory = false;
-                    if (categoryName.equalsIgnoreCase("TÜMÜ")) {
-                        matchesCategory = true;
-                    } else if (item.getCategory() != null) {
-                        String itemCategory = item.getCategory().toLowerCase(trLocale).trim();
-                        String targetCategory = categoryName.toLowerCase(trLocale).trim();
-                        if (itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory)) {
-                            matchesCategory = true;
-                        }
-                    } else {
-                        matchesCategory = true;
-                    }
-
-                    // 2. Arama Sorgusu Kontrolü (Başlık, İçerik ve Açıklamada Arama)
-                    boolean matchesSearch = true;
-                    if (!cleanQuery.isEmpty()) {
-                        String title = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
-                        String content = item.getContent() != null ? item.getContent().toLowerCase(trLocale) : "";
-                        String description = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
-
-                        matchesSearch = title.contains(cleanQuery) || content.contains(cleanQuery) || description.contains(cleanQuery);
-                    }
-
-                    if (matchesCategory && matchesSearch) {
-                        displayList.add(item);
-                    }
-                }
-            }
-
+    private void setupRecyclerView() {
+        RecyclerView recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
+        if (recyclerView != null) {
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
             adapter = new kaydedilenler_adapter(this, displayList);
             adapter.setOnItemClickListener(item -> {
+                if (item == null) return;
                 Intent intent = new Intent(KisiselMetinlerimActivity.this, kisisel_metin_okuma_sayfa.class);
                 intent.putExtra("TITLE", item.getTitle());
                 intent.putExtra("CONTENT", item.getContent());
@@ -209,9 +98,154 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
                 intent.putExtra("CATEGORY", item.getCategory());
                 startActivity(intent);
             });
-
             recyclerView.setAdapter(adapter);
         }
+    }
+
+    private void setupClickListeners() {
+        if (btnAll != null) {
+            btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
+        }
+        if (btnPratikHayat != null) {
+            btnPratikHayat.setOnClickListener(v -> filterCategory("Pratik Hayat İçin Fayda", btnPratikHayat));
+        }
+        if (btnDisSeyler != null) {
+            btnDisSeyler.setOnClickListener(v -> filterCategory("Dış Şeylere Karşı Savunma", btnDisSeyler));
+        }
+        if (btnZihinselMekanizma != null) {
+            btnZihinselMekanizma.setOnClickListener(v -> filterCategory("Zihinsel Mekanizma & Mimari", btnZihinselMekanizma));
+        }
+    }
+
+    private void setupSearchListener() {
+        EditText searchEditText = findViewById(R.id.searchBar);
+        if (searchEditText != null) {
+            searchEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    currentSearchQuery = (s != null) ? s.toString() : "";
+                    filterCategory(currentSelectedCategory, getButtonForCategory(currentSelectedCategory));
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+    }
+
+    private void loadDataFromRoomDatabase() {
+        DB_EXECUTOR.execute(() -> {
+            List<kaydedilenler> rawList = parseRawListFromAsset();
+            syncSavedStatesWithDb(rawList);
+
+            runOnUiThread(() -> {
+                masterList.clear();
+                masterList.addAll(rawList);
+                filterCategory(currentSelectedCategory, getButtonForCategory(currentSelectedCategory));
+            });
+        });
+    }
+
+    private List<kaydedilenler> parseRawListFromAsset() {
+        List<kaydedilenler> rawList = new ArrayList<>();
+        String jsonString = loadJSONFromAsset();
+        if (jsonString != null && !jsonString.trim().isEmpty()) {
+            try {
+                Gson gson = new Gson();
+                Type listType = new TypeToken<List<kaydedilenler>>() {}.getType();
+                List<kaydedilenler> parsed = gson.fromJson(jsonString, listType);
+                if (parsed != null) {
+                    rawList.addAll(parsed);
+                }
+            } catch (Exception ignored) {}
+        }
+        return rawList;
+    }
+
+    private void syncSavedStatesWithDb(List<kaydedilenler> rawList) {
+        AppDatabase db = AppDatabase.getInstance(KisiselMetinlerimActivity.this);
+        if (db == null || rawList == null || rawList.isEmpty()) return;
+
+        List<MetinItem> dbMetinler = db.metinDao().getAllMetinler();
+        if (dbMetinler != null && !dbMetinler.isEmpty()) {
+            for (kaydedilenler item : rawList) {
+                if (item == null || item.getTitle() == null) continue;
+                String cleanItemTitle = item.getTitle().replaceAll("\\s+", "").toLowerCase(TR_LOCALE);
+
+                for (MetinItem dbItem : dbMetinler) {
+                    if (dbItem != null && dbItem.getTitle() != null) {
+                        String cleanDbTitle = dbItem.getTitle().replaceAll("\\s+", "").toLowerCase(TR_LOCALE);
+                        if (cleanDbTitle.equals(cleanItemTitle)) {
+                            item.setSaved(dbItem.isSaved());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void filterCategory(String categoryName, TextView selectedButton) {
+        currentSelectedCategory = categoryName;
+
+        for (TextView btn : categoryButtons) {
+            if (btn != null) {
+                btn.setBackgroundResource(R.drawable.bg_search_bar);
+                btn.setTextColor(Color.parseColor("#CCCCCC"));
+            }
+        }
+
+        if (selectedButton != null) {
+            selectedButton.setBackgroundResource(R.drawable.bg_black_icon_box);
+            selectedButton.setTextColor(Color.WHITE);
+        }
+
+        List<kaydedilenler> filtered = new ArrayList<>();
+        String cleanQuery = currentSearchQuery.toLowerCase(TR_LOCALE).trim();
+
+        for (kaydedilenler item : masterList) {
+            if (item == null) continue;
+
+            boolean matchesCategory = isCategoryMatching(categoryName, item);
+            boolean matchesSearch = isSearchMatching(cleanQuery, item);
+
+            if (matchesCategory && matchesSearch) {
+                filtered.add(item);
+            }
+        }
+
+        displayList.clear();
+        displayList.addAll(filtered);
+
+        if (adapter != null) {
+            adapter.filterList(new ArrayList<>(displayList));
+        }
+    }
+
+    private boolean isCategoryMatching(String categoryName, kaydedilenler item) {
+        if (categoryName.equalsIgnoreCase("TÜMÜ")) {
+            return true;
+        }
+        if (item.getCategory() != null) {
+            String itemCategory = item.getCategory().toLowerCase(TR_LOCALE).trim();
+            String targetCategory = categoryName.toLowerCase(TR_LOCALE).trim();
+            return itemCategory.contains(targetCategory) || targetCategory.contains(itemCategory);
+        }
+        return true;
+    }
+
+    private boolean isSearchMatching(String cleanQuery, kaydedilenler item) {
+        if (cleanQuery.isEmpty()) {
+            return true;
+        }
+        String title = item.getTitle() != null ? item.getTitle().toLowerCase(TR_LOCALE) : "";
+        String content = item.getContent() != null ? item.getContent().toLowerCase(TR_LOCALE) : "";
+        String description = item.getDescription() != null ? item.getDescription().toLowerCase(TR_LOCALE) : "";
+
+        return title.contains(cleanQuery) || content.contains(cleanQuery) || description.contains(cleanQuery);
     }
 
     private TextView getButtonForCategory(String categoryName) {
@@ -223,19 +257,15 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         }
     }
 
-    private String loadJSONFromAsset(String fileName) {
-        String json = null;
-        try {
-            InputStream is = getAssets().open(fileName);
+    private String loadJSONFromAsset() {
+        try (InputStream is = getAssets().open(JSON_FILE_NAME)) {
             int size = is.available();
             byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
+            int bytesRead = is.read(buffer);
+            if (bytesRead > 0) {
+                return new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+            }
+        } catch (IOException ignored) {}
+        return null;
     }
 }

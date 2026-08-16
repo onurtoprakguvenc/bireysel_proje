@@ -7,9 +7,18 @@ import android.widget.LinearLayout;
 import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
 
-public class NavigationHelper {
+public final class NavigationHelper {
+
+    // Yardımcı sınıfın nesneleştirilmesini (instantiation) engellemek için private constructor
+    private NavigationHelper() {
+        throw new UnsupportedOperationException("Bu yardımcı sınıf nesneleştirilemez.");
+    }
 
     public static void setupBottomNavigation(Activity currentActivity) {
+        if (currentActivity == null || currentActivity.isFinishing() || currentActivity.isDestroyed()) {
+            return;
+        }
+
         LinearLayout navCategories = currentActivity.findViewById(R.id.navCategories);
         LinearLayout navSaved = currentActivity.findViewById(R.id.navSaved);
         LinearLayout navRecent = currentActivity.findViewById(R.id.navRecent);
@@ -33,6 +42,10 @@ public class NavigationHelper {
     }
 
     private static void navigateTo(Activity currentActivity, Class<?> targetClass) {
+        if (currentActivity == null || currentActivity.isFinishing() || currentActivity.isDestroyed()) {
+            return;
+        }
+
         Intent intent = new Intent(currentActivity, targetClass);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         currentActivity.startActivity(intent);
@@ -40,4 +53,3 @@ public class NavigationHelper {
         currentActivity.overridePendingTransition(0, 0);
     }
 }
-
