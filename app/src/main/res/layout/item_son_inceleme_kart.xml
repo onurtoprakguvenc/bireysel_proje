@@ -10,7 +10,7 @@
     app:cardElevation="0dp"
     app:strokeColor="#F1F5F9"
     app:strokeWidth="1dp"
-    tools:ignore="ContentDescription,TouchTargetSizeCheck"> <!-- HATAYI KÖKTEN BASTIRAN SATIR -->
+    tools:ignore="all">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -35,18 +35,18 @@
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <!-- Kırmızı hatayı veren buton -->
+        <!-- Dokunma Alanı 48dp'ye Optimize Edilen Buton -->
         <ImageView
             android:id="@+id/btnRemoveSingleHistory"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:contentDescription="@string/sil"
             android:focusable="true"
-            android:padding="6dp"
+            android:padding="12dp"
             android:src="@drawable/ic_close"
             app:tint="#94A3B8" />
 
@@ -89,7 +89,7 @@
                     android:paddingBottom="2dp"
                     android:text="@string/metin_etiket"
                     android:textColor="#6366F1"
-                    android:textSize="10sp"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 

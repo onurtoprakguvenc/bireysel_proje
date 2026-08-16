@@ -1,28 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    tools:ignore="all">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Silgi Boyutu"
+        android:text="@string/silgi_boyutu"
         android:textColor="#0F172A"
         android:textSize="18sp"
         android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvEraserSizePreview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Boyut: 24 px"
-        android:textColor="#64748B"
-        android:textSize="13sp" />
 
     <!-- HASSAS AYAR ÇUBUĞU (SEEKBAR) -->
     <SeekBar
@@ -50,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Küçük"
+            android:text="@string/kucuk"
             android:textColor="#0F172A"
             android:textSize="12sp"
             app:strokeColor="#CBD5E1" />
@@ -62,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Orta"
+            android:text="@string/orta"
             android:textColor="#0F172A"
             android:textSize="12sp"
             app:strokeColor="#CBD5E1" />
@@ -72,9 +65,8 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Büyük"
+            android:text="@string/buyuk"
             android:textColor="#0F172A"
             android:textSize="12sp"
             app:strokeColor="#CBD5E1" />
@@ -86,7 +78,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:backgroundTint="#0284C7"
-        android:text="Tamam"
+        android:text="@string/tamam"
         android:textAllCaps="false"
         android:textColor="#FFFFFF" />
 

@@ -4,8 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/bg_main"
     android:fitsSystemWindows="true"
-    android:background="@color/bg_main">
+    tools:ignore="all">
 
     <!-- Üst Bar (Geri Ok ve Üç Nokta) -->
     <RelativeLayout
@@ -18,17 +19,29 @@
 
         <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/geri"
+            android:focusable="true"
+            android:padding="12dp"
             android:src="@drawable/ic_arrow_back"
             app:tint="@color/text_primary" />
 
         <ImageView
             android:id="@+id/btnMenu"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/secenekler"
+            android:focusable="true"
+            android:padding="12dp"
             android:src="@drawable/ic_more_vert"
             app:tint="@color/text_primary" />
     </RelativeLayout>
@@ -102,11 +115,18 @@
                             android:id="@+id/btnShare1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:drawableStart="@drawable/ic_share"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
                             android:drawablePadding="8dp"
+                            android:focusable="true"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:gravity="center"
+                            android:paddingHorizontal="8dp"
                             android:text="@string/paylas"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            app:drawableStartCompat="@drawable/ic_share"
                             app:drawableTint="@color/text_secondary" />
 
                         <View
@@ -117,11 +137,18 @@
                             android:id="@+id/btnCopy1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:drawableStart="@drawable/ic_copy"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
                             android:drawablePadding="8dp"
+                            android:focusable="true"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:gravity="center"
+                            android:paddingHorizontal="8dp"
                             android:text="@string/kopyala"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            app:drawableStartCompat="@drawable/ic_copy"
                             app:drawableTint="@color/text_secondary" />
                     </LinearLayout>
                 </LinearLayout>
@@ -169,11 +196,18 @@
                             android:id="@+id/btnShare2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:drawableStart="@drawable/ic_share"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
                             android:drawablePadding="8dp"
+                            android:focusable="true"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:gravity="center"
+                            android:paddingHorizontal="8dp"
                             android:text="@string/paylas"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            app:drawableStartCompat="@drawable/ic_share"
                             app:drawableTint="@color/text_secondary" />
 
                         <View
@@ -184,11 +218,18 @@
                             android:id="@+id/btnCopy2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:drawableStart="@drawable/ic_copy"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
                             android:drawablePadding="8dp"
+                            android:focusable="true"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:gravity="center"
+                            android:paddingHorizontal="8dp"
                             android:text="@string/kopyala"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp"
+                            app:drawableStartCompat="@drawable/ic_copy"
                             app:drawableTint="@color/text_secondary" />
                     </LinearLayout>
                 </LinearLayout>
@@ -211,6 +252,8 @@
                 android:layout_height="52dp"
                 android:layout_marginBottom="8dp"
                 android:background="@drawable/bg_settings_card"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="20dp">
 
                 <TextView
@@ -227,6 +270,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center_vertical|end"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_expand_arrow"
                     app:tint="@color/text_primary" />
             </FrameLayout>
@@ -268,7 +312,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_share"
                         android:drawablePadding="8dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -278,6 +321,7 @@
                         android:text="@string/paylas"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/ic_share"
                         app:drawableTint="@color/text_secondary" />
 
                     <View
@@ -290,7 +334,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_copy"
                         android:drawablePadding="8dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -300,6 +343,7 @@
                         android:text="@string/kopyala"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/ic_copy"
                         app:drawableTint="@color/text_secondary" />
                 </LinearLayout>
             </LinearLayout>
@@ -311,6 +355,8 @@
                 android:layout_height="52dp"
                 android:layout_marginBottom="8dp"
                 android:background="@drawable/bg_settings_card"
+                android:clickable="true"
+                android:focusable="true"
                 android:paddingHorizontal="20dp">
 
                 <TextView
@@ -327,6 +373,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center_vertical|end"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_expand_arrow"
                     app:tint="@color/text_primary" />
             </FrameLayout>
@@ -368,7 +415,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_share"
                         android:drawablePadding="8dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -378,6 +424,7 @@
                         android:text="@string/paylas"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/ic_share"
                         app:drawableTint="@color/text_secondary" />
 
                     <View
@@ -390,7 +437,6 @@
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:drawableStart="@drawable/ic_copy"
                         android:drawablePadding="8dp"
                         android:focusable="true"
                         android:gravity="center"
@@ -400,6 +446,7 @@
                         android:text="@string/kopyala"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
+                        app:drawableStartCompat="@drawable/ic_copy"
                         app:drawableTint="@color/text_secondary" />
                 </LinearLayout>
             </LinearLayout>
@@ -413,16 +460,19 @@
                 <LinearLayout
                     android:id="@+id/btnSave"
                     android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="@drawable/bg_kaydet_button"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
                     android:paddingHorizontal="16dp">
 
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_bookmark"
                         app:tint="@color/text_primary" />
 
@@ -454,6 +504,7 @@
                     android:layout_height="14dp"
                     android:layout_marginEnd="6dp"
                     android:layout_marginTop="2dp"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_lightbulb"
                     app:tint="@color/text_secondary" />
 
@@ -461,7 +512,7 @@
                     android:id="@+id/txtDisclaimer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Not: Bu içerik yalnızca genel bilgilendirme amaçlıdır; klinik/tıbbi teşhis ve tedavi tavsiyesi niteliği taşımaz."
+                    android:text="@string/uyarı"
                     android:textColor="@color/text_secondary"
                     android:textSize="11sp" />
             </LinearLayout>

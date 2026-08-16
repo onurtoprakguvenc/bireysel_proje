@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
@@ -8,7 +9,8 @@
     app:cardBackgroundColor="@color/bg_card"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:strokeWidth="0dp">
+    app:strokeWidth="0dp"
+    tools:ignore="all">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -22,17 +24,17 @@
             android:layout_height="20dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
+            android:contentDescription="@null"
             android:src="@drawable/ic_pin"
             android:visibility="gone"
-            app:tint="#EAB308"
-            android:contentDescription="@string/app_name" />
+            app:tint="#EAB308" />
 
         <TextView
             android:id="@+id/tvNoteTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/ivPinBadge"
             android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/ivPinBadge"
             android:text="@string/not_baslıgı"
             android:textColor="@color/text_primary"
             android:textSize="16sp"

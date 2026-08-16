@@ -205,4 +205,11 @@
     <string name="t">T</string>
     <string name="nav_notes">Notlar</string>
     <string name="nav_library">Kütüphane</string>
+    <string name="buyuk">Büyük</string>
+    <string name="silgi_boyutu">Silgi Boyutu</string>
+    <string name="kucuk">Küçük</string>
+    <string name="kare">Kare</string>
+    <string name="renk_secin">Renk Seçin</string>
+    <string name="uyarı">Not: Bu içerik yalnızca genel bilgilendirme amaçlıdır; klinik/tıbbi teşhis ve tedavi tavsiyesi niteliği taşımaz.</string>
+    <string name="secenekler">Seçenekler</string>
 </resources>

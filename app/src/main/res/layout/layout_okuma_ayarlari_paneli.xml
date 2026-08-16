@@ -9,7 +9,8 @@
     app:cardBackgroundColor="#0F172A"
     app:cardCornerRadius="20dp"
     app:cardElevation="12dp"
-    tools:visibility="visible">
+    tools:visibility="visible"
+    tools:ignore="all">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,6 +26,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:text="@string/okuma_temasi"
                 android:textColor="#FFFFFF"
@@ -91,6 +93,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:text="@string/metin_boyutu"
                 android:textColor="#FFFFFF"

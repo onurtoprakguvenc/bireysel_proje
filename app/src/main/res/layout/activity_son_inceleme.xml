@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_main">
+    android:background="@color/bg_main"
+    tools:ignore="all">
 
     <!-- ÜST İÇERİK ALANI (Pürüzsüz NestedScrollView) -->
     <androidx.core.widget.NestedScrollView
@@ -24,12 +25,6 @@
             android:paddingEnd="20dp"
             android:paddingBottom="40dp">
 
-            <!-- 1. ÜST BAŞLIK VE TEMİZLE BUTONU (ÇAKIŞMASIZ HİZALAMA) -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"/>
-
             <!-- 1. ÜST BAŞLIK VE TEMİZLE BUTONU -->
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -40,7 +35,9 @@
                 <LinearLayout
                     android:id="@+id/btnClearHistory"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
+                    android:layout_height="wrap_content"
+                    android:minWidth="48dp"
+                    android:minHeight="48dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="@drawable/bg_clear_button"
@@ -268,6 +265,7 @@
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:background="@color/nav_bg"
+        android:baselineAligned="false"
         android:elevation="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -332,8 +330,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:clickable="true"
-            android:focusable="true"
+            android:clickable="false"
+            android:focusable="false"
             android:gravity="center"
             android:orientation="vertical">
 

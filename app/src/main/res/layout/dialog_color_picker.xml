@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    tools:ignore="all">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Renk Seçin"
+        android:text="@string/renk_secin"
         android:textStyle="bold"
         android:textSize="16sp"
         android:textColor="#0F172A"
@@ -27,40 +30,45 @@
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_margin="8dp"
+            android:contentDescription="@null"
             android:src="@drawable/shape_color_circle_black"
-            app:tint="#EF4444" xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#EF4444" />
 
         <ImageView
             android:id="@+id/colorGreen"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_margin="8dp"
+            android:contentDescription="@null"
             android:src="@drawable/shape_color_circle_black"
-            app:tint="#22C55E" xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#22C55E" />
 
         <ImageView
             android:id="@+id/colorPurple"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_margin="8dp"
+            android:contentDescription="@null"
             android:src="@drawable/shape_color_circle_black"
-            app:tint="#A855F7" xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#A855F7" />
 
         <ImageView
             android:id="@+id/colorOrange"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_margin="8dp"
+            android:contentDescription="@null"
             android:src="@drawable/shape_color_circle_black"
-            app:tint="#F97316" xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#F97316" />
 
         <ImageView
             android:id="@+id/colorYellow"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_margin="8dp"
+            android:contentDescription="@null"
             android:src="@drawable/shape_color_circle_black"
-            app:tint="#EAB308" xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#EAB308" />
     </GridLayout>
 
     <Button

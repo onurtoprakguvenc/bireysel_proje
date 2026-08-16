@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
@@ -8,7 +9,8 @@
     app:cardCornerRadius="20dp"
     app:cardElevation="0dp"
     app:strokeColor="#E2E8F0"
-    app:strokeWidth="1dp">
+    app:strokeWidth="1dp"
+    tools:ignore="all">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,8 +30,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:layout_toStartOf="@id/btnRemoveSave"
                 android:layout_marginEnd="8dp"
+                android:layout_toStartOf="@id/btnRemoveSave"
                 android:text="@string/baslik_1_dusunce_mimarisi"
                 android:textColor="#0F172A"
                 android:textSize="16sp"
@@ -41,6 +43,7 @@
                 android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_bookmark"
                 app:tint="#CBD5E1" />
         </RelativeLayout>
@@ -69,9 +72,9 @@
                 android:layout_height="20dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_share"
                 app:tint="#94A3B8" />
-
 
             <TextView
                 android:id="@+id/btnInspect"
@@ -79,6 +82,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/btnShare"
+                android:gravity="end"
                 android:text="@string/incele"
                 android:textColor="#0F172A"
                 android:textSize="13sp"

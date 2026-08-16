@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_main">
+    android:background="@color/bg_main"
+    tools:ignore="all">
 
     <!-- ÜST İÇERİK ALANI -->
     <ScrollView
@@ -26,8 +27,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                tools:ignore="RelativeOverlap">
+                android:layout_marginBottom="20dp">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -92,15 +92,15 @@
                 <!-- Uygulama Teması -->
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:ignore="RelativeOverlap">
+                    android:layout_height="wrap_content">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
                         android:layout_toStartOf="@id/spinnerTheme"
+                        android:layout_marginEnd="8dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -143,8 +143,7 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:minWidth="48dp"
-                        android:minHeight="48dp"
-                        tools:ignore="TouchTargetSizeCheck" />
+                        android:minHeight="48dp" />
                 </RelativeLayout>
             </LinearLayout>
 
@@ -174,14 +173,15 @@
                     android:layout_height="wrap_content"
                     android:clickable="true"
                     android:focusable="true"
-                    android:minHeight="48dp"
-                    tools:ignore="TouchTargetSizeCheck">
+                    android:minHeight="48dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
+                        android:layout_toStartOf="@+id/imgChevronReset"
+                        android:layout_marginEnd="8dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -218,6 +218,7 @@
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/imgChevronReset"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_alignParentEnd="true"

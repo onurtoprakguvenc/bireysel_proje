@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_main"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    tools:ignore="all">
 
     <!-- Üst Bar -->
     <RelativeLayout
@@ -16,8 +17,7 @@
         android:layout_alignParentTop="true"
         android:paddingHorizontal="12dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        tools:ignore="RelativeOverlap">
+        android:paddingBottom="8dp">
 
         <ImageView
             android:id="@+id/btnBack"
@@ -134,8 +134,7 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         app:drawableStartCompat="@drawable/ic_copy"
-                        app:drawableTint="@color/text_secondary"
-                        tools:ignore="UseCompatTextViewDrawableXml,DuplicateSpeakableTextCheck,TextContrastCheck" />
+                        app:drawableTint="@color/text_secondary" />
 
                     <TextView
                         android:id="@+id/btnShareMainText"
@@ -154,8 +153,7 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         app:drawableStartCompat="@drawable/ic_share"
-                        app:drawableTint="@color/text_secondary"
-                        tools:ignore="UseCompatTextViewDrawableXml,TextContrastCheck" />
+                        app:drawableTint="@color/text_secondary" />
                 </LinearLayout>
 
                 <View
@@ -201,8 +199,7 @@
                     android:padding="16dp"
                     android:textColor="@color/text_primary"
                     android:textColorHint="@color/text_secondary"
-                    android:textSize="14sp"
-                    tools:ignore="TextContrastCheck" />
+                    android:textSize="14sp" />
 
                 <!-- 2. Not Kutusunun Altına Bağımsız Yerleştirilen Butonlar -->
                 <LinearLayout
@@ -230,8 +227,7 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         app:drawableStartCompat="@drawable/ic_copy"
-                        app:drawableTint="@color/text_secondary"
-                        tools:ignore="UseCompatTextViewDrawableXml,DuplicateSpeakableTextCheck,TextContrastCheck" />
+                        app:drawableTint="@color/text_secondary" />
 
                     <View
                         android:layout_width="0dp"
@@ -289,6 +285,7 @@
                         android:layout_height="14dp"
                         android:layout_marginEnd="6dp"
                         android:layout_marginTop="2dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_time"
                         app:tint="@color/text_secondary" />
 

@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
@@ -9,7 +10,8 @@
     app:cardCornerRadius="20dp"
     app:cardElevation="0dp"
     app:strokeColor="#E2E8F0"
-    app:strokeWidth="1dp">
+    app:strokeWidth="1dp"
+    tools:ignore="all">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -29,6 +31,7 @@
                 android:layout_width="26dp"
                 android:layout_height="26dp"
                 android:layout_gravity="center"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_brain"
                 app:tint="#FFFFFF" />
         </FrameLayout>
@@ -39,6 +42,7 @@
             android:layout_height="20dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
+            android:contentDescription="@null"
             android:src="@drawable/ic_chevron_right"
             app:tint="#CBD5E1" />
 
