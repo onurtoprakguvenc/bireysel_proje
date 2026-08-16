@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("SpellCheckingInspection")
 public class not_alma_sayfa extends AppCompatActivity {
 
     private ImageButton btnCloseEditor, btnPinNote;
@@ -92,7 +94,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                                 Toast.makeText(this, "Görsel tuvale eklendi", Toast.LENGTH_SHORT).show();
                             }
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Log.e("not_alma_sayfa", "Görsel yüklenirken hata oluştu", e);
                             Toast.makeText(this, "Görsel yüklenemedi", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -358,7 +360,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 1. TEKİL SEÇİM (CURSOR) BUTONU
         if (btnToolSelect != null) {
             btnToolSelect.setOnClickListener(v -> {
                 commitInlineText();
@@ -369,7 +370,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 2. ÇOKLU KEMENT (LASSO) BUTONU
         if (btnToolLasso != null) {
             btnToolLasso.setOnClickListener(v -> {
                 commitInlineText();
@@ -535,13 +535,11 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnToolScroll.setColorFilter(isScroll ? 0xFF0284C7 : 0xFF475569);
         }
 
-        // Tekil Seçim (Cursor) Vurgusu
         if (btnToolSelect != null) {
             boolean isSelect = (mode == DrawingView.ToolMode.SELECT);
             btnToolSelect.setColorFilter(isSelect ? 0xFF0284C7 : 0xFF475569);
         }
 
-        // Çoklu Kement (Lasso) Vurgusu
         if (btnToolLasso != null) {
             boolean isLasso = (mode == DrawingView.ToolMode.LASSO);
             btnToolLasso.setColorFilter(isLasso ? 0xFF0284C7 : 0xFF475569);
@@ -799,6 +797,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         finish();
     }
 
+    @SuppressLint("SetTextI18n")
     private void showEraserWidthDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.silgi_kalinlik_ayarlama, null);
@@ -807,7 +806,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         AlertDialog dialog = builder.create();
 
         SeekBar seekBarEraserWidth = dialogView.findViewById(R.id.seekBarEraserWidth);
-        TextView tvEraserSizePreview = dialogView.findViewById(R.id.tvEraserSizePreview);
         Button btnEraserThin = dialogView.findViewById(R.id.btnEraserThin);
         Button btnEraserMedium = dialogView.findViewById(R.id.btnEraserMedium);
         Button btnEraserThick = dialogView.findViewById(R.id.btnEraserThick);
@@ -815,9 +813,6 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (seekBarEraserWidth != null) {
             seekBarEraserWidth.setProgress((int) currentStrokeWidth);
-            if (tvEraserSizePreview != null) {
-                tvEraserSizePreview.setText("Boyut: " + (int) currentStrokeWidth + " px");
-            }
 
             seekBarEraserWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
@@ -825,9 +820,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                     currentStrokeWidth = Math.max(6, progress);
                     if (globalDrawingCanvas != null) {
                         globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
-                    }
-                    if (tvEraserSizePreview != null) {
-                        tvEraserSizePreview.setText("Boyut: " + (int) currentStrokeWidth + " px");
                     }
                 }
 
@@ -870,6 +862,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
+    @SuppressLint("SetTextI18n")
     private void showStrokeSizeDialog(String title, float minSize, float maxSize, float defaultThin, float defaultMedium, float defaultThick) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.silgi_kalinlik_ayarlama, null);
@@ -877,10 +870,11 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
 
-        TextView tvTitle = dialogView.findViewById(R.id.tvEraserSizePreview);
-        TextView tvMainTitle = (TextView) ((LinearLayout) dialogView).getChildAt(0);
-        if (tvMainTitle != null) {
-            tvMainTitle.setText(title);
+        if (dialogView instanceof LinearLayout && ((LinearLayout) dialogView).getChildCount() > 0) {
+            View firstChild = ((LinearLayout) dialogView).getChildAt(0);
+            if (firstChild instanceof TextView) {
+                ((TextView) firstChild).setText(title);
+            }
         }
 
         SeekBar seekBarWidth = dialogView.findViewById(R.id.seekBarEraserWidth);
@@ -892,9 +886,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (seekBarWidth != null) {
             seekBarWidth.setMax((int) maxSize);
             seekBarWidth.setProgress((int) currentStrokeWidth);
-            if (tvTitle != null) {
-                tvTitle.setText("Kalınlık: " + (int) currentStrokeWidth + " px");
-            }
 
             seekBarWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
@@ -902,9 +893,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                     currentStrokeWidth = Math.max(minSize, progress);
                     if (globalDrawingCanvas != null) {
                         globalDrawingCanvas.setStrokeWidth(currentStrokeWidth);
-                    }
-                    if (tvTitle != null) {
-                        tvTitle.setText("Kalınlık: " + (int) currentStrokeWidth + " px");
                     }
                 }
 

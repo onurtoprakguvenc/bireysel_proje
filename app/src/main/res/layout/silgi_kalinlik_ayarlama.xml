@@ -11,6 +11,7 @@
 
     <TextView
         android:layout_width="wrap_content"
+        android:id="@+id/tvEraserSizePreview"
         android:layout_height="wrap_content"
         android:text="@string/silgi_boyutu"
         android:textColor="#0F172A"
