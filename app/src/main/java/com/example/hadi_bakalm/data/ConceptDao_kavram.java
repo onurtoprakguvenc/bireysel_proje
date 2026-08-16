@@ -3,6 +3,7 @@ package com.example.hadi_bakalm.data;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -11,10 +12,9 @@ import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import java.util.List;
 
 @Dao
-@SuppressWarnings("unused")
 public interface ConceptDao_kavram {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(ConceptItem_kavram conceptItem);
 
     @Update
@@ -34,4 +34,7 @@ public interface ConceptDao_kavram {
 
     @Query("SELECT * FROM kavramlar WHERE id = :conceptId LIMIT 1")
     ConceptItem_kavram getConceptById(int conceptId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM kavramlar WHERE id = :conceptId AND isSaved = 1)")
+    boolean isConceptSaved(int conceptId);
 }

@@ -1,29 +1,34 @@
 package com.example.hadi_bakalm.model;
 
+import androidx.annotation.NonNull;
+import java.util.Objects;
+
 @SuppressWarnings("unused")
 public class Concept {
 
     private String name;
     private String aciklama;          // kavram açıklaması normal
-    private String kisiselNot;        // benim kişisel geliştirici notum
+    private String kisiselNot;        // kişisel geliştirici notu
     private String ornekDiyaloglar;   // örnek diyaloglar
     private String pratikOnemi;       // pratik hayattaki önemi
-    private String vucutEtkisi;       // vücut içinde yarattığı etki
 
-    // Sadece isimle hızlı oluşturmak için (mevcut kullanım, geriye dönük uyumlu)
+    // Sadece isimle hızlı oluşturmak için
     public Concept(String name) {
-        this.name = name;
+        this.name = (name != null) ? name : "";
+        this.aciklama = "";
+        this.kisiselNot = "";
+        this.ornekDiyaloglar = "";
+        this.pratikOnemi = "";
     }
 
-    // Detay ekranı için tüm alanlarla oluşturmak istersen
+    // Detay ekranı için tüm alanlarla oluşturmak için
     public Concept(String name, String aciklama, String kisiselNot,
-                   String ornekDiyaloglar, String pratikOnemi, String vucutEtkisi) {
-        this.name = name;
-        this.aciklama = aciklama;
-        this.kisiselNot = kisiselNot;
-        this.ornekDiyaloglar = ornekDiyaloglar;
-        this.pratikOnemi = pratikOnemi;
-        this.vucutEtkisi = vucutEtkisi;
+                   String ornekDiyaloglar, String pratikOnemi, String s) {
+        this.name = (name != null) ? name : "";
+        this.aciklama = (aciklama != null) ? aciklama : "";
+        this.kisiselNot = (kisiselNot != null) ? kisiselNot : "";
+        this.ornekDiyaloglar = (ornekDiyaloglar != null) ? ornekDiyaloglar : "";
+        this.pratikOnemi = (pratikOnemi != null) ? pratikOnemi : "";
     }
 
     public String getName() {
@@ -31,7 +36,7 @@ public class Concept {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = (name != null) ? name : "";
     }
 
     public String getAciklama() {
@@ -39,7 +44,7 @@ public class Concept {
     }
 
     public void setAciklama(String aciklama) {
-        this.aciklama = aciklama;
+        this.aciklama = (aciklama != null) ? aciklama : "";
     }
 
     public String getKisiselNot() {
@@ -47,7 +52,7 @@ public class Concept {
     }
 
     public void setKisiselNot(String kisiselNot) {
-        this.kisiselNot = kisiselNot;
+        this.kisiselNot = (kisiselNot != null) ? kisiselNot : "";
     }
 
     public String getOrnekDiyaloglar() {
@@ -55,7 +60,7 @@ public class Concept {
     }
 
     public void setOrnekDiyaloglar(String ornekDiyaloglar) {
-        this.ornekDiyaloglar = ornekDiyaloglar;
+        this.ornekDiyaloglar = (ornekDiyaloglar != null) ? ornekDiyaloglar : "";
     }
 
     public String getPratikOnemi() {
@@ -63,14 +68,35 @@ public class Concept {
     }
 
     public void setPratikOnemi(String pratikOnemi) {
-        this.pratikOnemi = pratikOnemi;
+        this.pratikOnemi = (pratikOnemi != null) ? pratikOnemi : "";
     }
 
-    public String getVucutEtkisi() {
-        return vucutEtkisi;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Concept concept = (Concept) o;
+        return Objects.equals(name, concept.name) &&
+                Objects.equals(aciklama, concept.aciklama) &&
+                Objects.equals(kisiselNot, concept.kisiselNot) &&
+                Objects.equals(ornekDiyaloglar, concept.ornekDiyaloglar) &&
+                Objects.equals(pratikOnemi, concept.pratikOnemi);
     }
 
-    public void setVucutEtkisi(String vucutEtkisi) {
-        this.vucutEtkisi = vucutEtkisi;
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, aciklama, kisiselNot, ornekDiyaloglar, pratikOnemi);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "Concept{" +
+                "name='" + name + '\'' +
+                ", aciklama='" + aciklama + '\'' +
+                ", kisiselNot='" + kisiselNot + '\'' +
+                ", ornekDiyaloglar='" + ornekDiyaloglar + '\'' +
+                ", pratikOnemi='" + pratikOnemi + '\'' +
+                '}';
     }
 }

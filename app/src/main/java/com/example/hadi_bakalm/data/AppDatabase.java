@@ -12,20 +12,24 @@ import com.example.hadi_bakalm.model.MetinItem;
 @Database(entities = {MetinItem.class, ConceptItem_kavram.class}, version = 2, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
-    private static AppDatabase instance;
+    private static volatile AppDatabase instance;
 
     public abstract MetinDao metinDao();
     public abstract ConceptDao_kavram conceptDao_kavram();
 
-    public static synchronized AppDatabase getInstance(Context context) {
+    public static AppDatabase getInstance(Context context) {
         if (instance == null) {
-            instance = Room.databaseBuilder(
-                            context.getApplicationContext(),
-                            AppDatabase.class,
-                            "hadi_bakalim_db"
-                    )
-                    .fallbackToDestructiveMigration() // GÜNCELLEME SIRAŞINDA ŞEMA ÇAKIŞIRSA ESKİ DB'Yİ SIFIRLAR, UYGULAMAYI ÇÖKERTMEZ
-                    .build();
+            synchronized (AppDatabase.class) {
+                if (instance == null) {
+                    instance = Room.databaseBuilder(
+                                    context.getApplicationContext(),
+                                    AppDatabase.class,
+                                    "hadi_bakalim_db"
+                            )
+                            .fallbackToDestructiveMigration()
+                            .build();
+                }
+            }
         }
         return instance;
     }

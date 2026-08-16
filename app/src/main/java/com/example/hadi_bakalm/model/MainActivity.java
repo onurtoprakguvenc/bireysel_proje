@@ -80,7 +80,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         noteList = new ArrayList<>();
-        noteAdapter = new NoteAdapter(this, noteList);
+        // 'this' parametresi kaldırıldı, tek parametre gönderiliyor:
+        noteAdapter = new NoteAdapter(noteList);
 
         noteAdapter.setOnItemClickListener(new NoteAdapter.OnItemClickListener() {
             @Override
@@ -142,14 +143,12 @@ public class MainActivity extends AppCompatActivity {
         if (noteDao == null) return;
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            notentity noteToDelete = new notentity("", "", "", "", "");
-            noteToDelete.id = noteId;
-            noteDao.deleteNote(noteToDelete);
+            noteDao.deleteNoteById(noteId); // <-- Doğrudan tek satırda ID ile siler
 
             runOnUiThread(() -> {
                 Toast.makeText(MainActivity.this, "Not silindi", Toast.LENGTH_SHORT).show();
                 loadNotesFromDatabase();
-                loadDynamicCategoryChips(); // Silindikten sonra kategorileri güncelle
+                loadDynamicCategoryChips();
             });
         });
     }
@@ -351,20 +350,18 @@ public class MainActivity extends AppCompatActivity {
         if (noteDao == null) return;
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<notentity> dbEntities = noteDao.getAllNotes();
+            List<notentity> dbEntities = noteDao.getNotesByCategory(category); // <-- Doğrudan veritabanı filtreler
             List<NoteModel> filteredList = new ArrayList<>();
 
             for (notentity entity : dbEntities) {
-                if (entity.category != null && entity.category.equalsIgnoreCase(category)) {
-                    filteredList.add(new NoteModel(
-                            entity.id,
-                            entity.title,
-                            entity.content,
-                            entity.timestamp,
-                            entity.category,
-                            entity.isPinned
-                    ));
-                }
+                filteredList.add(new NoteModel(
+                        entity.id,
+                        entity.title,
+                        entity.content,
+                        entity.timestamp,
+                        entity.category,
+                        entity.isPinned
+                ));
             }
 
             runOnUiThread(() -> {

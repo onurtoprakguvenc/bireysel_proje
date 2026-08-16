@@ -4,24 +4,26 @@ import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.ViewHolder> {
 
-    private List<String> categories;
+    private final List<String> categories = new ArrayList<>();
     private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(String categoryName);
     }
 
-    public ana_sayfa_adapter(List<String> categories, OnItemClickListener listener) {
-        this.categories = categories;
+    public ana_sayfa_adapter(List<String> initialCategories, OnItemClickListener listener) {
+        if (initialCategories != null) {
+            this.categories.addAll(initialCategories);
+        }
         this.listener = listener;
     }
 
@@ -34,35 +36,38 @@ public class ana_sayfa_adapter extends RecyclerView.Adapter<ana_sayfa_adapter.Vi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String category = categories.get(position);
-        holder.txtTitle.setText(category);
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onItemClick(category);
-            }
-        });
+        holder.bind(categories.get(position), listener);
     }
 
     @SuppressLint("NotifyDataSetChanged")
     public void filterList(List<String> filteredList) {
-        this.categories = filteredList;
+        this.categories.clear();
+        if (filteredList != null) {
+            this.categories.addAll(filteredList);
+        }
         notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return categories != null ? categories.size() : 0;
+        return categories.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgIcon;
-        TextView txtTitle, txtDescription;
+        private final TextView txtTitle;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgIcon = itemView.findViewById(R.id.imgCardIcon);
             txtTitle = itemView.findViewById(R.id.txtCardTitle);
-            txtDescription = itemView.findViewById(R.id.txtCardDescription);
+        }
+
+        public void bind(String categoryName, OnItemClickListener listener) {
+            txtTitle.setText(categoryName);
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(categoryName);
+                }
+            });
         }
     }
 }

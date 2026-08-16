@@ -6,23 +6,25 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 
 public class note_Converters {
 
+    private static final Gson GSON = new Gson();
+    private static final Type BLOCK_LIST_TYPE = new TypeToken<List<NoteBlockModel>>() {}.getType();
+
     @TypeConverter
     public static String fromBlockList(List<NoteBlockModel> blocks) {
         if (blocks == null) return null;
-        Gson gson = new Gson();
-        return gson.toJson(blocks);
+        return GSON.toJson(blocks);
     }
 
     @TypeConverter
     public static List<NoteBlockModel> toBlockList(String blocksJson) {
-        if (blocksJson == null) return null;
-        Gson gson = new Gson();
-        // DÜZELTİLEN SATIR: TypeToken içindeki > sembolü teke düşürüldü
-        Type type = new TypeToken<List<NoteBlockModel>>() {}.getType();
-        return gson.fromJson(blocksJson, type);
+        if (blocksJson == null || blocksJson.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return GSON.fromJson(blocksJson, BLOCK_LIST_TYPE);
     }
 }

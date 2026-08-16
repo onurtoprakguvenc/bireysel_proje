@@ -10,19 +10,23 @@ import androidx.room.TypeConverters;
 @TypeConverters({note_Converters.class})
 public abstract class not_app_database extends RoomDatabase {
 
-    private static not_app_database instance;
+    private static volatile not_app_database instance;
 
     public abstract notdao noteDao();
 
-    public static synchronized not_app_database getInstance(Context context) {
+    public static not_app_database getInstance(Context context) {
         if (instance == null) {
-            instance = Room.databaseBuilder(
-                            context.getApplicationContext(),
-                            not_app_database.class,
-                            "sade_not_database"
-                    ).allowMainThreadQueries()
-                    .fallbackToDestructiveMigration()
-                    .build();
+            synchronized (not_app_database.class) {
+                if (instance == null) {
+                    instance = Room.databaseBuilder(
+                                    context.getApplicationContext(),
+                                    not_app_database.class,
+                                    "sade_not_database"
+                            )
+                            .fallbackToDestructiveMigration()
+                            .build();
+                }
+            }
         }
         return instance;
     }

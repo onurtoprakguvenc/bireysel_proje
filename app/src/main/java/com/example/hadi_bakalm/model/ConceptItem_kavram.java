@@ -1,7 +1,11 @@
 package com.example.hadi_bakalm.model;
 
+import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+
+import java.util.Objects;
 
 @Entity(tableName = "kavramlar")
 @SuppressWarnings("unused")
@@ -10,46 +14,126 @@ public class ConceptItem_kavram {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    private String title;               // Kavram adı / temsili
-    private String description;         // Normal açıklama
-    private String developerNote;       // Geliştirici notu/düşüncesi
-    private String exampleDialogues;    // Örnek diyaloglar
-    private String practicalImportance; // Pratik hayattaki önemi
-    private boolean isSaved;            // Kaydedildi mi?
-    private long lastViewedTime = 0;    // 0 = Henüz incelenmedi
+    private String title;
+    private String description;
+    private String developerNote;
+    private String exampleDialogues;
+    private String practicalImportance;
+    private boolean isSaved;
+    private long lastViewedTime;
 
+    // Room'un kullanacağı ana constructor
     public ConceptItem_kavram(String title, String description, String developerNote,
                               String exampleDialogues, String practicalImportance, boolean isSaved) {
-        this.title = title;
-        this.description = description;
-        this.developerNote = developerNote;
-        this.exampleDialogues = exampleDialogues;
-        this.practicalImportance = practicalImportance;
+        this.title = (title != null) ? title : "";
+        this.description = (description != null) ? description : "";
+        this.developerNote = (developerNote != null) ? developerNote : "";
+        this.exampleDialogues = (exampleDialogues != null) ? exampleDialogues : "";
+        this.practicalImportance = (practicalImportance != null) ? practicalImportance : "";
         this.isSaved = isSaved;
+        this.lastViewedTime = 0L;
     }
 
-    // Getter ve Setter Metotları
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    // Kod içinden zaman damgasıyla doğrudan nesne oluşturmak için alternatif constructor
+    @Ignore
+    public ConceptItem_kavram(String title, String description, String developerNote,
+                              String exampleDialogues, String practicalImportance, boolean isSaved, long lastViewedTime) {
+        this(title, description, developerNote, exampleDialogues, practicalImportance, isSaved);
+        this.lastViewedTime = lastViewedTime;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public int getId() {
+        return id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public String getDeveloperNote() { return developerNote; }
-    public void setDeveloperNote(String developerNote) { this.developerNote = developerNote; }
+    public String getTitle() {
+        return title;
+    }
 
-    public long getLastViewedTime() { return lastViewedTime; }
-    public void setLastViewedTime(long lastViewedTime) { this.lastViewedTime = lastViewedTime; }
+    public void setTitle(String title) {
+        this.title = (title != null) ? title : "";
+    }
 
-    public String getExampleDialogues() { return exampleDialogues; }
-    public void setExampleDialogues(String exampleDialogues) { this.exampleDialogues = exampleDialogues; }
+    public String getDescription() {
+        return description;
+    }
 
-    public String getPracticalImportance() { return practicalImportance; }
-    public void setPracticalImportance(String practicalImportance) { this.practicalImportance = practicalImportance; }
+    public void setDescription(String description) {
+        this.description = (description != null) ? description : "";
+    }
 
-    public boolean isSaved() { return isSaved; }
-    public void setSaved(boolean saved) { isSaved = saved; }
+    public String getDeveloperNote() {
+        return developerNote;
+    }
+
+    public void setDeveloperNote(String developerNote) {
+        this.developerNote = (developerNote != null) ? developerNote : "";
+    }
+
+    public long getLastViewedTime() {
+        return lastViewedTime;
+    }
+
+    public void setLastViewedTime(long lastViewedTime) {
+        this.lastViewedTime = lastViewedTime;
+    }
+
+    public String getExampleDialogues() {
+        return exampleDialogues;
+    }
+
+    public void setExampleDialogues(String exampleDialogues) {
+        this.exampleDialogues = (exampleDialogues != null) ? exampleDialogues : "";
+    }
+
+    public String getPracticalImportance() {
+        return practicalImportance;
+    }
+
+    public void setPracticalImportance(String practicalImportance) {
+        this.practicalImportance = (practicalImportance != null) ? practicalImportance : "";
+    }
+
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean saved) {
+        isSaved = saved;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConceptItem_kavram that = (ConceptItem_kavram) o;
+        return id == that.id &&
+                isSaved == that.isSaved &&
+                lastViewedTime == that.lastViewedTime &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(developerNote, that.developerNote) &&
+                Objects.equals(exampleDialogues, that.exampleDialogues) &&
+                Objects.equals(practicalImportance, that.practicalImportance);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, title, description, developerNote, exampleDialogues, practicalImportance, isSaved, lastViewedTime);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "ConceptItem_kavram{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", isSaved=" + isSaved +
+                ", lastViewedTime=" + lastViewedTime +
+                '}';
+    }
 }

@@ -1,9 +1,12 @@
 package com.example.hadi_bakalm.model;
 
+import androidx.annotation.NonNull;
 import com.google.gson.annotations.SerializedName;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class kaydedilenler {
+
     private String id;
     private String title;
     private String description;
@@ -18,64 +21,155 @@ public class kaydedilenler {
     private String addedTime;
     private boolean isSaved;
 
-    // Boş Constructor (Gson için)
+    // Boş Constructor (Gson serileştirme/ayrıştırma için zorunlu)
     public kaydedilenler() {
+        this.id = "";
+        this.title = "";
+        this.description = "";
+        this.personalNote = "";
+        this.dialogues = "";
+        this.importance = "";
+        this.type = "";
+        this.category = "";
+        this.addedTime = "";
+        this.isSaved = false;
     }
 
     // 6 Parametreli Constructor
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.type = type;
-        this.category = category;
-        this.addedTime = addedTime;
-        this.isSaved = false;
+        this(id, title, description, type, category, addedTime, false);
     }
 
     // 7 Parametreli Constructor
     public kaydedilenler(String id, String title, String description, String type, String category, String addedTime, boolean isSaved) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.type = type;
-        this.category = category;
-        this.addedTime = addedTime;
+        this.id = (id != null) ? id : "";
+        this.title = (title != null) ? title : "";
+        this.description = (description != null) ? description : "";
+        this.personalNote = "";
+        this.dialogues = "";
+        this.importance = "";
+        this.type = (type != null) ? type : "";
+        this.category = (category != null) ? category : "";
+        this.addedTime = (addedTime != null) ? addedTime : "";
         this.isSaved = isSaved;
     }
 
-    // Getter ve Setter Metodları
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() {
+        return id != null ? id : "";
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setId(String id) {
+        this.id = (id != null) ? id : "";
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getTitle() {
+        return title != null ? title : "";
+    }
 
-    public String getPersonalNote() { return personalNote; }
-    public void setPersonalNote(String personalNote) { this.personalNote = personalNote; }
+    public void setTitle(String title) {
+        this.title = (title != null) ? title : "";
+    }
 
-    // Eski koddaki bağımlılıklar için geriye dönük uyumluluk (getContent)
-    public String getContent() { return personalNote; }
-    public void setContent(String content) { this.personalNote = content; }
+    public String getDescription() {
+        return description != null ? description : "";
+    }
 
-    public String getDialogues() { return dialogues; }
-    public void setDialogues(String dialogues) { this.dialogues = dialogues; }
+    public void setDescription(String description) {
+        this.description = (description != null) ? description : "";
+    }
 
-    public String getImportance() { return importance; }
-    public void setImportance(String importance) { this.importance = importance; }
+    public String getPersonalNote() {
+        return personalNote != null ? personalNote : "";
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setPersonalNote(String personalNote) {
+        this.personalNote = (personalNote != null) ? personalNote : "";
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    // Geriye dönük uyumluluk (getContent / setContent)
+    public String getContent() {
+        return getPersonalNote();
+    }
 
-    public String getAddedTime() { return addedTime; }
-    public void setAddedTime(String addedTime) { this.addedTime = addedTime; }
+    public void setContent(String content) {
+        setPersonalNote(content);
+    }
 
-    public boolean isSaved() { return isSaved; }
-    public void setSaved(boolean saved) { isSaved = saved; }
+    public String getDialogues() {
+        return dialogues != null ? dialogues : "";
+    }
+
+    public void setDialogues(String dialogues) {
+        this.dialogues = (dialogues != null) ? dialogues : "";
+    }
+
+    public String getImportance() {
+        return importance != null ? importance : "";
+    }
+
+    public void setImportance(String importance) {
+        this.importance = (importance != null) ? importance : "";
+    }
+
+    public String getType() {
+        return type != null ? type : "";
+    }
+
+    public void setType(String type) {
+        this.type = (type != null) ? type : "";
+    }
+
+    public String getCategory() {
+        return category != null ? category : "";
+    }
+
+    public void setCategory(String category) {
+        this.category = (category != null) ? category : "";
+    }
+
+    public String getAddedTime() {
+        return addedTime != null ? addedTime : "";
+    }
+
+    public void setAddedTime(String addedTime) {
+        this.addedTime = (addedTime != null) ? addedTime : "";
+    }
+
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean saved) {
+        isSaved = saved;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        kaydedilenler that = (kaydedilenler) o;
+        return isSaved == that.isSaved &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(title, that.title) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(personalNote, that.personalNote) &&
+                Objects.equals(type, that.type) &&
+                Objects.equals(category, that.category);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, title, description, personalNote, type, category, isSaved);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "kaydedilenler{" +
+                "id='" + id + '\'' +
+                ", title='" + title + '\'' +
+                ", type='" + type + '\'' +
+                ", isSaved=" + isSaved +
+                '}';
+    }
 }

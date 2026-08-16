@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -19,15 +20,18 @@ import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.data.AppDatabase;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AyarlarActivity extends AppCompatActivity {
 
-    private Spinner spinnerTheme;
-    private SharedPreferences sharedPreferences;
-    private AppDatabase db;
-
     public static final String PREFS_NAME = "AyarlarPrefs";
     public static final String KEY_THEME = "secilen_tema_pozisyon";
+
+    private Spinner spinnerTheme;
+    private SharedPreferences sharedPreferences;
+    private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,37 +57,29 @@ public class AyarlarActivity extends AppCompatActivity {
         LinearLayout navRecent = findViewById(R.id.navRecent);
 
         if (navCategories != null) {
-            navCategories.setOnClickListener(v -> {
-                Intent intent = new Intent(AyarlarActivity.this, EskiMainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-                overridePendingTransition(0, 0);
-            });
+            navCategories.setOnClickListener(v -> navigateTo(EskiMainActivity.class));
         }
 
         if (navSaved != null) {
-            navSaved.setOnClickListener(v -> {
-                Intent intent = new Intent(AyarlarActivity.this, kaydet_ana_sayfa.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-                overridePendingTransition(0, 0);
-            });
+            navSaved.setOnClickListener(v -> navigateTo(kaydet_ana_sayfa.class));
         }
 
         if (navRecent != null) {
-            navRecent.setOnClickListener(v -> {
-                Intent intent = new Intent(AyarlarActivity.this, SonIncelemeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-                overridePendingTransition(0, 0);
-            });
+            navRecent.setOnClickListener(v -> navigateTo(SonIncelemeActivity.class));
         }
     }
 
+    private void navigateTo(Class<?> targetActivity) {
+        Intent intent = new Intent(AyarlarActivity.this, targetActivity);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
+        overridePendingTransition(0, 0);
+    }
+
     private void setupSpinners() {
+        if (spinnerTheme == null) return;
+
         String[] themeOptions = {"Aydınlık", "Karanlık", "Sistem Varsayılanı"};
         ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(
                 this,
@@ -114,14 +110,13 @@ public class AyarlarActivity extends AppCompatActivity {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
                             break;
                     }
-
-                    // Sayfanın yeni temayla anında çizilmesi için gerekli
                     recreate();
                 }
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
 
@@ -142,8 +137,9 @@ public class AyarlarActivity extends AppCompatActivity {
     }
 
     private void resetAllData() {
-        new Thread(() -> {
+        DB_EXECUTOR.execute(() -> {
             if (db != null) {
+                // Kavramları temizle
                 List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
                 if (allConcepts != null) {
                     for (ConceptItem_kavram concept : allConcepts) {
@@ -152,15 +148,26 @@ public class AyarlarActivity extends AppCompatActivity {
                         db.conceptDao_kavram().update(concept);
                     }
                 }
+
+                // Metinleri temizle
+                List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
+                if (allMetinler != null) {
+                    for (MetinItem metin : allMetinler) {
+                        metin.setSaved(false);
+                        metin.setLastViewedTime(0);
+                        db.metinDao().update(metin);
+                    }
+                }
             }
 
             runOnUiThread(() -> {
                 sharedPreferences.edit().clear().apply();
-                spinnerTheme.setSelection(0);
+                if (spinnerTheme != null) {
+                    spinnerTheme.setSelection(0);
+                }
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-
                 Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
             });
-        }).start();
+        });
     }
 }

@@ -1,7 +1,9 @@
 package com.example.hadi_bakalm.data;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
@@ -13,11 +15,14 @@ import java.util.List;
 @SuppressWarnings("unused")
 public interface MetinDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(MetinItem metinItem);
 
     @Update
     void update(MetinItem metinItem);
+
+    @Delete
+    void delete(MetinItem metinItem);
 
     @Query("SELECT * FROM metinler")
     List<MetinItem> getAllMetinler();
@@ -30,6 +35,9 @@ public interface MetinDao {
 
     @Query("SELECT * FROM metinler WHERE id = :metinId LIMIT 1")
     MetinItem getMetinById(int metinId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM metinler WHERE id = :metinId AND isSaved = 1)")
+    boolean isMetinSaved(int metinId);
 
     @Query("DELETE FROM metinler")
     void deleteAll();

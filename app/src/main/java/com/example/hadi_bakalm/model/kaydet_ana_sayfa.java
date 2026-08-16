@@ -19,26 +19,32 @@ import com.example.hadi_bakalm.data.AppDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class kaydet_ana_sayfa extends AppCompatActivity {
+
+    public static final String TYPE_KAVRAM = "KAVRAM";
+    public static final String TYPE_METIN = "METIN";
+
+    private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final Locale TR_LOCALE = new Locale("tr", "TR");
 
     private RecyclerView recyclerViewSaved;
     private kaydedilenler_adapter adapter;
 
-    // TÜRKÇE KARAKTER RİSKİNİ VE İSİMLENDİRME SAFSATASINI BİTİREN SABİTLER
-    public static final String TYPE_KAVRAM = "KAVRAM";
-    public static final String TYPE_METIN = "METIN"; // Standart İngilizce harflerle tanımlandı
+    private final List<kaydedilenler> savedList = new ArrayList<>();
+    private final List<kaydedilenler> currentFilteredList = new ArrayList<>();
 
-    private List<kaydedilenler> savedList;
-    private List<kaydedilenler> currentFilteredList;
     private TextView txtItemCount;
-    private ImageView btnBack;
     private EditText etSearch;
 
-    private TextView btnFilterAll, btnFilterConcepts, btnFilterTexts;
+    private TextView btnFilterAll;
+    private TextView btnFilterConcepts;
+    private TextView btnFilterTexts;
     private String selectedType = "ALL";
 
-    // Room Veri Tabanı Bağlantısı
     private AppDatabase db;
 
     @Override
@@ -59,14 +65,12 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Detay sayfasından kaydedildi/çıkarıldı yapılıp dönüldüğünde verileri tazeler
         loadSavedDataFromDb();
     }
 
     private void initViews() {
         recyclerViewSaved = findViewById(R.id.recyclerViewSaved);
         txtItemCount = findViewById(R.id.txtItemCount);
-        btnBack = findViewById(R.id.btnBack);
         etSearch = findViewById(R.id.etSearch);
 
         btnFilterAll = findViewById(R.id.btnFilterAll);
@@ -75,6 +79,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
                 Intent intent = new Intent(kaydet_ana_sayfa.this, EskiMainActivity.class);
@@ -111,34 +116,30 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        recyclerViewSaved.setLayoutManager(new LinearLayoutManager(this));
-
-        savedList = new ArrayList<>();
-        currentFilteredList = new ArrayList<>();
-
-        adapter = new kaydedilenler_adapter(this, currentFilteredList);
-        recyclerViewSaved.setAdapter(adapter);
-
+        if (recyclerViewSaved != null) {
+            recyclerViewSaved.setLayoutManager(new LinearLayoutManager(this));
+            adapter = new kaydedilenler_adapter(this, currentFilteredList);
+            recyclerViewSaved.setAdapter(adapter);
+        }
         loadSavedDataFromDb();
     }
 
-    // --- ROOM VERİ TABANINDAN DİNAMİK VERİ ÇEKME METODU ---
     private void loadSavedDataFromDb() {
         if (db == null) return;
 
-        new Thread(() -> {
+        DB_EXECUTOR.execute(() -> {
             List<kaydedilenler> tempSavedList = new ArrayList<>();
 
             // 1. KAVRAMLAR
             List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
             if (allConcepts != null) {
                 for (ConceptItem_kavram item : allConcepts) {
-                    if (item.isSaved()) {
+                    if (item != null && item.isSaved()) {
                         kaydedilenler savedItem = new kaydedilenler(
                                 String.valueOf(item.getId()),
                                 item.getTitle(),
                                 item.getDescription(),
-                                TYPE_KAVRAM,                   // Sabit bağlandı
+                                TYPE_KAVRAM,
                                 "",
                                 "Dün eklendi",
                                 true
@@ -152,12 +153,12 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
             if (allMetinler != null) {
                 for (MetinItem item : allMetinler) {
-                    if (item.isSaved()) {
+                    if (item != null && item.isSaved()) {
                         kaydedilenler savedItem = new kaydedilenler(
                                 String.valueOf(item.getId()),
                                 item.getTitle(),
-                                item.getContent() != null ? item.getContent() : "",
-                                TYPE_METIN,                    // Sabit bağlandı
+                                item.getContent(),
+                                TYPE_METIN,
                                 "",
                                 "Dün eklendi",
                                 true
@@ -172,7 +173,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
                 savedList.addAll(tempSavedList);
                 applyFilterAndSearch();
             });
-        }).start();
+        });
     }
 
     private void setupSearchAndFilters() {
@@ -193,41 +194,38 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void applyFilterAndSearch() {
-        java.util.Locale trLocale = new java.util.Locale("tr", "TR");
-        String query = etSearch != null ? etSearch.getText().toString().toLowerCase(trLocale).trim() : "";
+        String query = etSearch != null && etSearch.getText() != null
+                ? etSearch.getText().toString().toLowerCase(TR_LOCALE).trim()
+                : "";
+
         List<kaydedilenler> filtered = new ArrayList<>();
 
-        if (savedList != null) {
-            for (kaydedilenler item : savedList) {
-                if (item == null) continue;
+        for (kaydedilenler item : savedList) {
+            if (item == null) continue;
 
-                String itemType = item.getType() != null ? item.getType().trim() : "";
+            String itemType = item.getType() != null ? item.getType().trim() : "";
+            boolean matchesType = "ALL".equalsIgnoreCase(selectedType) || itemType.equalsIgnoreCase(selectedType);
 
-                // Kesin tür eşleşmesi (Metinsel bozulmalara kapalı)
-                boolean matchesType = selectedType.equals("ALL") || itemType.equalsIgnoreCase(selectedType);
+            String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(TR_LOCALE) : "";
+            String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(TR_LOCALE) : "";
+            String icerik = item.getContent() != null ? item.getContent().toLowerCase(TR_LOCALE) : "";
 
-                // Arama Kontrolü: Başlık (Title), Açıklama (Description) ve İçerik (Content) katmanlarında arar
-                String baslik = item.getTitle() != null ? item.getTitle().toLowerCase(trLocale) : "";
-                String aciklama = item.getDescription() != null ? item.getDescription().toLowerCase(trLocale) : "";
-                String icerik = item.getContent() != null ? item.getContent().toLowerCase(trLocale) : "";
+            boolean matchesQuery = query.isEmpty()
+                    || baslik.contains(query)
+                    || aciklama.contains(query)
+                    || icerik.contains(query);
 
-                boolean matchesQuery = query.isEmpty()
-                        || baslik.contains(query)
-                        || aciklama.contains(query)
-                        || icerik.contains(query);
-
-                if (matchesType && matchesQuery) {
-                    filtered.add(item);
-                }
+            if (matchesType && matchesQuery) {
+                filtered.add(item);
             }
         }
 
-        currentFilteredList = filtered;
+        currentFilteredList.clear();
+        currentFilteredList.addAll(filtered);
 
-        // Arayüz Çizimini Garantiye Alma
         runOnUiThread(() -> {
             if (adapter != null) {
-                adapter.filterList(currentFilteredList);
+                adapter.filterList(new ArrayList<>(currentFilteredList));
             }
             updateCount(currentFilteredList.size());
         });
@@ -250,7 +248,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
     private void updateCount(int count) {
         if (txtItemCount != null) {
-            txtItemCount.setText(count + " İçerik");
+            txtItemCount.setText(String.format(TR_LOCALE, "%d İçerik", count));
         }
     }
 }

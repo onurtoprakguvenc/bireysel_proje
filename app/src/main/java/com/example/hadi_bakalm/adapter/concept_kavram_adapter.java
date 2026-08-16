@@ -21,11 +21,13 @@ import java.util.List;
 
 public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_adapter.RowViewHolder> {
 
-    private final List<CategoryGroupModel> kategoriListesi;
+    private final List<CategoryGroupModel> kategoriListesi = new ArrayList<>();
     private final RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
 
     public concept_kavram_adapter(List<CategoryGroupModel> kategoriListesi) {
-        this.kategoriListesi = kategoriListesi;
+        if (kategoriListesi != null) {
+            this.kategoriListesi.addAll(kategoriListesi);
+        }
     }
 
     @NonNull
@@ -41,21 +43,18 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
 
     @Override
     public void onBindViewHolder(@NonNull RowViewHolder holder, int position) {
-        CategoryGroupModel group = kategoriListesi.get(position);
-        holder.txtCategoryTitle.setText(group.getKategoriBasligi());
-
-        holder.innerAdapter.updateData(group.getKavramlar());
+        holder.bind(kategoriListesi.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return kategoriListesi != null ? kategoriListesi.size() : 0;
+        return kategoriListesi.size();
     }
 
     public static class RowViewHolder extends RecyclerView.ViewHolder {
-        TextView txtCategoryTitle;
-        RecyclerView recyclerViewHorizontal;
-        InnerCardAdapter innerAdapter;
+        private final TextView txtCategoryTitle;
+        private final RecyclerView recyclerViewHorizontal;
+        private final InnerCardAdapter innerAdapter;
 
         @SuppressLint("ClickableViewAccessibility")
         public RowViewHolder(@NonNull View itemView) {
@@ -68,29 +67,41 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
                     LinearLayoutManager.HORIZONTAL,
                     false
             );
+            // Yatay kaydırma önbellekleme performans optimizasyonu
+            layoutManager.setInitialPrefetchItemCount(4);
             recyclerViewHorizontal.setLayoutManager(layoutManager);
 
             innerAdapter = new InnerCardAdapter(new ArrayList<>());
             recyclerViewHorizontal.setAdapter(innerAdapter);
 
-            // DİKEY RECYCLERVIEW'IN DOKUNMAYI GASP ETMESİNİ ENGELLEYEN KOD:
             recyclerViewHorizontal.setOnTouchListener((v, event) -> {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 return false;
             });
         }
+
+        public void bind(CategoryGroupModel group) {
+            if (group == null) return;
+            txtCategoryTitle.setText(group.getKategoriBasligi());
+            innerAdapter.updateData(group.getKavramlar());
+        }
     }
 
     private static class InnerCardAdapter extends RecyclerView.Adapter<InnerCardAdapter.CardViewHolder> {
-        private List<concept_kavram_model> kavramlar;
+        private final List<concept_kavram_model> kavramlar = new ArrayList<>();
 
-        public InnerCardAdapter(List<concept_kavram_model> kavramlar) {
-            this.kavramlar = kavramlar;
+        public InnerCardAdapter(List<concept_kavram_model> initialKavramlar) {
+            if (initialKavramlar != null) {
+                this.kavramlar.addAll(initialKavramlar);
+            }
         }
 
         @SuppressLint("NotifyDataSetChanged")
         public void updateData(List<concept_kavram_model> newKavramlar) {
-            this.kavramlar = newKavramlar;
+            this.kavramlar.clear();
+            if (newKavramlar != null) {
+                this.kavramlar.addAll(newKavramlar);
+            }
             notifyDataSetChanged();
         }
 
@@ -104,33 +115,38 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
 
         @Override
         public void onBindViewHolder(@NonNull CardViewHolder holder, int position) {
-            concept_kavram_model item = kavramlar.get(position);
-            holder.txtTitle.setText(item.getKavramAdi());
-            holder.txtDesc.setText(item.getAciklama());
-
-            // Tıklama Olayı (Detay sayfasına tüm JSON verilerini eksiksiz taşır)
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(v.getContext(), noroplastite.class);
-                intent.putExtra("KAVRAM_ID", item.getId());
-                intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
-                intent.putExtra("KAVRAM_ACIKLAMA", item.getAciklama());
-                intent.putExtra("KAVRAM_ICERIK", item.getIcerik());
-                v.getContext().startActivity(intent);
-            });
+            holder.bind(kavramlar.get(position));
         }
 
         @Override
         public int getItemCount() {
-            return kavramlar != null ? kavramlar.size() : 0;
+            return kavramlar.size();
         }
 
         static class CardViewHolder extends RecyclerView.ViewHolder {
-            TextView txtTitle, txtDesc;
+            private final TextView txtTitle;
+            private final TextView txtDesc;
 
             public CardViewHolder(@NonNull View itemView) {
                 super(itemView);
                 txtTitle = itemView.findViewById(R.id.txtCardTitle);
                 txtDesc = itemView.findViewById(R.id.txtCardDescription);
+            }
+
+            public void bind(concept_kavram_model item) {
+                if (item == null) return;
+
+                txtTitle.setText(item.getKavramAdi());
+                txtDesc.setText(item.getAciklama());
+
+                itemView.setOnClickListener(v -> {
+                    Intent intent = new Intent(v.getContext(), noroplastite.class);
+                    intent.putExtra("KAVRAM_ID", item.getId());
+                    intent.putExtra("KAVRAM_ADI", item.getKavramAdi());
+                    intent.putExtra("KAVRAM_ACIKLAMA", item.getAciklama());
+                    intent.putExtra("KAVRAM_ICERIK", item.getIcerik());
+                    v.getContext().startActivity(intent);
+                });
             }
         }
     }

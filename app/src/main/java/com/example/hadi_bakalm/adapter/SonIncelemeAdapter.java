@@ -18,7 +18,7 @@ import java.util.List;
 
 public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.ViewHolder> {
 
-    private List<SonIncelemeModel> incelemeListesi;
+    private final List<SonIncelemeModel> incelemeListesi = new ArrayList<>();
     private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -26,8 +26,10 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
         void onDeleteClick(SonIncelemeModel item);
     }
 
-    public SonIncelemeAdapter(List<SonIncelemeModel> incelemeListesi, OnItemClickListener listener) {
-        this.incelemeListesi = incelemeListesi != null ? new ArrayList<>(incelemeListesi) : new ArrayList<>();
+    public SonIncelemeAdapter(List<SonIncelemeModel> initialList, OnItemClickListener listener) {
+        if (initialList != null) {
+            this.incelemeListesi.addAll(initialList);
+        }
         this.listener = listener;
     }
 
@@ -39,52 +41,18 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
         return new ViewHolder(view);
     }
 
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        holder.bind(incelemeListesi.get(position), listener);
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     public void updateList(List<SonIncelemeModel> newList) {
-        if (this.incelemeListesi == null) {
-            this.incelemeListesi = new ArrayList<>();
-        }
         this.incelemeListesi.clear();
         if (newList != null) {
             this.incelemeListesi.addAll(newList);
         }
         notifyDataSetChanged();
-    }
-
-    @SuppressLint("SetTextI18n")
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        SonIncelemeModel item = incelemeListesi.get(position);
-        if (item == null) return;
-
-        if (holder.txtTitle != null) holder.txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
-        if (holder.txtDescription != null) holder.txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
-        if (holder.txtTime != null) holder.txtTime.setText(item.getZaman() != null ? item.getZaman() : "");
-
-        String tur = item.getTur() != null ? item.getTur().trim() : "";
-
-        // Ortak rozet arka planı
-        if (holder.txtBadge != null) {
-            holder.txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
-        }
-
-        if ("KAVRAM".equalsIgnoreCase(tur)) {
-            if (holder.txtBadge != null) holder.txtBadge.setText("Kavram");
-            if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_lightbulb);
-        } else {
-            if (holder.txtBadge != null) holder.txtBadge.setText("Metin");
-            if (holder.imgIcon != null) holder.imgIcon.setImageResource(R.drawable.ic_document);
-        }
-
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onItemClick(item);
-        });
-
-        if (holder.btnRemove != null) {
-            holder.btnRemove.setOnClickListener(v -> {
-                if (listener != null) listener.onDeleteClick(item);
-            });
-        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -95,12 +63,16 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
 
     @Override
     public int getItemCount() {
-        return incelemeListesi != null ? incelemeListesi.size() : 0;
+        return incelemeListesi.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView imgIcon, btnRemove;
-        TextView txtTitle, txtBadge, txtDescription, txtTime;
+        private final ImageView imgIcon;
+        private final ImageView btnRemove;
+        private final TextView txtTitle;
+        private final TextView txtBadge;
+        private final TextView txtDescription;
+        private final TextView txtTime;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -110,6 +82,36 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
             txtBadge = itemView.findViewById(R.id.txtItemBadge);
             txtDescription = itemView.findViewById(R.id.txtItemDescription);
             txtTime = itemView.findViewById(R.id.txtReadTime);
+        }
+
+        @SuppressLint("SetTextI18n")
+        public void bind(SonIncelemeModel item, OnItemClickListener listener) {
+            if (item == null) return;
+
+            txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
+            txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
+            txtTime.setText(item.getZaman() != null ? item.getZaman() : "");
+
+            txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
+
+            String tur = item.getTur() != null ? item.getTur().trim() : "";
+            if ("KAVRAM".equalsIgnoreCase(tur)) {
+                txtBadge.setText("Kavram");
+                imgIcon.setImageResource(R.drawable.ic_lightbulb);
+            } else {
+                txtBadge.setText("Metin");
+                imgIcon.setImageResource(R.drawable.ic_document);
+            }
+
+            itemView.setOnClickListener(v -> {
+                if (listener != null) listener.onItemClick(item);
+            });
+
+            if (btnRemove != null) {
+                btnRemove.setOnClickListener(v -> {
+                    if (listener != null) listener.onDeleteClick(item);
+                });
+            }
         }
     }
 }
