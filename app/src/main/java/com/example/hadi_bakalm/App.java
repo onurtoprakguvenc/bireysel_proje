@@ -2,8 +2,12 @@ package com.example.hadi_bakalm;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatDelegate;
+
+import com.example.hadi_bakalm.model.CrashActivity;
 
 public class App extends Application {
 
@@ -13,7 +17,23 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        setupGlobalCrashHandler();
         applyAppTheme();
+    }
+
+    private void setupGlobalCrashHandler() {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            String errorLog = Log.getStackTraceString(throwable);
+
+            Intent intent = new Intent(this, CrashActivity.class);
+            intent.putExtra("EXTRA_ERROR_LOG", errorLog);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+        });
     }
 
     private void applyAppTheme() {

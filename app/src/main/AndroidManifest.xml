@@ -18,6 +18,12 @@
             android:exported="false" />
 
         <activity
+            android:name=".model.CrashActivity"
+            android:exported="false"
+            android:process=":crash_process"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+
+        <activity
             android:name=".model.bagis_sayfa"
             android:exported="false" />
 

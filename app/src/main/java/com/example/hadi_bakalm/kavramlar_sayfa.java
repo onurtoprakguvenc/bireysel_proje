@@ -1,6 +1,5 @@
 package com.example.hadi_bakalm;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
@@ -13,23 +12,24 @@ import com.example.hadi_bakalm.adapter.concept_kavram_adapter;
 import com.example.hadi_bakalm.model.CategoryGroupModel;
 import com.example.hadi_bakalm.model.concept_kavram_model;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
-import java.lang.reflect.Type;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class kavramlar_sayfa extends AppCompatActivity {
 
-    private static final String TAG = "KavramlarSayfa";
+    private static final String TAG = "KAVRAM_KONTROL";
     private static final String JSON_FILE_NAME = "kavramlar.json";
-    private static final ExecutorService BG_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Gson GSON = new Gson();
 
     private concept_kavram_adapter adapter;
@@ -62,8 +62,9 @@ public class kavramlar_sayfa extends AppCompatActivity {
     }
 
     private void loadConceptDataAsync() {
-        BG_EXECUTOR.execute(() -> {
-            List<CategoryGroupModel> yuklenenListe = loadConceptsFromJSON();
+        new Thread(() -> {
+            String jsonMetni = loadJSONFromAsset();
+            List<CategoryGroupModel> yuklenenListe = loadConceptsFromJSON(jsonMetni);
 
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
@@ -72,37 +73,33 @@ public class kavramlar_sayfa extends AppCompatActivity {
                 anaListe.addAll(yuklenenListe);
 
                 if (adapter != null) {
-                    updateAdapter();
+                    adapter.updateData(anaListe);
                 }
             });
-        });
+        }).start();
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private void updateAdapter() {
-        adapter.notifyDataSetChanged();
-    }
-
-    private List<CategoryGroupModel> loadConceptsFromJSON() {
+    private List<CategoryGroupModel> loadConceptsFromJSON(String jsonString) {
         List<CategoryGroupModel> sonucListesi = new ArrayList<>();
-        String jsonString = loadJSONFromAsset();
         if (jsonString == null || jsonString.trim().isEmpty()) {
             return sonucListesi;
         }
 
         try {
-            Type listType = new TypeToken<List<JsonConceptModel>>() {}.getType();
-            List<JsonConceptModel> rawList = GSON.fromJson(jsonString, listType);
+            JsonArray jsonArray = extractJsonArray(jsonString);
 
-            if (rawList != null && !rawList.isEmpty()) {
+            if (jsonArray != null && !jsonArray.isEmpty()) {
                 Map<String, List<concept_kavram_model>> groupedMap = new LinkedHashMap<>();
 
-                for (JsonConceptModel item : rawList) {
+                for (JsonElement elem : jsonArray) {
+                    if (!elem.isJsonObject()) continue;
+
+                    JsonConceptModel item = GSON.fromJson(elem, JsonConceptModel.class);
                     if (item == null) continue;
 
                     String category = (item.category != null && !item.category.trim().isEmpty())
                             ? item.category
-                            : "Diğer Kavramlar";
+                            : "Genel Kavramlar";
 
                     if (!groupedMap.containsKey(category)) {
                         groupedMap.put(category, new ArrayList<>());
@@ -126,21 +123,39 @@ public class kavramlar_sayfa extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "JSON parse hatası", e);
+            Log.e(TAG, "JSON Ayrıştırma Hatası: ", e);
         }
 
         return sonucListesi;
     }
 
+    private JsonArray extractJsonArray(String jsonString) {
+        JsonElement rootElement = JsonParser.parseString(jsonString);
+
+        if (rootElement.isJsonArray()) {
+            return rootElement.getAsJsonArray();
+        } else if (rootElement.isJsonObject()) {
+            JsonObject rootObj = rootElement.getAsJsonObject();
+            if (rootObj.has("kavramlar")) {
+                return rootObj.getAsJsonArray("kavramlar");
+            } else if (rootObj.has("concepts")) {
+                return rootObj.getAsJsonArray("concepts");
+            }
+        }
+        return null;
+    }
+
     private String loadJSONFromAsset() {
-        try (InputStream is = getAssets().open(JSON_FILE_NAME)) {
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            int bytesRead = is.read(buffer);
-            if (bytesRead == -1) return null;
-            return new String(buffer, StandardCharsets.UTF_8);
+        StringBuilder stringBuilder = new StringBuilder();
+        try (InputStream is = getAssets().open(JSON_FILE_NAME);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
         } catch (Exception ex) {
-            Log.e(TAG, "Asset okuma hatası: " + JSON_FILE_NAME, ex);
+            Log.e(TAG, "Asset okunamadı (" + JSON_FILE_NAME + "): ", ex);
             return null;
         }
     }

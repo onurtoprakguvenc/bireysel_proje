@@ -212,4 +212,9 @@
     <string name="renk_secin">Renk Seçin</string>
     <string name="uyarı">Not: Bu içerik yalnızca genel bilgilendirme amaçlıdır; klinik/tıbbi teşhis ve tedavi tavsiyesi niteliği taşımaz.</string>
     <string name="secenekler">Seçenekler</string>
+    <string name="teknik_detay">Teknik Detay</string>
+    <string name="yeniden_baslat">Yeniden Başlat</string>
+    <string name="hata">Uygulama çalışırken öngörülemeyen bir durumla karşılaşıldı. Verileriniz koruma altındadır.</string>
+    <string name="beklenmeyen_bir_hata_olustu">Beklenmeyen Bir Hata Oluştu</string>
+    <string name="uyari_simge">⚠️</string>
 </resources>

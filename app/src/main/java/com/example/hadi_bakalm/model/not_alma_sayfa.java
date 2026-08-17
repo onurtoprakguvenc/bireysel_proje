@@ -5,11 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.ImageDecoder;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -215,6 +218,27 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void setupInlineEditorListener() {
         if (inlineTextEditor == null) return;
 
+        inlineTextEditor.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (activeEditingTableCell != null && globalDrawingCanvas != null) {
+                    globalDrawingCanvas.updateTableCellText(
+                            activeEditingTableCell.table,
+                            activeEditingTableCell.row,
+                            activeEditingTableCell.col,
+                            s.toString()
+                    );
+                    updateInlineTableCellPosition();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
         inlineTextEditor.setOnEditorActionListener((v, actionId, event) -> {
             commitInlineText();
             return true;
@@ -227,6 +251,27 @@ public class not_alma_sayfa extends AppCompatActivity {
         });
     }
 
+    private void updateInlineTableCellPosition() {
+        if (activeEditingTableCell == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
+
+        float scale = globalDrawingCanvas.getScaleFactor();
+        Paint tempPaint = new Paint();
+        tempPaint.setTextSize(32f);
+        float[] colWidths = activeEditingTableCell.table.getColumnWidths(tempPaint);
+
+        float cellX = activeEditingTableCell.table.startX;
+        for (int c = 0; c < activeEditingTableCell.col; c++) {
+            cellX += (c < colWidths.length ? colWidths[c] : activeEditingTableCell.table.defaultCellWidth);
+        }
+        float cellY = activeEditingTableCell.table.startY + (activeEditingTableCell.row * activeEditingTableCell.table.cellHeight);
+
+        float screenX = cellX * scale;
+        float screenY = (cellY + globalDrawingCanvas.getOffsetY()) * scale;
+
+        inlineTextEditor.setX(screenX + 8f);
+        inlineTextEditor.setY(screenY + 8f);
+    }
+
     private void openInlineTextEditor(float x, float y, DrawingView.TextItem textObj) {
         commitInlineText();
         activeEditingTableCell = null;
@@ -235,25 +280,71 @@ public class not_alma_sayfa extends AppCompatActivity {
             isCreatingNewText = false;
             activeEditingTextObj = textObj;
             inlineTextEditor.setText(textObj.text);
+            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, textObj.textSize > 0 ? textObj.textSize : 36f);
+            if (globalDrawingCanvas != null) {
+                globalDrawingCanvas.setEditingTextItem(textObj);
+            }
         } else {
             isCreatingNewText = true;
             activeEditingTextObj = null;
             pendingNewTextX = x;
             pendingNewTextY = y;
             inlineTextEditor.setText("");
+            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 36f);
+            if (globalDrawingCanvas != null) {
+                globalDrawingCanvas.setEditingTextItem(null);
+            }
         }
 
         if (globalDrawingCanvas == null) return;
 
         float scale = globalDrawingCanvas.getScaleFactor();
         float screenX = x * scale;
-        float screenY = (y + globalDrawingCanvas.getOffsetY()) * scale;
+        float textSize = (textObj != null && textObj.textSize > 0) ? textObj.textSize : 36f;
+        float screenY = ((y - textSize) + globalDrawingCanvas.getOffsetY()) * scale;
 
         inlineTextEditor.setX(screenX);
         inlineTextEditor.setY(screenY);
         if (inlineTextEditor.getText() != null) {
             inlineTextEditor.setSelection(inlineTextEditor.getText().length());
         }
+
+        inlineTextEditor.setVisibility(View.VISIBLE);
+        inlineTextEditor.requestFocus();
+
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(inlineTextEditor, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
+        if (result == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
+
+        commitInlineText();
+
+        activeEditingTableCell = result;
+        activeEditingTextObj = null;
+
+        globalDrawingCanvas.setEditingTableCell(result);
+
+        String currentText = "";
+        if (result.table.cells != null) {
+            for (DrawingView.TableCell cell : result.table.cells) {
+                if (cell.row == result.row && cell.col == result.col) {
+                    currentText = cell.text != null ? cell.text : "";
+                    break;
+                }
+            }
+        }
+
+        inlineTextEditor.setText(currentText);
+        inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f);
+        if (inlineTextEditor.getText() != null) {
+            inlineTextEditor.setSelection(inlineTextEditor.getText().length());
+        }
+
+        updateInlineTableCellPosition();
 
         inlineTextEditor.setVisibility(View.VISIBLE);
         inlineTextEditor.requestFocus();
@@ -285,6 +376,11 @@ public class not_alma_sayfa extends AppCompatActivity {
             globalDrawingCanvas.updateTableCellText(activeEditingTableCell.table, activeEditingTableCell.row, activeEditingTableCell.col, text);
         }
 
+        if (globalDrawingCanvas != null) {
+            globalDrawingCanvas.setEditingTextItem(null);
+            globalDrawingCanvas.setEditingTableCell(null);
+        }
+
         isCreatingNewText = false;
         activeEditingTextObj = null;
         activeEditingTableCell = null;
@@ -293,47 +389,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(inlineTextEditor.getWindowToken(), 0);
-        }
-    }
-
-    private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
-        if (result == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
-
-        commitInlineText();
-
-        activeEditingTableCell = result;
-        activeEditingTextObj = null;
-
-        float scale = globalDrawingCanvas.getScaleFactor();
-        float cellX = result.table.startX + (result.col * result.table.cellWidth);
-        float cellY = result.table.startY + (result.row * result.table.cellHeight);
-
-        float screenX = cellX * scale;
-        float screenY = (cellY + globalDrawingCanvas.getOffsetY()) * scale;
-
-        inlineTextEditor.setX(screenX + 8f);
-        inlineTextEditor.setY(screenY + 8f);
-
-        String currentText = "";
-        if (result.table.cells != null) {
-            for (DrawingView.TableCell cell : result.table.cells) {
-                if (cell.row == result.row && cell.col == result.col) {
-                    currentText = cell.text != null ? cell.text : "";
-                    break;
-                }
-            }
-        }
-
-        inlineTextEditor.setText(currentText);
-        if (inlineTextEditor.getText() != null) {
-            inlineTextEditor.setSelection(inlineTextEditor.getText().length());
-        }
-        inlineTextEditor.setVisibility(View.VISIBLE);
-        inlineTextEditor.requestFocus();
-
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.showSoftInput(inlineTextEditor, InputMethodManager.SHOW_IMPLICIT);
         }
     }
 
@@ -803,7 +858,10 @@ public class not_alma_sayfa extends AppCompatActivity {
                     }
 
                     if (globalDrawingCanvas != null) {
-                        globalDrawingCanvas.addTableToCanvas(rows, cols);
+                        float currentCanvasOffsetY = globalDrawingCanvas.getOffsetY();
+                        float spawnX = 60f;
+                        float spawnY = -currentCanvasOffsetY + 140f;
+                        globalDrawingCanvas.addTableToCanvas(spawnX, spawnY, rows, cols);
                     }
 
                     Toast.makeText(this, "Tablo eklendi. Hücreye tıklayarak yazabilirsiniz.", Toast.LENGTH_SHORT).show();

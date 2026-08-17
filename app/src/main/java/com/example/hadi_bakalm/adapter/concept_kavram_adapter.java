@@ -30,6 +30,18 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
         }
     }
 
+    /**
+     * Dışarıdan gelen yeni verileri adapter'ın kendi listesine aktarır ve UI'ı yeniler.
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void updateData(List<CategoryGroupModel> yeniListe) {
+        this.kategoriListesi.clear();
+        if (yeniListe != null) {
+            this.kategoriListesi.addAll(yeniListe);
+        }
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public RowViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -67,7 +79,6 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
                     LinearLayoutManager.HORIZONTAL,
                     false
             );
-            // Yatay kaydırma önbellekleme performans optimizasyonu
             layoutManager.setInitialPrefetchItemCount(4);
             recyclerViewHorizontal.setLayoutManager(layoutManager);
 

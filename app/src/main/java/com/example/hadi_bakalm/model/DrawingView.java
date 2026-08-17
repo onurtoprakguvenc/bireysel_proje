@@ -42,6 +42,8 @@ public class DrawingView extends View {
     }
 
     private OnDrawingChangeListener onDrawingChangeListener;
+    private TextItem editingTextItem = null;
+    private TableCellClickResult editingTableCell = null;
 
     public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
         this.onDrawingChangeListener = listener;
@@ -98,18 +100,32 @@ public class DrawingView extends View {
             this.strokeWidth = strokeWidth;
         }
 
+        public RectF getExactGeometry() {
+            if (shapeType == ToolMode.SQUARE) {
+                float dx = endX - startX;
+                float dy = endY - startY;
+                float side = Math.max(Math.abs(dx), Math.abs(dy));
+                float left = (dx < 0) ? startX - side : startX;
+                float top = (dy < 0) ? startY - side : startY;
+                return new RectF(left, top, left + side, top + side);
+            } else {
+                float left = Math.min(startX, endX);
+                float top = Math.min(startY, endY);
+                float right = Math.max(startX, endX);
+                float bottom = Math.max(startY, endY);
+                return new RectF(left, top, right, bottom);
+            }
+        }
+
         public RectF getBounds() {
-            float minX = Math.min(startX, endX);
-            float maxX = Math.max(startX, endX);
-            float minY = Math.min(startY, endY);
-            float maxY = Math.max(startY, endY);
+            RectF geo = getExactGeometry();
             float pad = Math.max(strokeWidth / 2f, 15f);
-            return new RectF(minX - pad, minY - pad, maxX + pad, maxY + pad);
+            return new RectF(geo.left - pad, geo.top - pad, geo.right + pad, geo.bottom + pad);
         }
 
         public RectF getResizeHandle() {
-            RectF b = getBounds();
-            return new RectF(b.right - 30f, b.bottom - 30f, b.right + 30f, b.bottom + 30f);
+            RectF geo = getExactGeometry();
+            return new RectF(geo.right - 25f, geo.bottom - 25f, geo.right + 25f, geo.bottom + 25f);
         }
 
         public void offset(float dx, float dy) {
@@ -161,6 +177,26 @@ public class DrawingView extends View {
             this.textSize = textSize;
         }
 
+        public RectF getBounds(Paint paint) {
+            if (text == null || text.isEmpty()) {
+                return new RectF(x, y, x, y);
+            }
+            float prevSize = paint.getTextSize();
+            paint.setTextSize(textSize > 0 ? textSize : 36f);
+
+            float textW = paint.measureText(text);
+            Paint.FontMetrics fm = paint.getFontMetrics();
+            float pad = 12f;
+
+            float left = x - pad;
+            float top = y + fm.ascent - pad;
+            float right = x + textW + pad;
+            float bottom = y + fm.descent + pad;
+
+            paint.setTextSize(prevSize);
+            return new RectF(left, top, right, bottom);
+        }
+
         public void offset(float dx, float dy) {
             x += dx;
             y += dy;
@@ -179,7 +215,8 @@ public class DrawingView extends View {
 
     public static class TableItem {
         public float startX, startY;
-        public float cellWidth = 160f, cellHeight = 90f;
+        public float defaultCellWidth = 160f;
+        public float cellHeight = 90f;
         public int rows, cols;
         public List<TableCell> cells = new ArrayList<>();
 
@@ -188,6 +225,39 @@ public class DrawingView extends View {
             this.startY = startY;
             this.rows = rows;
             this.cols = cols;
+        }
+
+        public float[] getColumnWidths(Paint textPaint) {
+            float[] colWidths = new float[cols];
+            for (int c = 0; c < cols; c++) {
+                float maxW = defaultCellWidth;
+                for (TableCell cell : cells) {
+                    if (cell.col == c && cell.text != null && !cell.text.isEmpty()) {
+                        float textW = textPaint.measureText(cell.text) + 32f;
+                        if (textW > maxW) {
+                            maxW = textW;
+                        }
+                    }
+                }
+                colWidths[c] = maxW;
+            }
+            return colWidths;
+        }
+
+        public float getTotalWidth(Paint textPaint) {
+            float[] colWidths = getColumnWidths(textPaint);
+            float total = 0f;
+            for (float w : colWidths) total += w;
+            return total;
+        }
+
+        public RectF getBounds(Paint textPaint) {
+            return new RectF(startX, startY, startX + getTotalWidth(textPaint), startY + (rows * cellHeight));
+        }
+
+        public void offset(float dx, float dy) {
+            startX += dx;
+            startY += dy;
         }
     }
 
@@ -202,7 +272,7 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 2. TUVAL VERİ HAVUZU (CANVAS REPOSITORY)
+    // 2. TUVAL VERİ HAVUZU
     // =========================================================================
 
     private final List<StrokeItem> strokes = new ArrayList<>();
@@ -367,20 +437,12 @@ public class DrawingView extends View {
         for (ShapeItem s : shapes) {
             shapeRenderPaint.setColor(s.color);
             shapeRenderPaint.setStrokeWidth(s.strokeWidth);
+            RectF geo = s.getExactGeometry();
 
-            if (s.shapeType == ToolMode.RECTANGLE) {
-                canvas.drawRect(Math.min(s.startX, s.endX), Math.min(s.startY, s.endY),
-                        Math.max(s.startX, s.endX), Math.max(s.startY, s.endY), shapeRenderPaint);
-            } else if (s.shapeType == ToolMode.SQUARE) {
-                float dx = s.endX - s.startX;
-                float dy = s.endY - s.startY;
-                float side = Math.max(Math.abs(dx), Math.abs(dy));
-                float left = (dx < 0) ? s.startX - side : s.startX;
-                float top = (dy < 0) ? s.startY - side : s.startY;
-                canvas.drawRect(left, top, left + side, top + side, shapeRenderPaint);
+            if (s.shapeType == ToolMode.RECTANGLE || s.shapeType == ToolMode.SQUARE) {
+                canvas.drawRect(geo, shapeRenderPaint);
             } else if (s.shapeType == ToolMode.CIRCLE) {
-                canvas.drawOval(new RectF(Math.min(s.startX, s.endX), Math.min(s.startY, s.endY),
-                        Math.max(s.startX, s.endX), Math.max(s.startY, s.endY)), shapeRenderPaint);
+                canvas.drawOval(geo, shapeRenderPaint);
             } else if (s.shapeType == ToolMode.LINE) {
                 canvas.drawLine(s.startX, s.startY, s.endX, s.endY, shapeRenderPaint);
             }
@@ -389,23 +451,46 @@ public class DrawingView extends View {
 
     private void renderTables(Canvas canvas) {
         for (TableItem table : tables) {
-            float totalW = table.cols * table.cellWidth;
+            float[] colWidths = table.getColumnWidths(textPaint);
+            float totalW = 0f;
+            for (float w : colWidths) totalW += w;
             float totalH = table.rows * table.cellHeight;
 
             for (int i = 0; i <= table.rows; i++) {
                 float y = table.startY + (i * table.cellHeight);
                 canvas.drawLine(table.startX, y, table.startX + totalW, y, tablePaint);
             }
-            for (int j = 0; j <= table.cols; j++) {
-                float x = table.startX + (j * table.cellWidth);
-                canvas.drawLine(x, table.startY, x, table.startY + totalH, tablePaint);
+
+            float currentX = table.startX;
+            canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
+            for (int j = 0; j < table.cols; j++) {
+                currentX += colWidths[j];
+                canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
             }
 
             for (TableCell cell : table.cells) {
+                // Eğer bu hücre şu an EditText ile düzenleniyorsa tuvalde çizme:
+                if (editingTableCell != null && editingTableCell.table == table &&
+                        editingTableCell.row == cell.row && editingTableCell.col == cell.col) {
+                    continue;
+                }
+
                 if (cell.text != null && !cell.text.isEmpty()) {
-                    float cx = table.startX + (cell.col * table.cellWidth) + (table.cellWidth / 2f);
-                    float cy = table.startY + (cell.row * table.cellHeight) + (table.cellHeight / 2f) + 10f;
+                    float cellStartX = table.startX;
+                    for (int c = 0; c < cell.col; c++) {
+                        cellStartX += colWidths[c];
+                    }
+                    float cellW = colWidths[cell.col];
+                    float cellY = table.startY + (cell.row * table.cellHeight);
+
+                    canvas.save();
+                    canvas.clipRect(cellStartX + 4f, cellY + 4f, cellStartX + cellW - 4f, cellY + table.cellHeight - 4f);
+
+                    float cx = cellStartX + (cellW / 2f);
+                    float cy = cellY + (table.cellHeight / 2f) + 10f;
                     canvas.drawText(cell.text, cx, cy, textPaint);
+
+                    canvas.restore();
                 }
             }
         }
@@ -421,6 +506,7 @@ public class DrawingView extends View {
 
     private void renderTexts(Canvas canvas) {
         for (TextItem t : texts) {
+            if (t == editingTextItem) continue;
             if (t.text != null && !t.text.isEmpty()) {
                 freeTextPaint.setColor(t.color);
                 freeTextPaint.setTextSize(t.textSize > 0 ? t.textSize : 36f);
@@ -457,9 +543,7 @@ public class DrawingView extends View {
             canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
         } else if (selectedItem instanceof TextItem) {
             TextItem t = (TextItem) selectedItem;
-            float textW = freeTextPaint.measureText(t.text);
-            float textH = t.textSize > 0 ? t.textSize : 36f;
-            bounds.set(t.x - 8f, t.y - textH - 8f, t.x + textW + 8f, t.y + 12f);
+            bounds = t.getBounds(freeTextPaint);
         } else if (selectedItem instanceof ShapeItem) {
             bounds = ((ShapeItem) selectedItem).getBounds();
             canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
@@ -497,7 +581,7 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 5. DOKUNMA YÖNETİMİ
+    // 5. DOKUNMA VE ETKİLEŞİM YÖNETİMİ
     // =========================================================================
 
     private Path activePath;
@@ -608,7 +692,6 @@ public class DrawingView extends View {
         return true;
     }
 
-    // --- TEKİL SEÇİM (CURSOR) METOTLARI ---
     private void handleSelectDown(float x, float y) {
         selectedGroup.clear();
         groupBounds.setEmpty();
@@ -682,9 +765,8 @@ public class DrawingView extends View {
 
         for (int i = texts.size() - 1; i >= 0; i--) {
             TextItem t = texts.get(i);
-            float w = freeTextPaint.measureText(t.text);
-            float h = t.textSize > 0 ? t.textSize : 36f;
-            if (x >= t.x - 10f && x <= t.x + w + 10f && y >= t.y - h - 10f && y <= t.y + 10f) {
+            RectF tBounds = t.getBounds(freeTextPaint);
+            if (tBounds.contains(x, y)) {
                 selectedItem = t;
                 isDraggingObject = true;
                 dragOffsetX = x - t.x;
@@ -742,7 +824,7 @@ public class DrawingView extends View {
         }
     }
 
-    // --- ÇOKLU KEMENT (LASSO) METOTLARI ---
+    // --- KEMENT (LASSO) METOTLARI (TABLO ENTEGRELİ) ---
     private void handleLassoDown(float x, float y) {
         selectedItem = null;
 
@@ -753,6 +835,7 @@ public class DrawingView extends View {
                     else if (obj instanceof ShapeItem) shapes.remove((ShapeItem) obj);
                     else if (obj instanceof ImageItem) images.remove((ImageItem) obj);
                     else if (obj instanceof TextItem) texts.remove((TextItem) obj);
+                    else if (obj instanceof TableItem) tables.remove((TableItem) obj);
                 }
                 selectedGroup.clear();
                 groupBounds.setEmpty();
@@ -787,6 +870,7 @@ public class DrawingView extends View {
                 else if (obj instanceof ShapeItem) ((ShapeItem) obj).offset(dx, dy);
                 else if (obj instanceof ImageItem) ((ImageItem) obj).offset(dx, dy);
                 else if (obj instanceof TextItem) ((TextItem) obj).offset(dx, dy);
+                else if (obj instanceof TableItem) ((TableItem) obj).offset(dx, dy);
             }
 
             groupBounds.offset(dx, dy);
@@ -851,8 +935,16 @@ public class DrawingView extends View {
         }
 
         for (TextItem txt : texts) {
-            if (lassoRegion.contains((int) txt.x, (int) txt.y)) {
+            RectF b = txt.getBounds(freeTextPaint);
+            if (lassoRegion.contains((int) b.centerX(), (int) b.centerY())) {
                 selectedGroup.add(txt);
+            }
+        }
+
+        for (TableItem table : tables) {
+            RectF b = table.getBounds(textPaint);
+            if (lassoRegion.contains((int) b.centerX(), (int) b.centerY())) {
+                selectedGroup.add(table);
             }
         }
 
@@ -891,12 +983,17 @@ public class DrawingView extends View {
                 maxX = Math.max(maxX, b.right);
                 maxY = Math.max(maxY, b.bottom);
             } else if (obj instanceof TextItem) {
-                TextItem t = (TextItem) obj;
-                float w = freeTextPaint.measureText(t.text);
-                minX = Math.min(minX, t.x);
-                minY = Math.min(minY, t.y - t.textSize);
-                maxX = Math.max(maxX, t.x + w);
-                maxY = Math.max(maxY, t.y);
+                RectF b = ((TextItem) obj).getBounds(freeTextPaint);
+                minX = Math.min(minX, b.left);
+                minY = Math.min(minY, b.top);
+                maxX = Math.max(maxX, b.right);
+                maxY = Math.max(maxY, b.bottom);
+            } else if (obj instanceof TableItem) {
+                RectF b = ((TableItem) obj).getBounds(textPaint);
+                minX = Math.min(minX, b.left);
+                minY = Math.min(minY, b.top);
+                maxX = Math.max(maxX, b.right);
+                maxY = Math.max(maxY, b.bottom);
             }
         }
 
@@ -961,9 +1058,15 @@ public class DrawingView extends View {
             eraserY = y;
             activePath.lineTo(x, y);
             activePoints.add(new Point(x, y));
+            // DrawingView.java -> continueStroke(float x, float y) içinde:
+
         } else if (currentToolMode == ToolMode.RECTANGLE) {
             activePath.reset();
-            activePath.addRect(Math.min(touchStartX, x), Math.min(touchStartY, y), Math.max(touchStartX, x), Math.max(touchStartY, y), Path.Direction.CW);
+            float left = Math.min(touchStartX, x);
+            float top = Math.min(touchStartY, y);
+            float right = Math.max(touchStartX, x);
+            float bottom = Math.max(touchStartY, y);
+            activePath.addRect(left, top, right, bottom, Path.Direction.CW);
         } else if (currentToolMode == ToolMode.SQUARE) {
             activePath.reset();
             float dx = x - touchStartX;
@@ -971,17 +1074,9 @@ public class DrawingView extends View {
             float side = Math.max(Math.abs(dx), Math.abs(dy));
             float left = (dx < 0) ? touchStartX - side : touchStartX;
             float top = (dy < 0) ? touchStartY - side : touchStartY;
-            activePath.addRect(left, top, left + side, top + side, Path.Direction.CW);
-        } else if (currentToolMode == ToolMode.CIRCLE) {
-            activePath.reset();
-            activePath.addOval(Math.min(touchStartX, x), Math.min(touchStartY, y), Math.max(touchStartX, x), Math.max(touchStartY, y), Path.Direction.CW);
-        } else if (currentToolMode == ToolMode.LINE) {
-            activePath.reset();
-            activePath.moveTo(touchStartX, touchStartY);
-            activePath.lineTo(x, y);
-        } else {
-            activePath.lineTo(x, y);
-            activePoints.add(new Point(x, y));
+            float right = left + side;
+            float bottom = top + side;
+            activePath.addRect(left, top, right, bottom, Path.Direction.CW);
         }
     }
 
@@ -1023,7 +1118,7 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 6. KAMUYA AÇIK METOTLAR
+    // 6. KAMUYA AÇIK API
     // =========================================================================
 
     public void setToolMode(ToolMode mode) {
@@ -1087,6 +1182,8 @@ public class DrawingView extends View {
         activePath = null;
         offsetY = 0f;
         scaleFactor = 1.0f;
+        editingTextItem = null;
+        editingTableCell = null;
         notifyChange();
         invalidate();
     }
@@ -1125,16 +1222,30 @@ public class DrawingView extends View {
         if (item == null) return;
         texts.remove(item);
         if (selectedItem == item) selectedItem = null;
+        if (editingTextItem == item) editingTextItem = null;
         notifyChange();
         invalidate();
+    }
+
+    public void setEditingTextItem(TextItem item) {
+        this.editingTextItem = item;
+        invalidate();
+    }
+
+    public void setEditingTableCell(TableCellClickResult cellResult) {
+        this.editingTableCell = cellResult;
+        invalidate();
+    }
+
+    public TableCellClickResult getEditingTableCell() {
+        return this.editingTableCell;
     }
 
     public TextItem checkTextClick(float touchX, float touchY) {
         for (int i = texts.size() - 1; i >= 0; i--) {
             TextItem t = texts.get(i);
-            float w = freeTextPaint.measureText(t.text);
-            float h = t.textSize > 0 ? t.textSize : 36f;
-            if (touchX >= t.x - 10f && touchX <= t.x + w + 10f && touchY >= t.y - h - 10f && touchY <= t.y + 10f) {
+            RectF bounds = t.getBounds(freeTextPaint);
+            if (bounds.contains(touchX, touchY)) {
                 return t;
             }
         }
@@ -1142,9 +1253,13 @@ public class DrawingView extends View {
     }
 
     public void addTableToCanvas(int rows, int cols) {
-        float startX = 80f;
-        float startY = -offsetY + 150f;
-        TableItem table = new TableItem(startX, startY, rows, cols);
+        float startX = 60f;
+        float startY = -offsetY + 140f;
+        addTableToCanvas(startX, startY, rows, cols);
+    }
+
+    public void addTableToCanvas(float x, float y, int rows, int cols) {
+        TableItem table = new TableItem(x, y, rows, cols);
         tables.add(table);
         notifyChange();
         invalidate();
@@ -1152,13 +1267,28 @@ public class DrawingView extends View {
 
     public TableCellClickResult checkTableCellClick(float touchX, float touchY) {
         for (TableItem table : tables) {
-            float totalW = table.cols * table.cellWidth;
+            float[] colWidths = table.getColumnWidths(textPaint);
+            float totalW = 0f;
+            for (float w : colWidths) totalW += w;
             float totalH = table.rows * table.cellHeight;
+
             if (touchX >= table.startX && touchX <= table.startX + totalW &&
                     touchY >= table.startY && touchY <= table.startY + totalH) {
-                int col = (int) ((touchX - table.startX) / table.cellWidth);
+
                 int row = (int) ((touchY - table.startY) / table.cellHeight);
-                return new TableCellClickResult(table, row, col);
+                float currentX = table.startX;
+                int clickedCol = -1;
+                for (int c = 0; c < table.cols; c++) {
+                    if (touchX >= currentX && touchX <= currentX + colWidths[c]) {
+                        clickedCol = c;
+                        break;
+                    }
+                    currentX += colWidths[c];
+                }
+
+                if (clickedCol != -1 && row < table.rows) {
+                    return new TableCellClickResult(table, row, clickedCol);
+                }
             }
         }
         return null;
@@ -1195,7 +1325,7 @@ public class DrawingView extends View {
             mainObj.put("texts", serializeTexts());
             return mainObj.toString();
         } catch (Exception e) {
-            Log.e(TAG, "getDrawingJson serileştirme hatası", e);
+            Log.e(TAG, "getDrawingJson hatası", e);
             return "";
         }
     }
@@ -1370,7 +1500,7 @@ public class DrawingView extends View {
 
             invalidate();
         } catch (Exception e) {
-            Log.e(TAG, "loadDrawingFromJson yükleme hatası", e);
+            Log.e(TAG, "loadDrawingFromJson hatası", e);
         }
     }
 
