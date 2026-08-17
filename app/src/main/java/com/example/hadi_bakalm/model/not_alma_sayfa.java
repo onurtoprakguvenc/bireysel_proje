@@ -1,6 +1,8 @@
 package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -41,6 +43,7 @@ import com.example.hadi_bakalm.data.notentity;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +59,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private ImageButton btnCloseEditor;
     private ImageButton btnPinNote;
+    private ImageButton btnEphemeralTimer; // Geçici not süresi ayarlama butonu
     private EditText etNoteTitle;
 
     private DrawingView globalDrawingCanvas;
@@ -77,6 +81,11 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private boolean isPinned = false;
     private int currentNoteId = -1;
+
+    // --- GEÇİCİ NOT DURUM DEĞİŞKENLERİ ---
+    private boolean isEphemeral = false;
+    private long expireTimestamp = 0L;
+    private long tempSelectedExpireTimestamp = 0L;
 
     private float currentStrokeWidth = 8f;
     private DrawingView.ToolMode activeMode = DrawingView.ToolMode.PEN;
@@ -152,6 +161,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void initViews() {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
+        btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer); // XML'de varsa bağlanır
         etNoteTitle = findViewById(R.id.etNoteTitle);
 
         globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
@@ -191,6 +201,9 @@ public class not_alma_sayfa extends AppCompatActivity {
                 notentity existingNote = noteDao.getNoteById(currentNoteId);
                 if (existingNote != null) {
                     isPinned = existingNote.isPinned;
+                    isEphemeral = existingNote.isEphemeral;
+                    expireTimestamp = existingNote.expireTimestamp;
+
                     if (existingNote.category != null) {
                         currentCategory = existingNote.category;
                     }
@@ -200,6 +213,10 @@ public class not_alma_sayfa extends AppCompatActivity {
 
                         if (btnPinNote != null) {
                             btnPinNote.setColorFilter(isPinned ? 0xFFEAB308 : 0xFF94A3B8);
+                        }
+
+                        if (btnEphemeralTimer != null && isEphemeral) {
+                            btnEphemeralTimer.setColorFilter(0xFFD32F2F); // Geçici not ise kırmızı ikon
                         }
 
                         if (existingNote.blocks != null && globalDrawingCanvas != null) {
@@ -459,6 +476,14 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
+        // Geçici not ayarlama butonu dinleyicisi
+        if (btnEphemeralTimer != null) {
+            btnEphemeralTimer.setOnClickListener(v -> {
+                commitInlineText();
+                showEphemeralDialog();
+            });
+        }
+
         if (btnToolSelect != null) {
             btnToolSelect.setOnClickListener(v -> {
                 commitInlineText();
@@ -600,6 +625,95 @@ public class not_alma_sayfa extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    /**
+     * gecici_not_uyari.xml arayüzünü açan ve geçici süre atamasını gerçekleştiren diyalog
+     */
+    @SuppressLint({"InflateParams", "SetTextI18n"})
+    private void showEphemeralDialog() {
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.gecici_not_uyari, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        TextView txtDialogMessage = dialogView.findViewById(R.id.txtDialogMessage);
+        Button btn1Hour = dialogView.findViewById(R.id.btnDuration1Hour);
+        Button btn24Hours = dialogView.findViewById(R.id.btnDuration24Hours);
+        Button btnCustom = dialogView.findViewById(R.id.btnDurationCustom);
+        Button btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btnDialogConfirm);
+
+        // Varsayılan geçici seçim: 1 saat sonrası
+        tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
+
+        if (btn1Hour != null) {
+            btn1Hour.setOnClickListener(v -> {
+                tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
+                if (txtDialogMessage != null) {
+                    txtDialogMessage.setText("Süre: 1 Saat sonra Geri Dönüşüm Kutusuna taşınacak.");
+                }
+            });
+        }
+
+        if (btn24Hours != null) {
+            btn24Hours.setOnClickListener(v -> {
+                tempSelectedExpireTimestamp = System.currentTimeMillis() + (24 * 60 * 60 * 1000L);
+                if (txtDialogMessage != null) {
+                    txtDialogMessage.setText("Süre: 24 Saat sonra Geri Dönüşüm Kutusuna taşınacak.");
+                }
+            });
+        }
+
+        if (btnCustom != null) {
+            btnCustom.setOnClickListener(v -> {
+                Calendar takvim = Calendar.getInstance();
+                DatePickerDialog datePicker = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+                    takvim.set(Calendar.YEAR, year);
+                    takvim.set(Calendar.MONTH, month);
+                    takvim.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                    TimePickerDialog timePicker = new TimePickerDialog(this, (timeView, hourOfDay, minute) -> {
+                        takvim.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        takvim.set(Calendar.MINUTE, minute);
+                        takvim.set(Calendar.SECOND, 0);
+
+                        long chosenTime = takvim.getTimeInMillis();
+                        if (chosenTime > System.currentTimeMillis()) {
+                            tempSelectedExpireTimestamp = chosenTime;
+                            if (txtDialogMessage != null) {
+                                txtDialogMessage.setText("Bitiş: " + dayOfMonth + "/" + (month + 1) + "/" + year + " " + String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute));
+                            }
+                        } else {
+                            Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
+                        }
+                    }, takvim.get(Calendar.HOUR_OF_DAY), takvim.get(Calendar.MINUTE), true);
+                    timePicker.show();
+                }, takvim.get(Calendar.YEAR), takvim.get(Calendar.MONTH), takvim.get(Calendar.DAY_OF_MONTH));
+                datePicker.show();
+            });
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnConfirm != null) {
+            btnConfirm.setOnClickListener(v -> {
+                isEphemeral = true;
+                expireTimestamp = tempSelectedExpireTimestamp;
+                if (btnEphemeralTimer != null) {
+                    btnEphemeralTimer.setColorFilter(0xFFD32F2F);
+                }
+                Toast.makeText(this, "Not geçici olarak ayarlandı", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
     }
 
     private void updateActiveToolUI(DrawingView.ToolMode mode) {
@@ -893,6 +1007,10 @@ public class not_alma_sayfa extends AppCompatActivity {
         notentity note = new notentity(title, "Çizim Notu", currentCategory, "#0284C7", currentTime);
         note.isPinned = isPinned;
         note.blocks = blocks;
+
+        // Geçici not alanlarını entity'ye aktar:
+        note.isEphemeral = isEphemeral;
+        note.expireTimestamp = expireTimestamp;
 
         if (noteDao != null) {
             final int idToUpdate = currentNoteId;

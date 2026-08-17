@@ -217,4 +217,11 @@
     <string name="hata">Uygulama çalışırken öngörülemeyen bir durumla karşılaşıldı. Verileriniz koruma altındadır.</string>
     <string name="beklenmeyen_bir_hata_olustu">Beklenmeyen Bir Hata Oluştu</string>
     <string name="uyari_simge">⚠️</string>
+    <string name="uyari_ikonu">Uyarı İkonu</string>
+    <string name="gecici_not_uyarı">Geçici Not Uyarısı</string>
+    <string name="uyari">Bu not için belirlenen süre dolduğunda, notunuz otomatik olarak Geri Dönüşüm Kutusu\'na taşınacaktır. 7 gün boyunca oradan kurtarmazsanız kalıcı olarak silinecektir.</string>
+    <string name="_1_saat">1 Saat</string>
+    <string name="_24_saat">24 Saat</string>
+    <string name="ozel">Özel...</string>
+    <string name="gecici_olarak_ayarla">Geçici Olarak Ayarla</string>
 </resources>

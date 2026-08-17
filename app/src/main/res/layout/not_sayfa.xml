@@ -9,6 +9,7 @@
     tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck,DuplicateSpeakableTextCheck,ImageContrastCheck,TextContrastCheck,VisualLintBounds,VisualLintOverlap,VisualLintTextFieldSize,VisualLintButtonSize">
 
     <!-- Üst Bar (Header) -->
+    <!-- Üst Bar (Header) -->
     <LinearLayout
         android:id="@+id/editorHeader"
         android:layout_width="match_parent"
@@ -42,6 +43,16 @@
             android:maxLines="1"
             android:inputType="textCapSentences"
             android:importantForAutofill="no" />
+
+        <!-- GEÇİCİ NOT SÜRE AYARLAMA BUTONU -->
+        <ImageButton
+            android:id="@+id/btnEphemeralTimer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_recent_history"
+            android:contentDescription="@string/app_name"
+            app:tint="#94A3B8" />
 
         <ImageButton
             android:id="@+id/btnPinNote"

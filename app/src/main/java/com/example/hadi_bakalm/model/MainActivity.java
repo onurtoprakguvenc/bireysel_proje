@@ -17,10 +17,14 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.NoteAdapter;
+import com.example.hadi_bakalm.data.NoteCleanupWorker;
 import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
@@ -31,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -66,13 +71,39 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         setupClickListeners();
         setupSearchListener();
+        setupPeriodicCleanupWorker();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadNotesFromDatabase();
-        loadDynamicCategoryChips();
+        // Sayfaya dönüldüğünde süresi o an dolmuş olanları anında çöpe taşı
+        if (noteDao != null) {
+            DB_EXECUTOR.execute(() -> {
+                noteDao.moveExpiredNotesToTrash(System.currentTimeMillis());
+                loadNotesFromDatabase();
+                loadDynamicCategoryChips();
+            });
+        } else {
+            loadNotesFromDatabase();
+            loadDynamicCategoryChips();
+        }
+    }
+
+    /**
+     * Arka planda süresi dolan notları çöpe atan ve 7 günü geçenleri silen WorkManager görevi
+     */
+    private void setupPeriodicCleanupWorker() {
+        PeriodicWorkRequest cleanupRequest = new PeriodicWorkRequest.Builder(
+                NoteCleanupWorker.class,
+                1, TimeUnit.HOURS
+        ).build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "NoteAutoCleanupWork",
+                ExistingPeriodicWorkPolicy.KEEP,
+                cleanupRequest
+        );
     }
 
     private void initViews() {

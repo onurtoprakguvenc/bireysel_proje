@@ -29,6 +29,12 @@ public class notentity {
 
     public List<NoteBlockModel> blocks;
 
+    // --- GEÇİCİ NOT VE GERİ DÖNÜŞÜM KUTUSU ALANLARI ---
+    public boolean isEphemeral;       // Notun geçici olup olmadığını belirten bayrak
+    public long expireTimestamp;       // Notun süresinin dolup çöpe taşınacağı zaman damgası (milisaniye)
+    public boolean isInTrash;          // Notun çöp kutusunda olup olmadığını belirten bayrak
+    public long trashedTimestamp;      // Notun çöp kutusuna girdiği anın zaman damgası (milisaniye)
+
     public notentity(String title, String content, String category, String colorHex, String timestamp) {
         this.title = title != null ? title : "";
         this.content = content != null ? content : "";
@@ -37,6 +43,12 @@ public class notentity {
         this.timestamp = timestamp != null ? timestamp : "";
         this.isPinned = false;
         this.blocks = new ArrayList<>();
+
+        // Varsayılan geçici not değerleri (Kalıcı not)
+        this.isEphemeral = false;
+        this.expireTimestamp = 0L;
+        this.isInTrash = false;
+        this.trashedTimestamp = 0L;
     }
 
     @Ignore
