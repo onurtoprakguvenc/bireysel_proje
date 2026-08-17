@@ -1,17 +1,20 @@
 package com.example.hadi_bakalm;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,25 +27,20 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class EskiMainActivity extends AppCompatActivity {
 
-    // XML'de adını değiştirdiğimiz gizli köprü ikonu
-    private ImageView btnBackToNotes;
-    private EditText searchBar;
-    private RecyclerView recyclerViewCategories;
-    private FloatingActionButton btnSupportDonate;
-    private ana_sayfa_adapter adapter;
-    private List<String> kategoriListesi;
-
+    private static final Locale TR_LOCALE = new Locale("tr", "TR");
     private static final String PREFS_NAME = "AppPrefs";
     private static final String KEY_DISCLAIMER_ACCEPTED = "is_disclaimer_accepted";
 
+    private EditText searchBar;
+    private ana_sayfa_adapter adapter;
+    private final List<String> kategoriListesi = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Ekran çizilmeden (setContentView) ÖNCE temayı yükle
-        applySavedTheme();
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -51,67 +49,47 @@ public class EskiMainActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupSearch();
+        checkAndShowDisclaimer();
+    }
 
-        // GİZLİ KÖPRÜ: Kalem İkonuna basınca ana notlar sayfasına (asil_ana_sayfa) yönlendirir
+    private void initViews() {
+        ImageView btnBackToNotes = findViewById(R.id.btnBackToNotes);
+        searchBar = findViewById(R.id.searchBar);
+        FloatingActionButton btnSupportDonate = findViewById(R.id.btnSupportDonate);
+
         if (btnBackToNotes != null) {
             btnBackToNotes.setOnClickListener(v -> {
                 Intent intent = new Intent(EskiMainActivity.this, MainActivity.class);
                 startActivity(intent);
-                finish(); // Bu ekranı kapatıp ana notlar listesine döner
+                finish();
             });
         }
 
-        // Bağış Butonu Tıklama Olayı (bağış sayfasına yönlendirme)
         if (btnSupportDonate != null) {
             btnSupportDonate.setOnClickListener(v -> {
                 Intent intent = new Intent(EskiMainActivity.this, bagis_sayfa.class);
                 startActivity(intent);
             });
         }
-
-        // Sadece daha önce kabul edilmediyse diyalogu gösterir
-        checkAndShowDisclaimer();
-    }
-
-    private void applySavedTheme() {
-        SharedPreferences prefs = getSharedPreferences("AyarlarPrefs", Context.MODE_PRIVATE);
-        int position = prefs.getInt("secilen_tema_pozisyon", 0);
-
-        switch (position) {
-            case 0:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                break;
-            case 1:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                break;
-            case 2:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-                break;
-        }
-    }
-
-    private void initViews() {
-        // XML'deki yeni ID bağlandı
-        btnBackToNotes = findViewById(R.id.btnBackToNotes);
-        searchBar = findViewById(R.id.searchBar);
-        recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
-        btnSupportDonate = findViewById(R.id.btnSupportDonate);
     }
 
     private void setupRecyclerView() {
+        RecyclerView recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
+        if (recyclerViewCategories == null) return;
+
         recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
 
-        kategoriListesi = new ArrayList<>();
+        kategoriListesi.clear();
         kategoriListesi.add("Kavramlar");
         kategoriListesi.add("Kişisel Metinlerim");
 
         adapter = new ana_sayfa_adapter(kategoriListesi, kategoriAdi -> {
+            if (isFinishing() || isDestroyed()) return;
+
             if ("Kavramlar".equals(kategoriAdi)) {
-                Intent intent = new Intent(EskiMainActivity.this, kavramlar_sayfa.class);
-                startActivity(intent);
+                startActivity(new Intent(EskiMainActivity.this, kavramlar_sayfa.class));
             } else if ("Kişisel Metinlerim".equals(kategoriAdi)) {
-                Intent intent = new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class);
-                startActivity(intent);
+                startActivity(new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class));
             }
         });
 
@@ -123,28 +101,24 @@ public class EskiMainActivity extends AppCompatActivity {
 
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filter(s.toString());
+                filter(s != null ? s.toString() : "");
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-            }
+            public void afterTextChanged(Editable s) {}
         });
     }
 
     private void filter(String text) {
-        java.util.Locale trLocale = new java.util.Locale("tr", "TR");
-
-        String query = text != null ? text.toLowerCase(trLocale).trim() : "";
+        String query = text != null ? text.toLowerCase(TR_LOCALE).trim() : "";
         List<String> filteredList = new ArrayList<>();
 
         for (String item : kategoriListesi) {
-            if (item.toLowerCase(trLocale).contains(query)) {
+            if (item != null && item.toLowerCase(TR_LOCALE).contains(query)) {
                 filteredList.add(item);
             }
         }
@@ -164,17 +138,18 @@ public class EskiMainActivity extends AppCompatActivity {
     }
 
     private void showExpertDisclaimerDialog() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        android.view.View dialogView = getLayoutInflater().inflate(R.layout.diyalog_uzman_uyari, null);
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.diyalog_uzman_uyari, null);
         builder.setView(dialogView);
 
-        android.app.AlertDialog dialog = builder.create();
-
+        AlertDialog dialog = builder.create();
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
         TextView btnAccept = dialogView.findViewById(R.id.btnAcceptDisclaimer);
@@ -182,7 +157,6 @@ public class EskiMainActivity extends AppCompatActivity {
             btnAccept.setOnClickListener(v -> {
                 SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 prefs.edit().putBoolean(KEY_DISCLAIMER_ACCEPTED, true).apply();
-
                 dialog.dismiss();
             });
         }

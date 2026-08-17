@@ -1,90 +1,105 @@
 package com.example.hadi_bakalm;
 
-import android.content.Intent;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.concept_kavram_adapter;
-import com.example.hadi_bakalm.data.AppDatabase;
-import com.example.hadi_bakalm.data.ConceptRepository;
 import com.example.hadi_bakalm.model.CategoryGroupModel;
-import com.example.hadi_bakalm.model.ConceptItem_kavram;
 import com.example.hadi_bakalm.model.concept_kavram_model;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.io.InputStream;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class kavramlar_sayfa extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
+    private static final String TAG = "KavramlarSayfa";
+    private static final String JSON_FILE_NAME = "kavramlar.json";
+    private static final ExecutorService BG_EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final Gson GSON = new Gson();
+
     private concept_kavram_adapter adapter;
-    private AppDatabase db;
+    private final List<CategoryGroupModel> anaListe = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kavramlar_sayfa);
 
-        // 1. Veri Tabanı Bağlantısı
-        db = AppDatabase.getInstance(this);
-
-        // 2. Arayüz Elemanları
         ImageView btnBack = findViewById(R.id.btnBack);
-        recyclerView = findViewById(R.id.recyclerViewMainCategories);
-
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // 3. RecyclerView Ayarları (Kategoriler Dikey Dizilir, Kartlar Yatay Kayar)
+        RecyclerView recyclerView = findViewById(R.id.recyclerViewMainCategories);
         if (recyclerView != null) {
-            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-            recyclerView.setLayoutManager(layoutManager);
+            recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+            adapter = new concept_kavram_adapter(anaListe);
+            recyclerView.setAdapter(adapter);
         }
 
-        // 4. Verileri Yükle
-        loadConceptList();
+        loadConceptDataAsync();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Detay sayfasından geri dönüldüğünde (örn: kaydedildi durumu değiştiyse) listeyi tazele
-        loadConceptList();
+        loadConceptDataAsync();
     }
 
-    private void loadConceptList() {
-        List<CategoryGroupModel> anaListe = new ArrayList<>();
+    private void loadConceptDataAsync() {
+        BG_EXECUTOR.execute(() -> {
+            List<CategoryGroupModel> yuklenenListe = loadConceptsFromJSON();
 
-        // 1. JSON'dan verileri anaListe'ye doldurur
-        loadConceptsFromJSON(anaListe);
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
 
-        // 2. Doğru ve Tek Yetkili Adaptörü Bağlar
-        if (recyclerView != null) {
-            adapter = new concept_kavram_adapter(anaListe);
-            recyclerView.setAdapter(adapter);
+                anaListe.clear();
+                anaListe.addAll(yuklenenListe);
+
+                if (adapter != null) {
+                    updateAdapter();
+                }
+            });
+        });
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void updateAdapter() {
+        adapter.notifyDataSetChanged();
+    }
+
+    private List<CategoryGroupModel> loadConceptsFromJSON() {
+        List<CategoryGroupModel> sonucListesi = new ArrayList<>();
+        String jsonString = loadJSONFromAsset();
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return sonucListesi;
         }
-    }
-
-    private void loadConceptsFromJSON(List<CategoryGroupModel> anaListe) {
-        String jsonString = loadJSONFromAsset("kavramlar.json");
-        if (jsonString == null) return;
 
         try {
-            // Gson Builder ile bilinmeyen alanları yoksayma garantisi
-            com.google.gson.Gson gson = new com.google.gson.Gson();
-            java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<List<JsonConceptModel>>() {}.getType();
-            List<JsonConceptModel> rawList = gson.fromJson(jsonString, listType);
-
+            Type listType = new TypeToken<List<JsonConceptModel>>() {}.getType();
+            List<JsonConceptModel> rawList = GSON.fromJson(jsonString, listType);
 
             if (rawList != null && !rawList.isEmpty()) {
-                java.util.Map<String, List<concept_kavram_model>> groupedMap = new java.util.LinkedHashMap<>();
+                Map<String, List<concept_kavram_model>> groupedMap = new LinkedHashMap<>();
 
                 for (JsonConceptModel item : rawList) {
+                    if (item == null) continue;
+
                     String category = (item.category != null && !item.category.trim().isEmpty())
                             ? item.category
                             : "Diğer Kavramlar";
@@ -93,47 +108,48 @@ public class kavramlar_sayfa extends AppCompatActivity {
                         groupedMap.put(category, new ArrayList<>());
                     }
 
+                    String id = item.id != null ? item.id : "";
                     String title = item.title != null ? item.title : "";
                     String desc = item.description != null ? item.description : "";
                     String content = item.content != null ? item.content : "";
 
-                    groupedMap.get(category).add(new concept_kavram_model(item.id, title, desc, content));
+                    List<concept_kavram_model> list = groupedMap.get(category);
+                    if (list != null) {
+                        list.add(new concept_kavram_model(id, title, desc, content));
+                    }
                 }
 
-                for (java.util.Map.Entry<String, List<concept_kavram_model>> entry : groupedMap.entrySet()) {
-                    if (!entry.getValue().isEmpty()) {
-                        anaListe.add(new CategoryGroupModel(entry.getKey(), entry.getValue()));
+                for (Map.Entry<String, List<concept_kavram_model>> entry : groupedMap.entrySet()) {
+                    if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                        sonucListesi.add(new CategoryGroupModel(entry.getKey(), entry.getValue()));
                     }
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "JSON parse hatası", e);
+        }
+
+        return sonucListesi;
+    }
+
+    private String loadJSONFromAsset() {
+        try (InputStream is = getAssets().open(JSON_FILE_NAME)) {
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            int bytesRead = is.read(buffer);
+            if (bytesRead == -1) return null;
+            return new String(buffer, StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            Log.e(TAG, "Asset okuma hatası: " + JSON_FILE_NAME, ex);
+            return null;
         }
     }
 
-    // 2. Temizlenmiş Kavram Helper Modeli (readTime Barındırmaz)
     private static class JsonConceptModel {
         public String id;
         public String title;
         public String category;
         public String description;
         public String content;
-    }
-
-    // Asset Dosyası Okuyucu
-    private String loadJSONFromAsset(String fileName) {
-        String json = null;
-        try {
-            java.io.InputStream is = getAssets().open(fileName);
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (java.io.IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
     }
 }

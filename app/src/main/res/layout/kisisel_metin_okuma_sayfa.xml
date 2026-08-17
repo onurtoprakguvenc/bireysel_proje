@@ -92,7 +92,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/baslık"
+                    android:id="@+id/baslik"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/baslik_1"

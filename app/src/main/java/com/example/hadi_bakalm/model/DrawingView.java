@@ -1,20 +1,28 @@
 package com.example.hadi_bakalm.model;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
+import android.graphics.ImageDecoder;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+
+import androidx.annotation.NonNull;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,7 +30,10 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"unused", "SpellCheckingInspection"})
 public class DrawingView extends View {
+
+    private static final String TAG = "DrawingView";
 
     public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, SELECT, LASSO, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
 
@@ -31,6 +42,7 @@ public class DrawingView extends View {
     }
 
     private OnDrawingChangeListener onDrawingChangeListener;
+
     public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
         this.onDrawingChangeListener = listener;
     }
@@ -201,13 +213,11 @@ public class DrawingView extends View {
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
-    // Tekil Seçim
     private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
     private final RectF menuSizeUpBounds = new RectF();
     private final RectF menuSizeDownBounds = new RectF();
 
-    // Kement Çoklu Seçim
     private final List<Object> selectedGroup = new ArrayList<>();
     private final RectF groupBounds = new RectF();
     private Path lassoPath = null;
@@ -297,7 +307,7 @@ public class DrawingView extends View {
 
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
-            public boolean onScale(ScaleGestureDetector detector) {
+            public boolean onScale(@NonNull ScaleGestureDetector detector) {
                 scaleFactor *= detector.getScaleFactor();
                 scaleFactor = Math.max(0.5f, Math.min(scaleFactor, 3.0f));
                 invalidate();
@@ -311,48 +321,40 @@ public class DrawingView extends View {
     // =========================================================================
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
 
-        // Serbest Çizimler
         for (StrokeItem stroke : strokes) {
             canvas.drawPath(stroke.path, stroke.paint);
         }
 
-        // Şekiller
         renderShapes(canvas);
 
-        // Anlık Çizim / Önizleme
         if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL &&
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
         }
 
-        // Tablolar, Görseller, Metinler
         renderTables(canvas);
         renderImages(canvas);
         renderTexts(canvas);
 
-        // Kement İzi
         if (lassoPath != null) {
             canvas.drawPath(lassoPath, lassoPaint);
         }
 
-        // Çoklu Grup Seçim Kutusu
         if (!selectedGroup.isEmpty()) {
             renderGroupSelectionAndMenu(canvas);
         }
 
-        // Tekil Seçim Çerçevesi (SELECT modunda)
         if (currentToolMode == ToolMode.SELECT && selectedItem != null && selectedGroup.isEmpty()) {
             renderSelectionAndFloatingMenu(canvas);
         }
 
-        // Silgi Göstergesi
         if (currentToolMode == ToolMode.ERASER && isErasing && eraserX >= 0 && eraserY >= 0) {
             float radius = (currentStrokeWidth * 3f) / 2f;
             canvas.drawCircle(eraserX, eraserY, radius, eraserCursorPaint);
@@ -511,7 +513,13 @@ public class DrawingView extends View {
     private float dragOffsetX, dragOffsetY;
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean performClick() {
+        return super.performClick();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(@NonNull MotionEvent event) {
         scaleGestureDetector.onTouchEvent(event);
 
         if (event.getPointerCount() > 1 || currentToolMode == ToolMode.SCROLL) {
@@ -567,6 +575,20 @@ public class DrawingView extends View {
                 break;
 
             case MotionEvent.ACTION_UP:
+                performClick();
+                if (currentToolMode == ToolMode.SELECT) {
+                    handleSelectUp();
+                    return true;
+                }
+
+                if (currentToolMode == ToolMode.LASSO) {
+                    handleLassoUp();
+                    return true;
+                }
+
+                finishStroke();
+                break;
+
             case MotionEvent.ACTION_CANCEL:
                 if (currentToolMode == ToolMode.SELECT) {
                     handleSelectUp();
@@ -591,7 +613,6 @@ public class DrawingView extends View {
         selectedGroup.clear();
         groupBounds.setEmpty();
 
-        // 1. Menü Tıklamaları
         if (selectedItem != null) {
             if (menuDeleteBounds.contains(x, y)) {
                 if (selectedItem instanceof ImageItem) images.remove((ImageItem) selectedItem);
@@ -619,7 +640,6 @@ public class DrawingView extends View {
             }
         }
 
-        // 2. Tutamaç Kontrolleri
         if (selectedItem instanceof ImageItem) {
             ImageItem img = (ImageItem) selectedItem;
             if (img.getResizeHandle().contains(x, y)) {
@@ -636,7 +656,6 @@ public class DrawingView extends View {
             }
         }
 
-        // 3. Şekil Tıklaması
         for (int i = shapes.size() - 1; i >= 0; i--) {
             ShapeItem s = shapes.get(i);
             if (s.getBounds().contains(x, y)) {
@@ -649,7 +668,6 @@ public class DrawingView extends View {
             }
         }
 
-        // 4. Görsel Tıklaması
         for (int i = images.size() - 1; i >= 0; i--) {
             ImageItem img = images.get(i);
             if (img.getBounds().contains(x, y)) {
@@ -662,7 +680,6 @@ public class DrawingView extends View {
             }
         }
 
-        // 5. Metin Tıklaması
         for (int i = texts.size() - 1; i >= 0; i--) {
             TextItem t = texts.get(i);
             float w = freeTextPaint.measureText(t.text);
@@ -677,7 +694,6 @@ public class DrawingView extends View {
             }
         }
 
-        // Boşluğa dokunuldu -> Seçimi kaldır
         selectedItem = null;
         invalidate();
     }
@@ -733,10 +749,10 @@ public class DrawingView extends View {
         if (!selectedGroup.isEmpty()) {
             if (menuDeleteBounds.contains(x, y)) {
                 for (Object obj : selectedGroup) {
-                    strokes.remove(obj);
-                    shapes.remove(obj);
-                    images.remove(obj);
-                    texts.remove(obj);
+                    if (obj instanceof StrokeItem) strokes.remove((StrokeItem) obj);
+                    else if (obj instanceof ShapeItem) shapes.remove((ShapeItem) obj);
+                    else if (obj instanceof ImageItem) images.remove((ImageItem) obj);
+                    else if (obj instanceof TextItem) texts.remove((TextItem) obj);
                 }
                 selectedGroup.clear();
                 groupBounds.setEmpty();
@@ -1172,90 +1188,104 @@ public class DrawingView extends View {
     public String getDrawingJson() {
         try {
             JSONObject mainObj = new JSONObject();
-
-            JSONArray pathsArray = new JSONArray();
-            for (StrokeItem stroke : strokes) {
-                JSONObject pathObj = new JSONObject();
-                pathObj.put("color", stroke.color);
-                pathObj.put("strokeWidth", stroke.strokeWidth);
-                pathObj.put("isEraser", stroke.isEraser);
-
-                JSONArray pointsArray = new JSONArray();
-                for (Point p : stroke.points) {
-                    JSONObject pointObj = new JSONObject();
-                    pointObj.put("x", p.x);
-                    pointObj.put("y", p.y);
-                    pointsArray.put(pointObj);
-                }
-                pathObj.put("points", pointsArray);
-                pathsArray.put(pathObj);
-            }
-            mainObj.put("paths", pathsArray);
-
-            JSONArray shapesArray = new JSONArray();
-            for (ShapeItem s : shapes) {
-                JSONObject shapeObj = new JSONObject();
-                shapeObj.put("type", s.shapeType.name());
-                shapeObj.put("startX", s.startX);
-                shapeObj.put("startY", s.startY);
-                shapeObj.put("endX", s.endX);
-                shapeObj.put("endY", s.endY);
-                shapeObj.put("color", s.color);
-                shapeObj.put("strokeWidth", s.strokeWidth);
-                shapesArray.put(shapeObj);
-            }
-            mainObj.put("shapes", shapesArray);
-
-            JSONArray tablesArray = new JSONArray();
-            for (TableItem table : tables) {
-                JSONObject tableObj = new JSONObject();
-                tableObj.put("startX", table.startX);
-                tableObj.put("startY", table.startY);
-                tableObj.put("rows", table.rows);
-                tableObj.put("cols", table.cols);
-
-                JSONArray cellsArray = new JSONArray();
-                for (TableCell cell : table.cells) {
-                    JSONObject cellObj = new JSONObject();
-                    cellObj.put("row", cell.row);
-                    cellObj.put("col", cell.col);
-                    cellObj.put("text", cell.text);
-                    cellsArray.put(cellObj);
-                }
-                tableObj.put("cells", cellsArray);
-                tablesArray.put(tableObj);
-            }
-            mainObj.put("tables", tablesArray);
-
-            JSONArray imagesArray = new JSONArray();
-            for (ImageItem img : images) {
-                JSONObject imgObj = new JSONObject();
-                imgObj.put("x", img.x);
-                imgObj.put("y", img.y);
-                imgObj.put("width", img.width);
-                imgObj.put("height", img.height);
-                imgObj.put("uri", img.uriStr);
-                imagesArray.put(imgObj);
-            }
-            mainObj.put("images", imagesArray);
-
-            JSONArray textsArray = new JSONArray();
-            for (TextItem t : texts) {
-                JSONObject tObj = new JSONObject();
-                tObj.put("x", t.x);
-                tObj.put("y", t.y);
-                tObj.put("text", t.text);
-                tObj.put("color", t.color);
-                tObj.put("textSize", t.textSize);
-                textsArray.put(tObj);
-            }
-            mainObj.put("texts", textsArray);
-
+            mainObj.put("paths", serializePaths());
+            mainObj.put("shapes", serializeShapes());
+            mainObj.put("tables", serializeTables());
+            mainObj.put("images", serializeImages());
+            mainObj.put("texts", serializeTexts());
             return mainObj.toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "getDrawingJson serileştirme hatası", e);
             return "";
         }
+    }
+
+    private JSONArray serializePaths() throws Exception {
+        JSONArray pathsArray = new JSONArray();
+        for (StrokeItem stroke : strokes) {
+            JSONObject pathObj = new JSONObject();
+            pathObj.put("color", stroke.color);
+            pathObj.put("strokeWidth", stroke.strokeWidth);
+            pathObj.put("isEraser", stroke.isEraser);
+
+            JSONArray pointsArray = new JSONArray();
+            for (Point p : stroke.points) {
+                JSONObject pointObj = new JSONObject();
+                pointObj.put("x", p.x);
+                pointObj.put("y", p.y);
+                pointsArray.put(pointObj);
+            }
+            pathObj.put("points", pointsArray);
+            pathsArray.put(pathObj);
+        }
+        return pathsArray;
+    }
+
+    private JSONArray serializeShapes() throws Exception {
+        JSONArray shapesArray = new JSONArray();
+        for (ShapeItem s : shapes) {
+            JSONObject shapeObj = new JSONObject();
+            shapeObj.put("type", s.shapeType.name());
+            shapeObj.put("startX", s.startX);
+            shapeObj.put("startY", s.startY);
+            shapeObj.put("endX", s.endX);
+            shapeObj.put("endY", s.endY);
+            shapeObj.put("color", s.color);
+            shapeObj.put("strokeWidth", s.strokeWidth);
+            shapesArray.put(shapeObj);
+        }
+        return shapesArray;
+    }
+
+    private JSONArray serializeTables() throws Exception {
+        JSONArray tablesArray = new JSONArray();
+        for (TableItem table : tables) {
+            JSONObject tableObj = new JSONObject();
+            tableObj.put("startX", table.startX);
+            tableObj.put("startY", table.startY);
+            tableObj.put("rows", table.rows);
+            tableObj.put("cols", table.cols);
+
+            JSONArray cellsArray = new JSONArray();
+            for (TableCell cell : table.cells) {
+                JSONObject cellObj = new JSONObject();
+                cellObj.put("row", cell.row);
+                cellObj.put("col", cell.col);
+                cellObj.put("text", cell.text);
+                cellsArray.put(cellObj);
+            }
+            tableObj.put("cells", cellsArray);
+            tablesArray.put(tableObj);
+        }
+        return tablesArray;
+    }
+
+    private JSONArray serializeImages() throws Exception {
+        JSONArray imagesArray = new JSONArray();
+        for (ImageItem img : images) {
+            JSONObject imgObj = new JSONObject();
+            imgObj.put("x", img.x);
+            imgObj.put("y", img.y);
+            imgObj.put("width", img.width);
+            imgObj.put("height", img.height);
+            imgObj.put("uri", img.uriStr);
+            imagesArray.put(imgObj);
+        }
+        return imagesArray;
+    }
+
+    private JSONArray serializeTexts() throws Exception {
+        JSONArray textsArray = new JSONArray();
+        for (TextItem t : texts) {
+            JSONObject tObj = new JSONObject();
+            tObj.put("x", t.x);
+            tObj.put("y", t.y);
+            tObj.put("text", t.text);
+            tObj.put("color", t.color);
+            tObj.put("textSize", t.textSize);
+            textsArray.put(tObj);
+        }
+        return textsArray;
     }
 
     public void loadDrawingFromJson(String jsonStr) {
@@ -1316,10 +1346,16 @@ public class DrawingView extends View {
                     float h = (float) obj.getDouble("height");
                     String uriStr = obj.getString("uri");
                     try {
-                        Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), android.net.Uri.parse(uriStr));
+                        Uri uri = Uri.parse(uriStr);
+                        Bitmap bitmap;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContext().getContentResolver(), uri));
+                        } else {
+                            bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), uri);
+                        }
                         images.add(new ImageItem(x, y, w, h, bitmap, uriStr));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "Görsel yüklenemedi: " + uriStr, e);
                     }
                 }
             }
@@ -1334,7 +1370,7 @@ public class DrawingView extends View {
 
             invalidate();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "loadDrawingFromJson yükleme hatası", e);
         }
     }
 
