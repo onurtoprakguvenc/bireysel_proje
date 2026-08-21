@@ -5,10 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -28,7 +26,7 @@ public class AyarlarActivity extends AppCompatActivity {
     public static final String PREFS_NAME = "AyarlarPrefs";
     public static final String KEY_THEME = "secilen_tema_pozisyon";
 
-    private Spinner spinnerTheme;
+    private Button btnThemeLight, btnThemeDark, btnThemeSystem;
     private SharedPreferences sharedPreferences;
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
     private AppDatabase db;
@@ -43,12 +41,14 @@ public class AyarlarActivity extends AppCompatActivity {
 
         initViews();
         setupBottomNavigation();
-        setupSpinners();
+        loadSavedTheme();
         setupClickListeners();
     }
 
     private void initViews() {
-        spinnerTheme = findViewById(R.id.spinnerTheme);
+        btnThemeLight = findViewById(R.id.btnThemeLight);
+        btnThemeDark = findViewById(R.id.btnThemeDark);
+        btnThemeSystem = findViewById(R.id.btnThemeSystem);
     }
 
     private void setupBottomNavigation() {
@@ -77,54 +77,52 @@ public class AyarlarActivity extends AppCompatActivity {
         overridePendingTransition(0, 0);
     }
 
-    private void setupSpinners() {
-        if (spinnerTheme == null) return;
-
-        String[] themeOptions = {"Aydınlık", "Karanlık", "Sistem Varsayılanı"};
-        ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                themeOptions
-        );
-        spinnerTheme.setAdapter(themeAdapter);
-
+    private void loadSavedTheme() {
         int savedThemePos = sharedPreferences.getInt(KEY_THEME, 0);
-        spinnerTheme.setSelection(savedThemePos);
-
-        spinnerTheme.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                int currentSaved = sharedPreferences.getInt(KEY_THEME, 0);
-
-                if (currentSaved != position) {
-                    sharedPreferences.edit().putInt(KEY_THEME, position).apply();
-
-                    switch (position) {
-                        case 0:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                            break;
-                        case 1:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                            break;
-                        case 2:
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-                            break;
-                    }
-                    recreate();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
+        updateThemeUI(savedThemePos);
     }
 
     private void setupClickListeners() {
+        if (btnThemeLight != null) {
+            btnThemeLight.setOnClickListener(v -> applyTheme(0));
+        }
+        if (btnThemeDark != null) {
+            btnThemeDark.setOnClickListener(v -> applyTheme(1));
+        }
+        if (btnThemeSystem != null) {
+            btnThemeSystem.setOnClickListener(v -> applyTheme(2));
+        }
+
         View btnReset = findViewById(R.id.btnResetAll);
         if (btnReset != null) {
             btnReset.setOnClickListener(v -> showResetConfirmationDialog());
         }
+    }
+
+    private void applyTheme(int position) {
+        int currentSaved = sharedPreferences.getInt(KEY_THEME, 0);
+
+        if (currentSaved != position) {
+            sharedPreferences.edit().putInt(KEY_THEME, position).apply();
+
+            switch (position) {
+                case 0:
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                    break;
+                case 1:
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                    break;
+                case 2:
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+                    break;
+            }
+            recreate();
+        }
+    }
+
+    private void updateThemeUI(int position) {
+        // Butonların aktif/pasif görsel durumlarını burada ayarlayabilirsin
+        // Şimdilik temel mantık seçilen temayı kaydedip uyguluyor.
     }
 
     private void showResetConfirmationDialog() {
@@ -139,7 +137,6 @@ public class AyarlarActivity extends AppCompatActivity {
     private void resetAllData() {
         DB_EXECUTOR.execute(() -> {
             if (db != null) {
-                // Kavramları temizle
                 List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
                 if (allConcepts != null) {
                     for (ConceptItem_kavram concept : allConcepts) {
@@ -149,7 +146,6 @@ public class AyarlarActivity extends AppCompatActivity {
                     }
                 }
 
-                // Metinleri temizle
                 List<MetinItem> allMetinler = db.metinDao().getAllMetinler();
                 if (allMetinler != null) {
                     for (MetinItem metin : allMetinler) {
@@ -162,9 +158,6 @@ public class AyarlarActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 sharedPreferences.edit().clear().apply();
-                if (spinnerTheme != null) {
-                    spinnerTheme.setSelection(0);
-                }
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                 Toast.makeText(AyarlarActivity.this, "Tüm veriler ve ayarlar başarıyla sıfırlandı.", Toast.LENGTH_SHORT).show();
             });

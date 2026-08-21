@@ -1,8 +1,17 @@
 package com.example.hadi_bakalm;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,27 +41,149 @@ public class kavramlar_sayfa extends AppCompatActivity {
     private static final String JSON_FILE_NAME = "kavramlar.json";
     private static final Gson GSON = new Gson();
 
+    private RecyclerView recyclerView;
     private concept_kavram_adapter adapter;
     private final List<CategoryGroupModel> anaListe = new ArrayList<>();
+    private final List<CategoryGroupModel> goruntulenenListe = new ArrayList<>();
+
+    private LinearLayout chipContainer;
+    private TextView txtConceptCountBadge;
+    private ImageView btnSearchConcept;
+
+    // Arayüz İçi Arama Bileşenleri
+    private RelativeLayout searchBarContainer;
+    private EditText etSearchInput;
+    private ImageView btnClearSearchText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kavramlar_sayfa);
 
+        initViews();
+        setupListeners();
+
+        if (recyclerView != null) {
+            recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+            adapter = new concept_kavram_adapter(goruntulenenListe);
+            recyclerView.setAdapter(adapter);
+        }
+
+        loadConceptDataAsync();
+    }
+
+    private void initViews() {
         ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerViewMainCategories);
-        if (recyclerView != null) {
-            recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-            adapter = new concept_kavram_adapter(anaListe);
-            recyclerView.setAdapter(adapter);
+        chipContainer = findViewById(R.id.conceptChipContainer);
+        recyclerView = findViewById(R.id.recyclerViewMainCategories);
+        txtConceptCountBadge = findViewById(R.id.txtConceptCountBadge);
+        btnSearchConcept = findViewById(R.id.btnSearchConcept);
+
+        searchBarContainer = findViewById(R.id.searchBarContainer);
+        etSearchInput = findViewById(R.id.etSearchInput);
+        btnClearSearchText = findViewById(R.id.btnClearSearchText);
+    }
+
+    private void setupListeners() {
+        // Büyütece tıklandığında popup yerine arayüzdeki arama çubuğunu aç/kapat
+        if (btnSearchConcept != null) {
+            btnSearchConcept.setOnClickListener(v -> {
+                if (searchBarContainer == null) return;
+
+                if (searchBarContainer.getVisibility() == View.VISIBLE) {
+                    searchBarContainer.setVisibility(View.GONE);
+                    if (etSearchInput != null) {
+                        etSearchInput.setText("");
+                        hideKeyboard(etSearchInput);
+                    }
+                    filterConcepts("");
+                } else {
+                    searchBarContainer.setVisibility(View.VISIBLE);
+                    if (etSearchInput != null) {
+                        etSearchInput.requestFocus();
+                        showKeyboard(etSearchInput);
+                    }
+                }
+            });
         }
 
-        loadConceptDataAsync();
+        // Arama çubuğundaki temizle / kapat (X) butonu
+        if (btnClearSearchText != null) {
+            btnClearSearchText.setOnClickListener(v -> {
+                if (etSearchInput != null) {
+                    etSearchInput.setText("");
+                }
+                filterConcepts("");
+            });
+        }
+
+        // Arama kutusuna yazı yazıldıkça anlık filtreleme
+        if (etSearchInput != null) {
+            etSearchInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterConcepts(s.toString());
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+    }
+
+    private void filterConcepts(String query) {
+        String cleanQuery = (query == null) ? "" : query.trim().toLowerCase();
+        goruntulenenListe.clear();
+
+        if (cleanQuery.isEmpty()) {
+            goruntulenenListe.addAll(anaListe);
+        } else {
+            for (CategoryGroupModel group : anaListe) {
+                List<concept_kavram_model> eslesenler = new ArrayList<>();
+                if (group.getKavramlar() != null) {
+                    for (concept_kavram_model item : group.getKavramlar()) {
+                        boolean adEslesiyor = item.getKavramAdi() != null && item.getKavramAdi().toLowerCase().contains(cleanQuery);
+                        boolean aciklamaEslesiyor = item.getAciklama() != null && item.getAciklama().toLowerCase().contains(cleanQuery);
+                        boolean kategoriEslesiyor = group.getKategoriBasligi() != null && group.getKategoriBasligi().toLowerCase().contains(cleanQuery);
+
+                        if (adEslesiyor || aciklamaEslesiyor || kategoriEslesiyor) {
+                            eslesenler.add(item);
+                        }
+                    }
+                }
+                if (!eslesenler.isEmpty()) {
+                    goruntulenenListe.add(new CategoryGroupModel(group.getKategoriBasligi(), eslesenler));
+                }
+            }
+        }
+
+        if (adapter != null) {
+            adapter.updateData(goruntulenenListe);
+        }
+        updateBadgeCount(goruntulenenListe);
+    }
+
+    private void showKeyboard(View view) {
+        view.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+            }
+        }, 150);
+    }
+
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     @Override
@@ -72,11 +203,120 @@ public class kavramlar_sayfa extends AppCompatActivity {
                 anaListe.clear();
                 anaListe.addAll(yuklenenListe);
 
+                goruntulenenListe.clear();
+                goruntulenenListe.addAll(anaListe);
+
                 if (adapter != null) {
-                    adapter.updateData(anaListe);
+                    adapter.updateData(goruntulenenListe);
                 }
+
+                updateBadgeCount(goruntulenenListe);
+                setupCategoryChips();
             });
         }).start();
+    }
+
+    private void updateBadgeCount(List<CategoryGroupModel> liste) {
+        if (txtConceptCountBadge == null) return;
+        int total = 0;
+        for (CategoryGroupModel g : liste) {
+            if (g.getKavramlar() != null) {
+                total += g.getKavramlar().size();
+            }
+        }
+        txtConceptCountBadge.setText(total + " kavram");
+    }
+
+    private void setupCategoryChips() {
+        if (chipContainer == null) return;
+        chipContainer.removeAllViews();
+
+        int toplamKavramSayisi = 0;
+        for (CategoryGroupModel group : anaListe) {
+            if (group.getKavramlar() != null) {
+                toplamKavramSayisi += group.getKavramlar().size();
+            }
+        }
+
+        addChipView("Tümü (" + toplamKavramSayisi + ")", -1, true);
+
+        for (int i = 0; i < anaListe.size(); i++) {
+            CategoryGroupModel group = anaListe.get(i);
+            String title = group.getKategoriBasligi();
+            String displayTitle = title.contains("/") ? title.split("/")[0].trim() : title;
+            addChipView(displayTitle, i, false);
+        }
+    }
+
+    private void addChipView(String text, int targetIndex, boolean isSelectedDefault) {
+        TextView chip = new TextView(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                (int) (32 * getResources().getDisplayMetrics().density)
+        );
+        params.setMarginEnd((int) (6 * getResources().getDisplayMetrics().density));
+        chip.setLayoutParams(params);
+
+        chip.setPadding(
+                (int) (14 * getResources().getDisplayMetrics().density),
+                0,
+                (int) (14 * getResources().getDisplayMetrics().density),
+                0
+        );
+        chip.setGravity(android.view.Gravity.CENTER);
+        chip.setText(text);
+        chip.setTextSize(12);
+
+        if (isSelectedDefault) {
+            chip.setBackgroundResource(R.drawable.bg_black_pill);
+            chip.setTextColor(0xFFFFFFFF);
+            chip.setTypeface(null, android.graphics.Typeface.BOLD);
+        } else {
+            chip.setBackgroundResource(R.drawable.bg_chip_inactive);
+            chip.setTextColor(0xFF475569);
+        }
+
+        chip.setOnClickListener(v -> {
+            updateChipSelectionUI(chip);
+
+            goruntulenenListe.clear();
+            if (targetIndex == -1) {
+                goruntulenenListe.addAll(anaListe);
+            } else if (targetIndex < anaListe.size()) {
+                goruntulenenListe.add(anaListe.get(targetIndex));
+            }
+
+            if (adapter != null) {
+                adapter.updateData(goruntulenenListe);
+            }
+            updateBadgeCount(goruntulenenListe);
+
+            if (recyclerView != null) {
+                recyclerView.scrollToPosition(0);
+            }
+        });
+
+        chipContainer.addView(chip);
+    }
+
+    private void updateChipSelectionUI(TextView selectedChip) {
+        if (chipContainer == null) return;
+
+        for (int i = 0; i < chipContainer.getChildCount(); i++) {
+            View child = chipContainer.getChildAt(i);
+            if (child instanceof TextView) {
+                TextView tv = (TextView) child;
+                if (tv == selectedChip) {
+                    tv.setBackgroundResource(R.drawable.bg_black_pill);
+                    tv.setTextColor(0xFFFFFFFF);
+                    tv.setTypeface(null, android.graphics.Typeface.BOLD);
+                } else {
+                    tv.setBackgroundResource(R.drawable.bg_chip_inactive);
+                    tv.setTextColor(0xFF475569);
+                    tv.setTypeface(null, android.graphics.Typeface.NORMAL);
+                }
+            }
+        }
     }
 
     private List<CategoryGroupModel> loadConceptsFromJSON(String jsonString) {

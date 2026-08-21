@@ -224,4 +224,19 @@
     <string name="_24_saat">24 Saat</string>
     <string name="ozel">Özel...</string>
     <string name="gecici_olarak_ayarla">Geçici Olarak Ayarla</string>
+    <string name="gorsel_ekle">GÖRSEL EKLE</string>
+    <string name="tablo_ekle">+ TABLO EKLE</string>
+    <string name="kaydedildi_12_43">● Kaydedildi (12:43)</string>
+    <string name="hangi_kategori_olsun">Hangi kategori olsun?</string>
+    <string name="notunuz_icin_baslik_ve_etiket_secin">Notunuz için başlık ve etiket seçin</string>
+    <string name="not_ismi_basligi">NOT İSMİ / BAŞLIĞI</string>
+    <string name="orn_fikir_notlar_istege_bagl">Örn: Fikir Notları (İsteğe bağlı)</string>
+    <string name="kisisel_dusunce_ve_gunluk_notlar">Kişisel düşünce ve günlük notlar</string>
+    <string name="gecici_not">Geçici Not</string>
+    <string name="sure_secin">Süre Seçin</string>
+    <string name="otomatik_silinecek_gecici_fikirler">Otomatik silinecek geçici fikirler</string>
+    <string name="is_okul">İş / Okul</string>
+    <string name="proje_calisma_ve_ders_notlar">Proje, çalışma ve ders notları</string>
+    <string name="yeni_kategori_ekle">+ Yeni Kategori Ekle</string>
+    <string name="ptal">İptal</string>
 </resources>

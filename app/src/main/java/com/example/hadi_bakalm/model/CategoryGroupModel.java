@@ -16,6 +16,8 @@ public class CategoryGroupModel {
         this.kavramlar = (kavramlar != null) ? List.copyOf(kavramlar) : List.of();
     }
 
+
+
     public String getKategoriBasligi() {
         return kategoriBasligi;
     }

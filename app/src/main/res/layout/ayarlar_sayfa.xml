@@ -7,23 +7,23 @@
     android:background="@color/bg_main"
     tools:ignore="all">
 
-    <!-- ÜST İÇERİK ALANI -->
+    <!-- ÜST İÇERİK ALANI (SCROLL) -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigation"
+        android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="36dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="20dp">
+            android:paddingHorizontal="16dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="24dp">
 
-            <!-- 1. Üst Başlık ve Sürüm Bilgisi -->
+            <!-- 1. Üst Başlık ve Sürüm Rozeti -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -39,9 +39,9 @@
 
                     <!-- Vurgu Çizgisi -->
                     <View
-                        android:layout_width="6dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="10dp"
+                        android:layout_width="4dp"
+                        android:layout_height="22dp"
+                        android:layout_marginEnd="8dp"
                         android:background="@drawable/bg_black_pill" />
 
                     <TextView
@@ -50,7 +50,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/ayarlar"
                         android:textColor="@color/text_primary"
-                        android:textSize="24sp"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -60,57 +60,56 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="@drawable/bg_chip_inactive"
-                    android:paddingStart="10dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="4dp"
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
                     android:text="@string/v1_0_0"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
+                    android:textColor="#64748B"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
             </RelativeLayout>
 
-            <!-- BÖLÜM 1: GÖRÜNÜM VE TEMA -->
+            <!-- BÖLÜM 1: GÖRÜNÜM VE OKUMA -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/gorunum_ve_tema"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"
+                android:layout_marginBottom="6dp"
+                android:text="GÖRÜNÜM VE OKUMA"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
-            <!-- Kart 1 Container -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_settings_card"
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="14dp">
 
                 <!-- Uygulama Teması -->
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/spinnerTheme"
-                        android:layout_marginEnd="8dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
 
                         <ImageView
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:layout_marginEnd="12dp"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
                             android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#EEF2FF"
                             android:contentDescription="@null"
-                            android:padding="8dp"
+                            android:padding="7dp"
                             android:src="@drawable/ic_palette"
                             app:tint="#6366F1" />
 
@@ -124,47 +123,344 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/uygulama_temasi"
                                 android:textColor="@color/text_primary"
-                                android:textSize="14sp"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/aydinlik_veya_karanlik_gorunum"
+                                android:text="Aydınlık veya karanlık görünüm"
                                 android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:textSize="11sp" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <Spinner
-                        android:id="@+id/spinnerTheme"
-                        android:layout_width="wrap_content"
+                    <!-- Segmented Button Group (Temalar) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_search_bar"
+                        android:backgroundTint="#F1F5F9"
+                        android:orientation="horizontal"
+                        android:padding="2dp">
+
+                        <Button
+                            android:id="@+id/btnThemeLight"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="#FFFFFF"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Aydınlık"
+                            android:textColor="#0F172A"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="6dp" />
+
+                        <Button
+                            android:id="@+id/btnThemeDark"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Karanlık"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            app:cornerRadius="6dp" />
+
+                        <Button
+                            android:id="@+id/btnThemeSystem"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Sistem"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            app:cornerRadius="6dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Ayırıcı Çizgi -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F1F5F9"
+                    android:layout_marginVertical="12dp" />
+
+                <!-- Varsayılan Metin Boyutu -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:minWidth="48dp"
-                        android:minHeight="48dp" />
-                </RelativeLayout>
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="10dp">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#E0F2FE"
+                            android:contentDescription="@null"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_text_size"
+                            app:tint="#0284C7" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Varsayılan Metin Boyutu"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Okuma ekranı varsayılan font boyutu"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Segmented Button Group (Font Boyutu) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_search_bar"
+                        android:backgroundTint="#F1F5F9"
+                        android:orientation="horizontal"
+                        android:padding="2dp">
+
+                        <Button
+                            android:id="@+id/btnFontSmall"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="A Küçük"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            app:cornerRadius="6dp" />
+
+                        <Button
+                            android:id="@+id/btnFontNormal"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="#FFFFFF"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="A Normal"
+                            android:textColor="#0F172A"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="6dp" />
+
+                        <Button
+                            android:id="@+id/btnFontLarge"
+                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@android:color/transparent"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="A Büyük"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            app:cornerRadius="6dp" />
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- BÖLÜM 2: VERİ VE GİZLİLİK YÖNETİMİ -->
+            <!-- BÖLÜM 2: BİLDİRİMLER -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="@string/veri_ve_gizlilik_yonetimi"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"
+                android:layout_marginBottom="6dp"
+                android:text="BİLDİRİMLER"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
-            <!-- Kart 2 Container -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_settings_card"
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="14dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_toStartOf="@id/switchNotification"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#FEF3C7"
+                            android:contentDescription="@null"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_notification"
+                            app:tint="#D97706" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Günlük Okuma Hatırlatıcısı"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Her gün 20:00'de günün kavramını hatırla"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchNotification"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- BÖLÜM 3: VERİ VE YEDEKLEME -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="VERİ VE YEDEKLEME"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_settings_card"
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <!-- Verileri Dışa Aktar -->
+                <RelativeLayout
+                    android:id="@+id/btnExportData"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="44dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/imgDownload"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#ECFDF5"
+                            android:contentDescription="@null"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_download"
+                            app:tint="#10B981" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Verileri Dışa Aktar"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Notlarını ve kayıtlarını (.json) indir"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/imgDownload"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_download"
+                        app:tint="@color/text_secondary" />
+                </RelativeLayout>
+
+                <!-- Ayırıcı -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F1F5F9"
+                    android:layout_marginVertical="12dp" />
 
                 <!-- Tüm Verileri Sıfırla -->
                 <RelativeLayout
@@ -173,25 +469,26 @@
                     android:layout_height="wrap_content"
                     android:clickable="true"
                     android:focusable="true"
-                    android:minHeight="48dp">
+                    android:minHeight="44dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@+id/imgChevronReset"
+                        android:layout_toStartOf="@id/imgChevronReset"
                         android:layout_marginEnd="8dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <ImageView
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:layout_marginEnd="12dp"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
                             android:background="@drawable/bg_icon_red"
+                            android:backgroundTint="#FEF2F2"
                             android:contentDescription="@null"
-                            android:padding="8dp"
+                            android:padding="7dp"
                             android:src="@drawable/ic_trash"
                             app:tint="#EF4444" />
 
@@ -205,7 +502,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/tum_verileri_sifirla"
                                 android:textColor="#EF4444"
-                                android:textSize="14sp"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -213,14 +510,168 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/kaydedilenleri_ve_gecmisi_kalici_olarak_sil"
                                 android:textColor="#F87171"
-                                android:textSize="12sp" />
+                                android:textSize="11sp" />
                         </LinearLayout>
                     </LinearLayout>
 
                     <ImageView
                         android:id="@+id/imgChevronReset"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_secondary" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <!-- BÖLÜM 4: DESTEK VE İLETİŞİM -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="DESTEK VE İLETİŞİM"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_settings_card"
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <!-- Geliştiriciye Destek Ol -->
+                <RelativeLayout
+                    android:id="@+id/btnSupportDev"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="44dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/imgHeart"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#FEF3C7"
+                            android:contentDescription="@null"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_coffe_support"
+                            app:tint="#D97706" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Geliştiriciye Destek Ol"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Uygulamayı desteklemek için kahve ısmarla"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/imgHeart"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_heart"
+                        app:tint="#EF4444" />
+                </RelativeLayout>
+
+                <!-- Ayırıcı -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F1F5F9"
+                    android:layout_marginVertical="12dp" />
+
+                <!-- Geri Bildirim Gönder -->
+                <RelativeLayout
+                    android:id="@+id/btnSendFeedback"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="44dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/imgChevronFeedback"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_icon_purple"
+                            android:backgroundTint="#E0F2FE"
+                            android:contentDescription="@null"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_feedback"
+                            app:tint="#0284C7" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Geri Bildirim Gönder"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Öneri veya hata bildirimi ilet"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/imgChevronFeedback"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:contentDescription="@null"
@@ -230,15 +681,29 @@
             </LinearLayout>
 
             <!-- Alt Telif / Sürüm Açıklaması -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="20dp"
                 android:gravity="center"
-                android:text="@string/versiyon_ve_şey_yazısı_ayarlar"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:orientation="vertical"
+                android:paddingBottom="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginBottom="4dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_brain"
+                    app:tint="#94A3B8" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/versiyon_ve_şey_yazısı_ayarlar"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

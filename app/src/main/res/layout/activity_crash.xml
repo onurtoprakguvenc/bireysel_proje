@@ -51,16 +51,6 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnToggleDetails"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:backgroundTint="#334155"
-            android:text="@string/teknik_detay"
-            android:textColor="#FFFFFF" />
-
-        <Button
             android:id="@+id/btnRestartApp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

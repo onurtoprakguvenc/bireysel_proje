@@ -16,9 +16,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
         android:background="#FFFFFF"
-        android:elevation="2dp"
+        android:elevation="1dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -27,42 +29,73 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="12dp">
 
-            <!-- 1. Önce Sağ Buton Grubu Tanımlanır -->
+            <!-- 1. Sağ Buton Grubu (Yuvarlak Kapsüller) -->
             <LinearLayout
                 android:id="@+id/headerActions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- KÖPRÜ: Zihinsel Kütüphaneye Geçiş Butonu -->
+                <!-- Kahve Ismarlama / Bağış Butonu (Üst Bar Kapsülü) -->
                 <ImageButton
-                    android:id="@+id/btnLibraryBridge"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/kutuphane_koprusu"
+                    android:id="@+id/fabDonateCoffee"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#FEF3C7"
+                    android:contentDescription="@string/bagis_yap"
                     android:padding="8dp"
-                    android:src="@drawable/ic_brain"
-                    app:tint="#0284C7" />
+                    android:src="@drawable/ic_coffe_support"
+                    app:tint="#D97706" />
+
+                <!-- KÖPRÜ: Zihinsel Kütüphaneye Geçiş Butonu (Canlı Durum Noktalı) -->
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp">
+
+                    <ImageButton
+                        android:id="@+id/btnLibraryBridge"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_chip_inactive"
+                        android:backgroundTint="#E0F2FE"
+                        android:contentDescription="@string/kutuphane_koprusu"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_brain"
+                        app:tint="#0284C7" />
+
+                    <!-- Aktif Durum / Senkron Noktası -->
+                    <View
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="2dp"
+                        android:background="@drawable/shape_color_circle_black"
+                        app:tint="#10B981" />
+                </FrameLayout>
 
                 <!-- Görünüm Değiştirme (Grid/List) -->
                 <ImageButton
                     android:id="@+id/btnToggleLayout"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/duzeni_degistir"
                     android:padding="8dp"
                     android:src="@drawable/ic_grid"
-                    app:tint="#475569" />
+                    app:tint="#64748B" />
             </LinearLayout>
 
-            <!-- 2. Sonra Başlık Alanı (Yukarıda Tanımlı ID'ye Sorunsuz Bağlanır) -->
+            <!-- 2. Sol Başlık ve Sayaç Alanı -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -72,45 +105,70 @@
                 android:layout_toStartOf="@id/headerActions"
                 android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/tvTitle"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/notlarim"
-                    android:textColor="#0F172A"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/notlarim"
+                        android:textColor="#0F172A"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <!-- Not Sayacı Rozeti (Örn: 4 Not) -->
+                    <TextView
+                        android:id="@+id/tvNoteCountBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_chip_inactive"
+                        android:backgroundTint="#E0F2FE"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="2dp"
+                        android:text="4 Not"
+                        android:textColor="#0284C7"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Alt Güncelleme / Bilgi Metni -->
                 <TextView
                     android:id="@+id/tvNoteCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/dummy"
-                    android:textColor="#64748B"
+                    android:layout_marginTop="2dp"
+                    android:text="Son güncelleme bugün 12:43"
+                    android:textColor="#94A3B8"
                     android:textSize="12sp" />
             </LinearLayout>
 
         </RelativeLayout>
 
-        <!-- Arama Çubuğu -->
+        <!-- Arama Çubuğu (Hafif Gri Dolgu, Yuvarlak Hat) -->
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="44dp"
             android:background="@drawable/bg_search_input"
-            android:hint="@string/notlarda_veya_etiketlerde_ara"
-            android:textColorHint="#94A3B8"
-            android:textColor="#1E293B"
-            android:textSize="14sp"
+            android:backgroundTint="#F1F5F9"
             android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="12dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:inputType="text"
+            android:drawablePadding="10dp"
+            android:drawableTint="#94A3B8"
+            android:hint="@string/notlarda_veya_etiketlerde_ara"
             android:importantForAutofill="no"
-            android:maxLines="1" />
+            android:inputType="text"
+            android:maxLines="1"
+            android:paddingHorizontal="14dp"
+            android:textColor="#1E293B"
+            android:textColorHint="#94A3B8"
+            android:textSize="13sp" />
 
-        <!-- Kategori Çipleri (Yatay Kaydırılabilir) -->
+        <!-- Kategori Çipleri (Yatay Kaydırılabilir Kapsüller) -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -121,43 +179,71 @@
                 android:id="@+id/categoryChipContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Tümü Çipi -->
+                <!-- Tümü Çipi (Aktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/tumu"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
+                    android:layout_marginEnd="6dp"
                     android:background="@drawable/bg_chip_active"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp" />
+                    android:backgroundTint="#0F172A"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
+                    android:text="@string/tumu"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                <!-- 7 Renkli Etiket/Kategori Örnekleri -->
+                <!-- Kategori Örnekleri (İnaktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
                     android:text="@string/kisisel"
-                    android:textSize="12sp"
-                    android:textColor="#475569"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp" />
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/simdilik_boyle"
-                    android:textSize="12sp"
-                    android:textColor="#475569"
+                    android:layout_marginEnd="6dp"
                     android:background="@drawable/bg_chip_inactive"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp" />
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
+                    android:text="Çizim"
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
+                    android:text="Geçici"
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
+                    android:text="İş"
+                    android:textColor="#64748B"
+                    android:textSize="12sp" />
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>
@@ -167,7 +253,9 @@
         android:id="@+id/rvNotes"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:padding="16dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="80dp"
         android:clipToPadding="false"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_note_card"
@@ -176,36 +264,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Kahve Ismarlama / Bağış Butonu (Küçük FAB) -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabDonateCoffee"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
-        android:src="@drawable/ic_coffe_support"
-        app:tint="#FFFFFF"
-        app:backgroundTint="#F59E0B"
-        app:fabSize="mini"
-        app:elevation="12dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:contentDescription="@string/bagis_yap"
-        app:layout_constraintBottom_toBottomOf="@id/fabAddNote"
-        app:layout_constraintTop_toTopOf="@id/fabAddNote"
-        app:layout_constraintEnd_toStartOf="@id/fabAddNote" />
-
-    <!-- Yüzen Ekleme Butonu (FAB) -->
+    <!-- Yüzen Ekleme Butonu (Modern FAB) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="20dp"
         android:src="@drawable/ic_plus"
         app:tint="#FFFFFF"
         app:backgroundTint="#0284C7"
-        app:fabSize="normal"
-        app:elevation="12dp"
+        app:fabCustomSize="56dp"
+        app:maxImageSize="24dp"
+        app:elevation="6dp"
         android:clickable="true"
         android:focusable="true"
         android:contentDescription="@string/yeni_not_ekle"

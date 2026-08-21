@@ -81,7 +81,21 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         if (btnPratikHayat != null) categoryButtons.add(btnPratikHayat);
         if (btnDisSeyler != null) categoryButtons.add(btnDisSeyler);
         if (btnZihinselMekanizma != null) categoryButtons.add(btnZihinselMekanizma);
+
+        // Sayfa ilk açıldığında stilleri garantiye al
+        for (TextView btn : categoryButtons) {
+            if (btn != null) {
+                btn.setBackgroundResource(R.drawable.bg_chip_inactive);
+                btn.setTextColor(Color.parseColor("#475569")); // Koyu gri / Görünür metin
+            }
+        }
+        if (btnAll != null) {
+            btnAll.setBackgroundResource(R.drawable.bg_black_pill);
+            btnAll.setTextColor(Color.WHITE);
+        }
     }
+
+
 
     private void setupRecyclerView() {
         RecyclerView recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
@@ -191,15 +205,17 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
     private void filterCategory(String categoryName, TextView selectedButton) {
         currentSelectedCategory = categoryName;
 
+        // Pasif butonlar: Açık gri zemin, net koyu yazı (#475569)
         for (TextView btn : categoryButtons) {
             if (btn != null) {
-                btn.setBackgroundResource(R.drawable.bg_search_bar);
-                btn.setTextColor(Color.parseColor("#CCCCCC"));
+                btn.setBackgroundResource(R.drawable.bg_chip_inactive);
+                btn.setTextColor(Color.parseColor("#475569"));
             }
         }
 
+        // Aktif buton: Koyu siyah hap zemin, beyaz yazı
         if (selectedButton != null) {
-            selectedButton.setBackgroundResource(R.drawable.bg_black_icon_box);
+            selectedButton.setBackgroundResource(R.drawable.bg_black_pill);
             selectedButton.setTextColor(Color.WHITE);
         }
 

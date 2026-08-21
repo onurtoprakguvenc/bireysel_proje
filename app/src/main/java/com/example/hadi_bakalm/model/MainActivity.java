@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton btnLibraryBridge;
     private ImageButton btnToggleLayout;
     private FloatingActionButton fabAddNote;
-    private FloatingActionButton fabDonateCoffee;
+    private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
     private LinearLayout categoryChipContainer;
 

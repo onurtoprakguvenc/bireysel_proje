@@ -14,128 +14,162 @@
         android:id="@+id/topContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:elevation="1dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp">
 
         <!-- Üst Başlık Barı -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="12dp">
+            android:layout_height="wrap_content">
 
-            <ImageView
-                android:id="@+id/btnBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:contentDescription="@string/geri"
-                android:focusable="true"
-                android:padding="12dp"
-                android:src="@drawable/ic_arrow_back"
-                app:tint="@color/text_primary" />
-
-            <TextView
-                android:id="@+id/txtHeaderTitle"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:layout_marginStart="8dp"
-                android:layout_toEndOf="@id/btnBack"
-                android:text="@string/kisisel_metinlerim"
-                android:textColor="@color/text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:contentDescription="@string/geri"
+                    android:focusable="true"
+                    android:src="@drawable/ic_arrow_back"
+                    app:tint="@color/text_primary" />
+
+                <TextView
+                    android:id="@+id/txtHeaderTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/kisisel_metinlerim"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <!-- Metin Sayacı Rozeti (Örn: 5 Metin) -->
+                <TextView
+                    android:id="@+id/txtPersonalTextCountBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#E0F2FE"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="5 Metin"
+                    android:textColor="#0284C7"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Görünüm Değiştirme Butonu (Grid/List) -->
+            <ImageView
+                android:id="@+id/btnToggleTextLayout"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:padding="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/duzeni_degistir"
+                android:src="@drawable/ic_grid"
+                app:tint="#64748B" />
         </RelativeLayout>
 
         <!-- Arama Çubuğu -->
         <EditText
             android:id="@+id/searchBar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/bg_search_bar"
+            android:backgroundTint="#F1F5F9"
             android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="12dp"
+            android:drawablePadding="10dp"
+            android:drawableTint="#94A3B8"
             android:hint="@string/ara"
             android:importantForAutofill="no"
             android:inputType="text"
-            android:paddingHorizontal="16dp"
+            android:maxLines="1"
+            android:paddingHorizontal="14dp"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_secondary"
-            android:textSize="15sp" />
+            android:textSize="13sp" />
 
-        <!-- Yatay Filtre Çipleri -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="12dp"
-            android:clipToPadding="false"
-            android:paddingHorizontal="20dp"
+            android:layout_marginTop="12dp"
             android:scrollbars="none">
 
             <LinearLayout
-                android:id="@+id/categoryContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <!-- Tümü Çipi (Varsayılan Aktif) -->
                 <TextView
                     android:id="@+id/tumu"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_black_icon_box"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/tumu"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_black_pill"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="6dp"
+                    android:text="Tümü"
                     android:textColor="#FFFFFF"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
+                <!-- Kategori 1: Dış Şeylere Karşı Savunma -->
                 <TextView
                     android:id="@+id/kategori_1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_search_bar"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/dis_seylere_karsi_avunma"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="dış şeylere karşı savunma"
+                    android:textColor="#475569"
+                    android:textSize="12sp" />
 
+                <!-- Kategori 2: Pratik Hayat İçin Fayda -->
                 <TextView
                     android:id="@+id/kategori_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_search_bar"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/pratik_hayat_icin_fayda"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="Pratik Hayat İçin Fayda"
+                    android:textColor="#475569"
+                    android:textSize="12sp" />
 
+                <!-- Kategori 3: Zihinsel Mekanizma ve Mimari -->
                 <TextView
                     android:id="@+id/kategori_3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/bg_search_bar"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/zihinsel_mekanizma_ve_mimari"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="Zihinsel Mekanizma ve Mimari"
+                    android:textColor="#475569"
+                    android:textSize="12sp" />
 
             </LinearLayout>
         </HorizontalScrollView>
@@ -148,9 +182,9 @@
         android:layout_height="match_parent"
         android:layout_below="@id/topContainer"
         android:clipToPadding="false"
-        android:paddingHorizontal="20dp"
+        android:paddingHorizontal="12dp"
         android:paddingTop="8dp"
-        android:paddingBottom="24dp"
+        android:paddingBottom="80dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/kaydedilen_sey_buton_iste" />
 

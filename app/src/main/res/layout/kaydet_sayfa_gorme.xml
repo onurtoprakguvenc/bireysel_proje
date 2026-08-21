@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
+        android:paddingTop="16dp"
         android:paddingBottom="12dp">
 
         <LinearLayout
@@ -22,19 +22,22 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_toStartOf="@id/txtItemCount"
+            android:layout_marginEnd="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- Geri Butonu -->
+            <!-- Geri Butonu (Yuvarlak Kapsül İçinde) -->
             <ImageView
                 android:id="@+id/btnBack"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#FFFFFF"
                 android:clickable="true"
                 android:contentDescription="@string/geri"
+                android:elevation="1dp"
                 android:focusable="true"
-                android:padding="12dp"
+                android:padding="10dp"
                 android:rotation="180"
                 android:src="@drawable/ic_chevron_right"
                 app:tint="@color/text_primary" />
@@ -42,6 +45,7 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
                 android:orientation="vertical">
 
                 <TextView
@@ -49,16 +53,16 @@
                     android:layout_height="wrap_content"
                     android:text="@string/kaydedilenler"
                     android:textColor="@color/text_primary"
-                    android:textSize="24sp"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="1dp"
                     android:text="@string/daha_sonra_okumak_icin_kaydettigin_icerikler"
                     android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
 
@@ -70,11 +74,12 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="@drawable/bg_black_icon_box"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="6dp"
+            android:backgroundTint="#0F172A"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
             android:text="@string/x_icerik"
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
     </RelativeLayout>
 
@@ -82,18 +87,20 @@
     <LinearLayout
         android:id="@+id/searchLayout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="44dp"
         android:layout_below="@id/headerLayout"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/bg_search_bar"
+        android:backgroundTint="#FFFFFF"
+        android:elevation="1dp"
         android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
+        android:paddingHorizontal="14dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@null"
             android:src="@drawable/ic_search"
             app:tint="@color/text_secondary" />
@@ -102,14 +109,14 @@
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="10dp"
             android:background="@null"
             android:hint="@string/kaydedilenlerde_ara"
             android:importantForAutofill="no"
             android:inputType="text"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_secondary"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
     <!-- Filtre Butonları (Tümü, Kavramlar, Metinler) -->
@@ -119,7 +126,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/searchLayout"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="14dp"
         android:orientation="horizontal">
 
         <TextView
@@ -128,11 +135,12 @@
             android:layout_height="36dp"
             android:layout_marginEnd="8dp"
             android:background="@drawable/bg_black_icon_box"
+            android:backgroundTint="#0F172A"
             android:gravity="center"
-            android:paddingHorizontal="18dp"
+            android:paddingHorizontal="16dp"
             android:text="@string/tumu"
             android:textColor="#FFFFFF"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
@@ -141,11 +149,13 @@
             android:layout_height="36dp"
             android:layout_marginEnd="8dp"
             android:background="@drawable/bg_search_bar"
+            android:backgroundTint="#FFFFFF"
+            android:elevation="1dp"
             android:gravity="center"
-            android:paddingHorizontal="18dp"
+            android:paddingHorizontal="16dp"
             android:text="@string/kavramlar"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
@@ -153,11 +163,13 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:background="@drawable/bg_search_bar"
+            android:backgroundTint="#FFFFFF"
+            android:elevation="1dp"
             android:gravity="center"
-            android:paddingHorizontal="18dp"
+            android:paddingHorizontal="16dp"
             android:text="@string/metinler"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -170,7 +182,7 @@
         android:layout_below="@id/filterLayout"
         android:clipToPadding="false"
         android:paddingHorizontal="20dp"
-        android:paddingBottom="20dp"
+        android:paddingBottom="16dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/kaydedilen_sey_buton_iste" />
 
@@ -178,7 +190,7 @@
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:background="@color/nav_bg"
         android:baselineAligned="false"

@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.hadi_bakalm.BuildConfig;
 import com.example.hadi_bakalm.R;
 
 public class CrashActivity extends AppCompatActivity {
@@ -29,11 +30,24 @@ public class CrashActivity extends AppCompatActivity {
         }
 
         TextView txtErrorDetails = findViewById(R.id.txtErrorDetails);
-        Button btnToggleDetails = findViewById(R.id.btnToggleDetails);
         Button btnRestartApp = findViewById(R.id.btnRestartApp);
 
+        // Canlı sürümde ham döküm alanını gizle
+        if (!BuildConfig.DEBUG) {
+            if (txtErrorDetails != null) {
+                txtErrorDetails.setVisibility(View.GONE);
+            }
+        }
+
         String dynamicExplanation = buildDynamicExplanation(rawErrorLog);
-        String fullDisplayText = dynamicExplanation + "\n\n--- [TEKNİK KOD DÖKÜMÜ] ---\n" + rawErrorLog;
+
+        // Debug modundaysa tam teknik dökümü ekle, Release modundaysa sadece kullanıcı dostu açıklamayı tut
+        final String fullDisplayText;
+        if (BuildConfig.DEBUG) {
+            fullDisplayText = dynamicExplanation + "\n\n--- [TEKNİK KOD DÖKÜMÜ] ---\n" + rawErrorLog;
+        } else {
+            fullDisplayText = dynamicExplanation;
+        }
 
         if (txtErrorDetails != null) {
             txtErrorDetails.setMovementMethod(new ScrollingMovementMethod());
@@ -45,13 +59,6 @@ public class CrashActivity extends AppCompatActivity {
                     cm.setPrimaryClip(ClipData.newPlainText("Crash Log", fullDisplayText));
                     Toast.makeText(this, "Hata raporu panoya kopyalandı", Toast.LENGTH_SHORT).show();
                 }
-            });
-        }
-
-        if (btnToggleDetails != null && txtErrorDetails != null) {
-            btnToggleDetails.setOnClickListener(v -> {
-                int visibility = txtErrorDetails.getVisibility();
-                txtErrorDetails.setVisibility(visibility == View.VISIBLE ? View.GONE : View.VISIBLE);
             });
         }
 
@@ -72,7 +79,6 @@ public class CrashActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-        // Mevcut hata sürecini (crash process) anında sonlandırıyoruz
         finish();
         android.os.Process.killProcess(android.os.Process.myPid());
         System.exit(0);
@@ -98,9 +104,12 @@ public class CrashActivity extends AppCompatActivity {
             explanation.append("Arayüz bileşenleri ile sistem kaynakları arasında öngörülemeyen bir senkronizasyon kopması yaşandı.");
         }
 
-        String location = extractLocation(rawLog);
-        if (!location.isEmpty()) {
-            explanation.append("\n\nKAYNAK:\n").append(location);
+        // Sadece geliştirici modunda kaynak kod lokasyonunu mesaja dahil et
+        if (BuildConfig.DEBUG) {
+            String location = extractLocation(rawLog);
+            if (!location.isEmpty()) {
+                explanation.append("\n\nKAYNAK:\n").append(location);
+            }
         }
 
         return explanation.toString();

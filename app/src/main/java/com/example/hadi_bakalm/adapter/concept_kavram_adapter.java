@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,11 +24,19 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
 
     private final List<CategoryGroupModel> kategoriListesi = new ArrayList<>();
     private final RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
+    private boolean isGridMode = false;
 
     public concept_kavram_adapter(List<CategoryGroupModel> kategoriListesi) {
         if (kategoriListesi != null) {
             this.kategoriListesi.addAll(kategoriListesi);
         }
+    }
+
+    /**
+     * Dışarıdan ızgara veya liste görünüm durumunu ayarlar.
+     */
+    public void setGridMode(boolean isGridMode) {
+        this.isGridMode = isGridMode;
     }
 
     /**
@@ -55,7 +64,7 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
 
     @Override
     public void onBindViewHolder(@NonNull RowViewHolder holder, int position) {
-        holder.bind(kategoriListesi.get(position));
+        holder.bind(kategoriListesi.get(position), isGridMode);
     }
 
     @Override
@@ -74,14 +83,6 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
             txtCategoryTitle = itemView.findViewById(R.id.txtCategoryTitle);
             recyclerViewHorizontal = itemView.findViewById(R.id.recyclerViewHorizontalButtons);
 
-            LinearLayoutManager layoutManager = new LinearLayoutManager(
-                    itemView.getContext(),
-                    LinearLayoutManager.HORIZONTAL,
-                    false
-            );
-            layoutManager.setInitialPrefetchItemCount(4);
-            recyclerViewHorizontal.setLayoutManager(layoutManager);
-
             innerAdapter = new InnerCardAdapter(new ArrayList<>());
             recyclerViewHorizontal.setAdapter(innerAdapter);
 
@@ -91,9 +92,23 @@ public class concept_kavram_adapter extends RecyclerView.Adapter<concept_kavram_
             });
         }
 
-        public void bind(CategoryGroupModel group) {
+        public void bind(CategoryGroupModel group, boolean isGridMode) {
             if (group == null) return;
             txtCategoryTitle.setText(group.getKategoriBasligi());
+
+            // Izgara moduna göre iç LayoutManager'ı dinamik olarak ayarla
+            if (isGridMode) {
+                recyclerViewHorizontal.setLayoutManager(new GridLayoutManager(itemView.getContext(), 2));
+            } else {
+                LinearLayoutManager layoutManager = new LinearLayoutManager(
+                        itemView.getContext(),
+                        LinearLayoutManager.HORIZONTAL,
+                        false
+                );
+                layoutManager.setInitialPrefetchItemCount(4);
+                recyclerViewHorizontal.setLayoutManager(layoutManager);
+            }
+
             innerAdapter.updateData(group.getKavramlar());
         }
     }

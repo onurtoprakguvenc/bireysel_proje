@@ -14,27 +14,28 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
+        android:paddingTop="16dp"
         android:paddingBottom="10dp">
 
         <ImageView
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/bg_chip_inactive"
+            android:backgroundTint="#FFFFFF"
             android:clickable="true"
             android:contentDescription="@string/geri"
             android:focusable="true"
-            android:padding="8dp"
-            android:src="@drawable/ic_history"
+            android:padding="10dp"
+            android:src="@drawable/ic_arrow_back"
             app:tint="@color/text_primary" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="12dp"
             android:layout_toEndOf="@id/btnBack"
             android:orientation="vertical">
 
@@ -43,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/istege_bagli_olan_bagis"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -51,7 +52,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/gelistiriciye_destek_olun"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
         </LinearLayout>
     </RelativeLayout>
 
@@ -61,6 +62,7 @@
         android:layout_height="match_parent"
         android:layout_above="@id/bottomActionContainer"
         android:layout_below="@id/headerContainer"
+        android:clipToPadding="false"
         android:fillViewport="true">
 
         <LinearLayout
@@ -68,32 +70,43 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingTop="10dp"
+            android:paddingTop="4dp"
             android:paddingBottom="20dp">
 
-            <!-- 2. KISIM: MESAJ / TEŞEKKÜR KUTUSU -->
+            <!-- 2. KISIM: MESAJ / BİLGİ KUTUSU (EditText veya TextView uyumlu) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_search_bar"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="14dp">
 
                 <TextView
                     android:id="@+id/txtDonateMessage"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/gecici_metin"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chat"
+                    app:tint="@color/text_secondary" />
             </LinearLayout>
 
             <!-- 3. KISIM: MİKTAR SEÇİM BAŞLIĞI -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="12dp">
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -101,7 +114,7 @@
                     android:layout_alignParentStart="true"
                     android:text="@string/bagis_miktarini_secin"
                     android:textColor="@color/text_primary"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -110,7 +123,7 @@
                     android:layout_alignParentEnd="true"
                     android:text="@string/tl_cinsinden"
                     android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
             </RelativeLayout>
 
             <!-- 4. KISIM: SEÇENEKLER GRID (2 SATIR x 3 SÜTUN + VIP) -->
@@ -122,90 +135,120 @@
                 android:orientation="horizontal"
                 android:weightSum="3">
 
-                <!-- ₺10 -->
+                <!-- ₺10 - Çay İkramı -->
                 <LinearLayout
                     android:id="@+id/card10"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_search_bar"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="1dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🫖"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/cay_ikrami"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_10"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- ₺20 -->
+                <!-- ₺20 - Kahve (Varsayılan Örnek Seçili) -->
                 <LinearLayout
                     android:id="@+id/card20"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_search_bar"
+                    android:background="@drawable/bg_chip_active"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="2dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="☕"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/kahve"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_20"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- ₺50 -->
+                <!-- ₺50 - Atıştırmalık -->
                 <LinearLayout
                     android:id="@+id/card50"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_search_bar"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="1dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🍕"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/atistirmalik"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_50"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
@@ -214,95 +257,125 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="3dp"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:weightSum="3">
 
-                <!-- ₺100 (Varsayılan / Popüler) -->
+                <!-- ₺100 - Yemek -->
                 <LinearLayout
                     android:id="@+id/card100"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_search_bar"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="1dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🍲"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/yemek"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_100"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- ₺200 -->
+                <!-- ₺200 - Kitap -->
                 <LinearLayout
                     android:id="@+id/card200"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_search_bar"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="1dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📚"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/kitap"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_200"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- ₺500 -->
+                <!-- ₺500 - Süper Destek -->
                 <LinearLayout
                     android:id="@+id/card500"
                     android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_margin="4dp"
+                    android:layout_height="76dp"
+                    android:layout_margin="3dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_search_bar"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="1dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🚀"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="2dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/super_destek"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/_500"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="15sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
@@ -311,29 +384,54 @@
             <LinearLayout
                 android:id="@+id/card1000"
                 android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:layout_marginHorizontal="4dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="64dp"
+                android:layout_marginHorizontal="3dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_search_bar"
+                android:backgroundTint="#FFFFFF"
+                android:elevation="1dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="4dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/vip_destek"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:text="👑 VIP Destek"
+                    android:textColor="#D97706"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="1dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/_1000"
                     android:textColor="@color/text_primary"
-                    android:textSize="20sp"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- BİLGİLENDİRME KUTUSU (INFO BOX) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="3dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#E0F2FE"
+                android:padding="14dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Katkılarınız uygulamanın reklamsız ve bağımsız olarak gelişmeye devam etmesini sağlar."
+                    android:textColor="#0369A1"
+                    android:textSize="12sp" />
             </LinearLayout>
 
         </LinearLayout>
@@ -345,30 +443,47 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@color/nav_bg"
-        android:elevation="8dp"
+        android:background="#FFFFFF"
+        android:elevation="12dp"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp">
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnSubmitDonate"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="48dp"
             android:background="@drawable/bg_black_icon_box"
-            android:text="@string/bagis_yap"
+            android:text="❤️ Kahve Ismarla • ₺20"
             android:textAllCaps="false"
-            android:textColor="@color/bg_main"
-            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="8dp"
-            android:text="@string/google_play_guvenli_odeme_istege_bagli_katki"
-            android:textColor="@color/text_secondary"
-            android:textSize="11sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_lock"
+                app:tint="#10B981" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/google_play_guvenli_odeme_istege_bagli_katki"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>

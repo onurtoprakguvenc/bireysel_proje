@@ -88,8 +88,12 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     intent.putExtra("DESCRIPTION", item.getAciklama());
                     intent.putExtra("CONTENT", item.getAciklama());
                 } else {
+                    // Kavram detay sayfasına (noroplastite) tüm anahtarlar eksiksiz aktarılıyor
                     intent = new Intent(SonIncelemeActivity.this, noroplastite.class);
+                    intent.putExtra("KAVRAM_ID", String.valueOf(item.getId()));
                     intent.putExtra("KAVRAM_ADI", item.getBaslik());
+                    intent.putExtra("KAVRAM_ACIKLAMA", item.getAciklama());
+                    intent.putExtra("KAVRAM_ICERIK", item.getAciklama());
                     intent.putExtra("TITLE", item.getBaslik());
                     intent.putExtra("DESCRIPTION", item.getAciklama());
                 }
