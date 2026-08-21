@@ -104,6 +104,16 @@
                 android:textColor="#64748B"
                 android:textSize="12sp" />
 
+            <!-- Çökmeyi Engelleyen Zaman/İnceleme Bilgisi -->
+            <TextView
+                android:id="@+id/txtReadTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/gecici"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
+
         </LinearLayout>
 
     </RelativeLayout>

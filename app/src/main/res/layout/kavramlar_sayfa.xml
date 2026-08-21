@@ -54,19 +54,7 @@
                     android:textStyle="bold" />
 
                 <!-- Toplam Not Sayacı Rozeti -->
-                <TextView
-                    android:id="@+id/txtConceptCountBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:backgroundTint="#F1F5F9"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:text="18 kavram"
-                    android:textColor="#64748B"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+
             </LinearLayout>
 
             <LinearLayout

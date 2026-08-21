@@ -239,4 +239,10 @@
     <string name="proje_calisma_ve_ders_notlar">Proje, çalışma ve ders notları</string>
     <string name="yeni_kategori_ekle">+ Yeni Kategori Ekle</string>
     <string name="ptal">İptal</string>
+    <string name="gecici_not_suresi">Geçici Not Süresi</string>
+    <string name="sure_bitiminde_not_geri_donusume_tasınır">Süre bitiminde not geri dönüşüme taşınır</string>
+    <string name="sure_1_saat_sonra_silinecek">Süre: 1 Saat sonra silinecek</string>
+    <string name="_3_gun">3 Gün</string>
+    <string name="ozel_tarih_ve_saat_sec">📅 Özel Tarih ve Saat Seç...</string>
+    <string name="notu_olustur">Notu Oluştur</string>
 </resources>

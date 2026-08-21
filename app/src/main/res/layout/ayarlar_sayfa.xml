@@ -37,7 +37,6 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <!-- Vurgu Çizgisi -->
                     <View
                         android:layout_width="4dp"
                         android:layout_height="22dp"
@@ -98,9 +97,9 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="10dp">
+                        android:orientation="horizontal">
 
                         <ImageView
                             android:layout_width="32dp"
@@ -144,157 +143,48 @@
                         android:orientation="horizontal"
                         android:padding="2dp">
 
-                        <Button
+                        <TextView
                             android:id="@+id/btnThemeLight"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:backgroundTint="#FFFFFF"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
+                            android:background="@drawable/bg_black_pill"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
                             android:text="Aydınlık"
-                            android:textColor="#0F172A"
+                            android:textColor="#FFFFFF"
                             android:textSize="11sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="6dp" />
+                            android:textStyle="bold" />
 
-                        <Button
+                        <TextView
                             android:id="@+id/btnThemeDark"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:backgroundTint="@android:color/transparent"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
+                            android:background="@android:color/transparent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
                             android:text="Karanlık"
                             android:textColor="#64748B"
-                            android:textSize="11sp"
-                            app:cornerRadius="6dp" />
+                            android:textSize="11sp" />
 
-                        <Button
+                        <TextView
                             android:id="@+id/btnThemeSystem"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:backgroundTint="@android:color/transparent"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
+                            android:background="@android:color/transparent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
                             android:text="Sistem"
                             android:textColor="#64748B"
-                            android:textSize="11sp"
-                            app:cornerRadius="6dp" />
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Ayırıcı Çizgi -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#F1F5F9"
-                    android:layout_marginVertical="12dp" />
-
-                <!-- Varsayılan Metin Boyutu -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="10dp">
-
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:layout_marginEnd="10dp"
-                            android:background="@drawable/bg_icon_purple"
-                            android:backgroundTint="#E0F2FE"
-                            android:contentDescription="@null"
-                            android:padding="7dp"
-                            android:src="@drawable/ic_text_size"
-                            app:tint="#0284C7" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Varsayılan Metin Boyutu"
-                                android:textColor="@color/text_primary"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Okuma ekranı varsayılan font boyutu"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Segmented Button Group (Font Boyutu) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="38dp"
-                        android:background="@drawable/bg_search_bar"
-                        android:backgroundTint="#F1F5F9"
-                        android:orientation="horizontal"
-                        android:padding="2dp">
-
-                        <Button
-                            android:id="@+id/btnFontSmall"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:backgroundTint="@android:color/transparent"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:text="A Küçük"
-                            android:textColor="#64748B"
-                            android:textSize="11sp"
-                            app:cornerRadius="6dp" />
-
-                        <Button
-                            android:id="@+id/btnFontNormal"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:backgroundTint="#FFFFFF"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:text="A Normal"
-                            android:textColor="#0F172A"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="6dp" />
-
-                        <Button
-                            android:id="@+id/btnFontLarge"
-                            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:backgroundTint="@android:color/transparent"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:text="A Büyük"
-                            android:textColor="#64748B"
-                            android:textSize="11sp"
-                            app:cornerRadius="6dp" />
-                    </LinearLayout>
-                </LinearLayout>
             </LinearLayout>
 
             <!-- BÖLÜM 2: BİLDİRİMLER -->
@@ -325,8 +215,8 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_toStartOf="@id/switchNotification"
                         android:layout_marginEnd="12dp"
+                        android:layout_toStartOf="@id/switchNotification"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -406,8 +296,8 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/imgDownload"
                         android:layout_marginEnd="8dp"
+                        android:layout_toStartOf="@id/imgDownload"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -455,12 +345,11 @@
                         app:tint="@color/text_secondary" />
                 </RelativeLayout>
 
-                <!-- Ayırıcı -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
-                    android:layout_marginVertical="12dp" />
+                    android:layout_marginVertical="12dp"
+                    android:background="#F1F5F9" />
 
                 <!-- Tüm Verileri Sıfırla -->
                 <RelativeLayout
@@ -476,8 +365,8 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/imgChevronReset"
                         android:layout_marginEnd="8dp"
+                        android:layout_toStartOf="@id/imgChevronReset"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -560,8 +449,8 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/imgHeart"
                         android:layout_marginEnd="8dp"
+                        android:layout_toStartOf="@id/imgHeart"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -609,12 +498,11 @@
                         app:tint="#EF4444" />
                 </RelativeLayout>
 
-                <!-- Ayırıcı -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
-                    android:layout_marginVertical="12dp" />
+                    android:layout_marginVertical="12dp"
+                    android:background="#F1F5F9" />
 
                 <!-- Geri Bildirim Gönder -->
                 <RelativeLayout
@@ -630,8 +518,8 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentStart="true"
                         android:layout_centerVertical="true"
-                        android:layout_toStartOf="@id/imgChevronFeedback"
                         android:layout_marginEnd="8dp"
+                        android:layout_toStartOf="@id/imgChevronFeedback"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -825,7 +713,6 @@
                 android:textColor="@color/text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
-
         </LinearLayout>
     </LinearLayout>
 

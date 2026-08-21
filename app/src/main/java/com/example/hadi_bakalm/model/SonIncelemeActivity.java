@@ -50,7 +50,12 @@ public class SonIncelemeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_son_inceleme);
-        NavigationHelper.setupBottomNavigation(this);
+
+        // Alt navigasyon çökme ihtimaline karşı güvenli çağrı
+        try {
+            NavigationHelper.setupBottomNavigation(this);
+        } catch (Exception ignored) {
+        }
 
         db = AppDatabase.getInstance(this);
 
@@ -88,7 +93,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     intent.putExtra("DESCRIPTION", item.getAciklama());
                     intent.putExtra("CONTENT", item.getAciklama());
                 } else {
-                    // Kavram detay sayfasına (noroplastite) tüm anahtarlar eksiksiz aktarılıyor
                     intent = new Intent(SonIncelemeActivity.this, noroplastite.class);
                     intent.putExtra("KAVRAM_ID", String.valueOf(item.getId()));
                     intent.putExtra("KAVRAM_ADI", item.getBaslik());
@@ -112,18 +116,21 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     if (db == null) return;
                     int itemId = (int) item.getId();
 
-                    if ("Kavram".equalsIgnoreCase(item.getTur())) {
-                        ConceptItem_kavram concept = db.conceptDao_kavram().getConceptById(itemId);
-                        if (concept != null) {
-                            concept.setLastViewedTime(0);
-                            db.conceptDao_kavram().update(concept);
+                    try {
+                        if ("Kavram".equalsIgnoreCase(item.getTur())) {
+                            ConceptItem_kavram concept = db.conceptDao_kavram().getConceptById(itemId);
+                            if (concept != null) {
+                                concept.setLastViewedTime(0);
+                                db.conceptDao_kavram().update(concept);
+                            }
+                        } else {
+                            MetinItem metin = db.metinDao().getMetinById(itemId);
+                            if (metin != null) {
+                                metin.setLastViewedTime(0);
+                                db.metinDao().update(metin);
+                            }
                         }
-                    } else {
-                        MetinItem metin = db.metinDao().getMetinById(itemId);
-                        if (metin != null) {
-                            metin.setLastViewedTime(0);
-                            db.metinDao().update(metin);
-                        }
+                    } catch (Exception ignored) {
                     }
                 });
             }
@@ -150,34 +157,37 @@ public class SonIncelemeActivity extends AppCompatActivity {
         DB_EXECUTOR.execute(() -> {
             List<SonIncelemeModel> gecmisListesi = new ArrayList<>();
 
-            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-            if (allConcepts != null) {
-                for (ConceptItem_kavram item : allConcepts) {
-                    if (item != null && item.getLastViewedTime() > 0) {
-                        gecmisListesi.add(new SonIncelemeModel(
-                                item.getId(),
-                                item.getTitle(),
-                                item.getDescription(),
-                                "Son incelendi",
-                                "Kavram"
-                        ));
+            try {
+                List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                if (allConcepts != null) {
+                    for (ConceptItem_kavram item : allConcepts) {
+                        if (item != null && item.getLastViewedTime() > 0) {
+                            gecmisListesi.add(new SonIncelemeModel(
+                                    item.getId(),
+                                    item.getTitle(),
+                                    item.getDescription(),
+                                    "Son incelendi",
+                                    "Kavram"
+                            ));
+                        }
                     }
                 }
-            }
 
-            List<MetinItem> metinler = db.metinDao().getRecentMetinler();
-            if (metinler != null) {
-                for (MetinItem item : metinler) {
-                    if (item != null) {
-                        gecmisListesi.add(new SonIncelemeModel(
-                                item.getId(),
-                                item.getTitle(),
-                                item.getContent(),
-                                "Son incelendi",
-                                "Metin"
-                        ));
+                List<MetinItem> metinler = db.metinDao().getRecentMetinler();
+                if (metinler != null) {
+                    for (MetinItem item : metinler) {
+                        if (item != null && item.getLastViewedTime() > 0) {
+                            gecmisListesi.add(new SonIncelemeModel(
+                                    item.getId(),
+                                    item.getTitle(),
+                                    item.getContent(),
+                                    "Son incelendi",
+                                    "Metin"
+                            ));
+                        }
                     }
                 }
+            } catch (Exception ignored) {
             }
 
             runOnUiThread(() -> {
@@ -203,24 +213,27 @@ public class SonIncelemeActivity extends AppCompatActivity {
                     .setMessage("Tüm inceleme geçmişiniz temizlenecektir. Kaydedilen içerikleriniz silinmez. Onaylıyor musunuz?")
                     .setPositiveButton("Temizle", (dialog, which) -> DB_EXECUTOR.execute(() -> {
                         if (db != null) {
-                            List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
-                            if (allConcepts != null) {
-                                for (ConceptItem_kavram concept : allConcepts) {
-                                    if (concept != null && concept.getLastViewedTime() > 0) {
-                                        concept.setLastViewedTime(0);
-                                        db.conceptDao_kavram().update(concept);
+                            try {
+                                List<ConceptItem_kavram> allConcepts = db.conceptDao_kavram().getAllConceptler();
+                                if (allConcepts != null) {
+                                    for (ConceptItem_kavram concept : allConcepts) {
+                                        if (concept != null && concept.getLastViewedTime() > 0) {
+                                            concept.setLastViewedTime(0);
+                                            db.conceptDao_kavram().update(concept);
+                                        }
                                     }
                                 }
-                            }
 
-                            List<MetinItem> allMetinler = db.metinDao().getRecentMetinler();
-                            if (allMetinler != null) {
-                                for (MetinItem metin : allMetinler) {
-                                    if (metin != null && metin.getLastViewedTime() > 0) {
-                                        metin.setLastViewedTime(0);
-                                        db.metinDao().update(metin);
+                                List<MetinItem> allMetinler = db.metinDao().getRecentMetinler();
+                                if (allMetinler != null) {
+                                    for (MetinItem metin : allMetinler) {
+                                        if (metin != null && metin.getLastViewedTime() > 0) {
+                                            metin.setLastViewedTime(0);
+                                            db.metinDao().update(metin);
+                                        }
                                     }
                                 }
+                            } catch (Exception ignored) {
                             }
                         }
 
@@ -241,7 +254,8 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
         etSearchHistory.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -249,7 +263,8 @@ public class SonIncelemeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+            }
         });
     }
 
@@ -298,10 +313,11 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private void updateSingleChip(LinearLayout chip, boolean isActive, String countText) {
         if (chip == null) return;
 
-        chip.setBackgroundResource(isActive ? R.drawable.bg_chip_active : R.drawable.bg_chip_inactive);
+        // Arka plan stillerini projenin standart stilleriyle eşitle
+        chip.setBackgroundResource(isActive ? R.drawable.bg_black_pill : R.drawable.bg_chip_inactive);
 
-        TextView countView = null;
         TextView titleView = null;
+        TextView countView = null;
         ImageView iconView = null;
 
         for (int i = 0; i < chip.getChildCount(); i++) {
@@ -317,16 +333,17 @@ public class SonIncelemeActivity extends AppCompatActivity {
             }
         }
 
-        if (countView != null) {
-            countView.setText(countText);
-            countView.setTextColor(isActive ? Color.parseColor("#94A3B8") : Color.parseColor("#64748B"));
+        if (titleView != null) {
+            titleView.setTextColor(isActive ? Color.WHITE : Color.parseColor("#475569"));
         }
 
-        if (titleView != null) {
-            titleView.setTextColor(isActive ? Color.parseColor("#FFFFFF") : Color.parseColor("#334155"));
+        if (countView != null) {
+            countView.setText(countText);
+            countView.setTextColor(isActive ? Color.parseColor("#94A3B8") : Color.parseColor("#94A3B8"));
         }
+
         if (iconView != null) {
-            iconView.setColorFilter(isActive ? Color.parseColor("#FFFFFF") : Color.parseColor("#64748B"));
+            iconView.setColorFilter(isActive ? Color.WHITE : Color.parseColor("#64748B"));
         }
     }
 }

@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -42,6 +43,10 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
     private TextView btnZihinselMekanizma;
     private final List<TextView> categoryButtons = new ArrayList<>();
 
+    private RecyclerView recyclerView;
+    private ImageView btnToggleTextLayout;
+    private boolean isGridMode = false;
+
     private kaydedilenler_adapter adapter;
     private final List<kaydedilenler> masterList = new ArrayList<>();
     private final List<kaydedilenler> displayList = new ArrayList<>();
@@ -71,6 +76,8 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
             btnBack.setOnClickListener(v -> finish());
         }
 
+        btnToggleTextLayout = findViewById(R.id.btnToggleTextLayout);
+
         btnAll = findViewById(R.id.tumu);
         btnPratikHayat = findViewById(R.id.kategori_2);
         btnDisSeyler = findViewById(R.id.kategori_1);
@@ -86,7 +93,7 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         for (TextView btn : categoryButtons) {
             if (btn != null) {
                 btn.setBackgroundResource(R.drawable.bg_chip_inactive);
-                btn.setTextColor(Color.parseColor("#475569")); // Koyu gri / Görünür metin
+                btn.setTextColor(Color.parseColor("#475569"));
             }
         }
         if (btnAll != null) {
@@ -95,10 +102,8 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         }
     }
 
-
-
     private void setupRecyclerView() {
-        RecyclerView recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
+        recyclerView = findViewById(R.id.recyclerViewPersonalTexts);
         if (recyclerView != null) {
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
             adapter = new kaydedilenler_adapter(this, displayList);
@@ -117,6 +122,7 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Kategori Tıklamaları
         if (btnAll != null) {
             btnAll.setOnClickListener(v -> filterCategory("TÜMÜ", btnAll));
         }
@@ -128,6 +134,23 @@ public class KisiselMetinlerimActivity extends AppCompatActivity {
         }
         if (btnZihinselMekanizma != null) {
             btnZihinselMekanizma.setOnClickListener(v -> filterCategory("Zihinsel Mekanizma & Mimari", btnZihinselMekanizma));
+        }
+
+        // Izgara / Liste Düzen Değiştirme Butonu
+        if (btnToggleTextLayout != null) {
+            btnToggleTextLayout.setOnClickListener(v -> {
+                isGridMode = !isGridMode;
+                btnToggleTextLayout.setImageResource(isGridMode ? R.drawable.ic_list : R.drawable.ic_grid);
+
+                if (recyclerView != null) {
+                    if (isGridMode) {
+                        recyclerView.setLayoutManager(new GridLayoutManager(KisiselMetinlerimActivity.this, 2));
+                    } else {
+                        recyclerView.setLayoutManager(new LinearLayoutManager(KisiselMetinlerimActivity.this));
+                    }
+                    recyclerView.setAdapter(adapter);
+                }
+            });
         }
     }
 

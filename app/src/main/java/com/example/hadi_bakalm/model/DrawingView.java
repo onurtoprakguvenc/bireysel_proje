@@ -283,6 +283,8 @@ public class DrawingView extends View {
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
+    private boolean isGridEnabled = false;
+
     private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
     private final RectF menuSizeUpBounds = new RectF();
@@ -313,6 +315,7 @@ public class DrawingView extends View {
     private Paint eraserCursorPaint;
     private Paint shapeRenderPaint;
     private Paint lassoPaint;
+    private Paint gridPaint;
 
     // =========================================================================
     // 3. BAŞLANGIÇ YAPILANDIRMASI
@@ -375,6 +378,11 @@ public class DrawingView extends View {
         lassoPaint.setStrokeWidth(3f);
         lassoPaint.setPathEffect(new DashPathEffect(new float[]{10, 10}, 0));
 
+        gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        gridPaint.setStyle(Paint.Style.STROKE);
+        gridPaint.setColor(0xFFE2E8F0);
+        gridPaint.setStrokeWidth(1.5f);
+
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(@NonNull ScaleGestureDetector detector) {
@@ -397,6 +405,10 @@ public class DrawingView extends View {
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(0, offsetY);
+
+        if (isGridEnabled) {
+            renderGrid(canvas);
+        }
 
         for (StrokeItem stroke : strokes) {
             canvas.drawPath(stroke.path, stroke.paint);
@@ -431,6 +443,20 @@ public class DrawingView extends View {
         }
 
         canvas.restore();
+    }
+
+    private void renderGrid(Canvas canvas) {
+        float gridSize = 60f;
+        float viewWidth = getWidth() / scaleFactor;
+        float viewHeight = (getHeight() / scaleFactor) - offsetY;
+        float startY = -offsetY;
+
+        for (float x = 0; x < viewWidth; x += gridSize) {
+            canvas.drawLine(x, startY, x, startY + (getHeight() / scaleFactor), gridPaint);
+        }
+        for (float y = startY - (startY % gridSize); y < startY + (getHeight() / scaleFactor); y += gridSize) {
+            canvas.drawLine(0, y, viewWidth, y, gridPaint);
+        }
     }
 
     private void renderShapes(Canvas canvas) {
@@ -469,7 +495,6 @@ public class DrawingView extends View {
             }
 
             for (TableCell cell : table.cells) {
-                // Eğer bu hücre şu an EditText ile düzenleniyorsa tuvalde çizme:
                 if (editingTableCell != null && editingTableCell.table == table &&
                         editingTableCell.row == cell.row && editingTableCell.col == cell.col) {
                     continue;
@@ -824,7 +849,6 @@ public class DrawingView extends View {
         }
     }
 
-    // --- KEMENT (LASSO) METOTLARI (TABLO ENTEGRELİ) ---
     private void handleLassoDown(float x, float y) {
         selectedItem = null;
 
@@ -1058,8 +1082,6 @@ public class DrawingView extends View {
             eraserY = y;
             activePath.lineTo(x, y);
             activePoints.add(new Point(x, y));
-            // DrawingView.java -> continueStroke(float x, float y) içinde:
-
         } else if (currentToolMode == ToolMode.RECTANGLE) {
             activePath.reset();
             float left = Math.min(touchStartX, x);
@@ -1077,6 +1099,20 @@ public class DrawingView extends View {
             float right = left + side;
             float bottom = top + side;
             activePath.addRect(left, top, right, bottom, Path.Direction.CW);
+        } else if (currentToolMode == ToolMode.CIRCLE) {
+            activePath.reset();
+            float left = Math.min(touchStartX, x);
+            float top = Math.min(touchStartY, y);
+            float right = Math.max(touchStartX, x);
+            float bottom = Math.max(touchStartY, y);
+            activePath.addOval(new RectF(left, top, right, bottom), Path.Direction.CW);
+        } else if (currentToolMode == ToolMode.LINE) {
+            activePath.reset();
+            activePath.moveTo(touchStartX, touchStartY);
+            activePath.lineTo(x, y);
+        } else {
+            activePath.lineTo(x, y);
+            activePoints.add(new Point(x, y));
         }
     }
 
@@ -1120,6 +1156,15 @@ public class DrawingView extends View {
     // =========================================================================
     // 6. KAMUYA AÇIK API
     // =========================================================================
+
+    public void toggleGrid() {
+        this.isGridEnabled = !this.isGridEnabled;
+        invalidate();
+    }
+
+    public boolean isGridVisible() {
+        return this.isGridEnabled;
+    }
 
     public void setToolMode(ToolMode mode) {
         this.currentToolMode = mode;

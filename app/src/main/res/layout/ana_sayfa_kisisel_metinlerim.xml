@@ -55,21 +55,6 @@
                     android:textColor="@color/text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
-
-                <!-- Metin Sayacı Rozeti (Örn: 5 Metin) -->
-                <TextView
-                    android:id="@+id/txtPersonalTextCountBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:backgroundTint="#E0F2FE"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="2dp"
-                    android:text="5 Metin"
-                    android:textColor="#0284C7"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
             </LinearLayout>
 
             <!-- Görünüm Değiştirme Butonu (Grid/List) -->

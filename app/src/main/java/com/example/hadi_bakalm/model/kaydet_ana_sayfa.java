@@ -1,6 +1,7 @@
 package com.example.hadi_bakalm.model;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -37,7 +38,6 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     private final List<kaydedilenler> savedList = new ArrayList<>();
     private final List<kaydedilenler> currentFilteredList = new ArrayList<>();
 
-    private TextView txtItemCount;
     private EditText etSearch;
 
     private TextView btnFilterAll;
@@ -54,7 +54,9 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
         db = AppDatabase.getInstance(this);
 
-        NavigationHelper.setupBottomNavigation(this);
+        try {
+            NavigationHelper.setupBottomNavigation(this);
+        } catch (Exception ignored) {}
 
         initViews();
         setupClickListeners();
@@ -70,7 +72,6 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
 
     private void initViews() {
         recyclerViewSaved = findViewById(R.id.recyclerViewSaved);
-        txtItemCount = findViewById(R.id.txtItemCount);
         etSearch = findViewById(R.id.etSearch);
 
         btnFilterAll = findViewById(R.id.btnFilterAll);
@@ -121,7 +122,6 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             adapter = new kaydedilenler_adapter(this, currentFilteredList);
             recyclerViewSaved.setAdapter(adapter);
         }
-        loadSavedDataFromDb();
     }
 
     private void loadSavedDataFromDb() {
@@ -169,6 +169,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             }
 
             runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
                 savedList.clear();
                 savedList.addAll(tempSavedList);
                 applyFilterAndSearch();
@@ -224,31 +225,27 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         currentFilteredList.addAll(filtered);
 
         runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) return;
             if (adapter != null) {
                 adapter.filterList(new ArrayList<>(currentFilteredList));
             }
-            updateCount(currentFilteredList.size());
         });
     }
 
     private void updateFilterUI() {
-        if (btnFilterAll != null) {
-            btnFilterAll.setBackgroundResource(selectedType.equals("ALL") ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
-            btnFilterAll.setTextColor(selectedType.equals("ALL") ? 0xFFFFFFFF : 0xFF475569);
-        }
-        if (btnFilterConcepts != null) {
-            btnFilterConcepts.setBackgroundResource(selectedType.equals(TYPE_KAVRAM) ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
-            btnFilterConcepts.setTextColor(selectedType.equals(TYPE_KAVRAM) ? 0xFFFFFFFF : 0xFF475569);
-        }
-        if (btnFilterTexts != null) {
-            btnFilterTexts.setBackgroundResource(selectedType.equals(TYPE_METIN) ? R.drawable.bg_black_icon_box : R.drawable.bg_kaydet_button);
-            btnFilterTexts.setTextColor(selectedType.equals(TYPE_METIN) ? 0xFFFFFFFF : 0xFF475569);
-        }
+        setFilterButtonState(btnFilterAll, selectedType.equals("ALL"));
+        setFilterButtonState(btnFilterConcepts, selectedType.equals(TYPE_KAVRAM));
+        setFilterButtonState(btnFilterTexts, selectedType.equals(TYPE_METIN));
     }
 
-    private void updateCount(int count) {
-        if (txtItemCount != null) {
-            txtItemCount.setText(String.format(TR_LOCALE, "%d İçerik", count));
+    private void setFilterButtonState(TextView btn, boolean isSelected) {
+        if (btn == null) return;
+        if (isSelected) {
+            btn.setBackgroundResource(R.drawable.bg_black_pill);
+            btn.setTextColor(Color.WHITE);
+        } else {
+            btn.setBackgroundResource(R.drawable.bg_chip_inactive);
+            btn.setTextColor(Color.parseColor("#475569"));
         }
     }
 }

@@ -59,7 +59,8 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private ImageButton btnCloseEditor;
     private ImageButton btnPinNote;
-    private ImageButton btnEphemeralTimer; // Geçici not süresi ayarlama butonu
+    private ImageButton btnEphemeralTimer;
+    private ImageButton btnGridToggle;
     private EditText etNoteTitle;
 
     private DrawingView globalDrawingCanvas;
@@ -72,17 +73,15 @@ public class not_alma_sayfa extends AppCompatActivity {
     private FrameLayout frameToolText;
     private TextView btnToolText;
 
-    private ImageButton btnToolScroll;
-    private ImageButton btnToolSelect;
-    private ImageButton btnToolLasso;
     private ImageButton btnToolPen;
     private ImageButton btnToolHighlighter;
     private ImageButton btnToolEraser;
+    private ImageButton btnToolSelect;
+    private ImageButton btnToolLasso;
 
     private boolean isPinned = false;
     private int currentNoteId = -1;
 
-    // --- GEÇİCİ NOT DURUM DEĞİŞKENLERİ ---
     private boolean isEphemeral = false;
     private long expireTimestamp = 0L;
     private long tempSelectedExpireTimestamp = 0L;
@@ -161,7 +160,8 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void initViews() {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
-        btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer); // XML'de varsa bağlanır
+        btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer);
+        btnGridToggle = findViewById(R.id.btnGridToggle);
         etNoteTitle = findViewById(R.id.etNoteTitle);
 
         globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
@@ -172,17 +172,28 @@ public class not_alma_sayfa extends AppCompatActivity {
         frameToolText = findViewById(R.id.frameToolText);
         btnToolText = findViewById(R.id.btnToolText);
 
-        btnToolScroll = findViewById(R.id.btnToolScroll);
-        btnToolSelect = findViewById(R.id.btnToolSelect);
-        btnToolLasso = findViewById(R.id.btnToolLasso);
         btnToolPen = findViewById(R.id.btnToolPen);
         btnToolHighlighter = findViewById(R.id.btnToolHighlighter);
         btnToolEraser = findViewById(R.id.btnToolEraser);
+        btnToolSelect = findViewById(R.id.btnToolSelect);
+        btnToolLasso = findViewById(R.id.btnToolLasso);
     }
 
     private void loadInitialIntentData() {
         Intent intent = getIntent();
         if (intent == null) return;
+
+        // Geçici not verilerini oku
+        boolean incomingIsEphemeral = intent.getBooleanExtra("EXTRA_IS_EPHEMERAL", false);
+        long incomingExpireTimestamp = intent.getLongExtra("EXTRA_EXPIRE_TIMESTAMP", 0L);
+
+        if (incomingIsEphemeral && incomingExpireTimestamp > 0) {
+            this.isEphemeral = true;
+            this.expireTimestamp = incomingExpireTimestamp;
+            if (btnEphemeralTimer != null) {
+                btnEphemeralTimer.setColorFilter(0xFFD32F2F); // Geçici ikonunu kırmızı yapar
+            }
+        }
 
         currentNoteId = intent.getIntExtra("EXTRA_NOTE_ID", -1);
         String incomingTitle = intent.getStringExtra("EXTRA_NOTE_TITLE");
@@ -216,7 +227,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                         }
 
                         if (btnEphemeralTimer != null && isEphemeral) {
-                            btnEphemeralTimer.setColorFilter(0xFFD32F2F); // Geçici not ise kırmızı ikon
+                            btnEphemeralTimer.setColorFilter(0xFFD32F2F);
                         }
 
                         if (existingNote.blocks != null && globalDrawingCanvas != null) {
@@ -450,19 +461,18 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        ImageButton btnToolShapes = findViewById(R.id.btnToolShapes);
         ImageButton btnToolUndo = findViewById(R.id.btnToolUndo);
         ImageButton btnToolRedo = findViewById(R.id.btnToolRedo);
         ImageButton btnColorPicker = findViewById(R.id.btnColorPicker);
         ImageButton btnClearCanvas = findViewById(R.id.btnClearCanvas);
 
+        ImageButton btnAddTable = findViewById(R.id.btnAddTable);
+        ImageButton btnAddImage = findViewById(R.id.btnAddImage);
+
         ImageView colorBlack = findViewById(R.id.colorBlack);
         ImageView colorBlue = findViewById(R.id.colorBlue);
         ImageView colorRed = findViewById(R.id.colorRed);
         ImageView colorGreen = findViewById(R.id.colorGreen);
-
-        Button btnAddTable = findViewById(R.id.btnAddTable);
-        Button btnAddImage = findViewById(R.id.btnAddImage);
 
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
@@ -476,11 +486,17 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // Geçici not ayarlama butonu dinleyicisi
         if (btnEphemeralTimer != null) {
             btnEphemeralTimer.setOnClickListener(v -> {
                 commitInlineText();
                 showEphemeralDialog();
+            });
+        }
+
+        if (btnGridToggle != null && globalDrawingCanvas != null) {
+            btnGridToggle.setOnClickListener(v -> {
+                globalDrawingCanvas.toggleGrid();
+                btnGridToggle.setColorFilter(globalDrawingCanvas.isGridVisible() ? 0xFF0284C7 : 0xFF64748B);
             });
         }
 
@@ -490,7 +506,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.SELECT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Seçim Modu: Düzenlemek veya silmek için nesneye dokunun", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Seçim Modu: Nesneye dokunup taşıyın", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -500,17 +516,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.LASSO;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kement Modu: Seçmek istediğiniz alanı parmağınızla çizin", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnToolScroll != null) {
-            btnToolScroll.setOnClickListener(v -> {
-                commitInlineText();
-                activeMode = DrawingView.ToolMode.SCROLL;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kaydırma Modu", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Kement Modu: Çizerek seçin", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -540,7 +546,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.TEXT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Metin Modu: İstediğiniz yere dokunup yazın", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Metin Modu: Tuvale dokunup yazın", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -575,10 +581,19 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        if (btnToolShapes != null) {
-            btnToolShapes.setOnClickListener(v -> {
+        if (btnAddTable != null) {
+            btnAddTable.setOnClickListener(v -> {
                 commitInlineText();
-                showShapePickerDialog();
+                showTableCreationDialog();
+            });
+        }
+
+        if (btnAddImage != null) {
+            btnAddImage.setOnClickListener(v -> {
+                commitInlineText();
+                if (imagePickerLauncher != null) {
+                    imagePickerLauncher.launch("image/*");
+                }
             });
         }
 
@@ -609,27 +624,59 @@ public class not_alma_sayfa extends AppCompatActivity {
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF10B981);
             });
         }
+    }
 
-        if (btnAddTable != null) {
-            btnAddTable.setOnClickListener(v -> {
-                commitInlineText();
-                showTableCreationDialog();
-            });
-        }
+    @SuppressLint("InflateParams")
+    private void showTableCreationDialog() {
+        if (isFinishing() || isDestroyed()) return;
 
-        if (btnAddImage != null) {
-            btnAddImage.setOnClickListener(v -> {
-                commitInlineText();
-                if (imagePickerLauncher != null) {
-                    imagePickerLauncher.launch("image/*");
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table_config, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        EditText etRows = dialogView.findViewById(R.id.etRows);
+        EditText etCols = dialogView.findViewById(R.id.etCols);
+        Button btnCreateTable = dialogView.findViewById(R.id.btnCreateTable);
+
+        if (btnCreateTable != null) {
+            btnCreateTable.setOnClickListener(v -> {
+                String rowStr = etRows != null ? etRows.getText().toString().trim() : "";
+                String colStr = etCols != null ? etCols.getText().toString().trim() : "";
+
+                if (TextUtils.isEmpty(rowStr) || TextUtils.isEmpty(colStr)) {
+                    Toast.makeText(this, "Lütfen satır ve sütun sayılarını girin", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                try {
+                    int rows = Integer.parseInt(rowStr);
+                    int cols = Integer.parseInt(colStr);
+
+                    if (rows <= 0 || cols <= 0 || rows > 50 || cols > 20) {
+                        Toast.makeText(this, "Geçerli bir boyut girin (Maks: 50 satır, 20 sütun)", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (globalDrawingCanvas != null) {
+                        float currentCanvasOffsetY = globalDrawingCanvas.getOffsetY();
+                        float spawnX = 60f;
+                        float spawnY = -currentCanvasOffsetY + 140f;
+                        globalDrawingCanvas.addTableToCanvas(spawnX, spawnY, rows, cols);
+                    }
+
+                    Toast.makeText(this, "Tablo eklendi. Hücreye tıklayarak yazabilirsiniz.", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                } catch (NumberFormatException e) {
+                    Toast.makeText(this, "Lütfen sadece sayısal değerler girin", Toast.LENGTH_SHORT).show();
                 }
             });
         }
+
+        dialog.show();
     }
 
-    /**
-     * gecici_not_uyari.xml arayüzünü açan ve geçici süre atamasını gerçekleştiren diyalog
-     */
     @SuppressLint({"InflateParams", "SetTextI18n"})
     private void showEphemeralDialog() {
         if (isFinishing() || isDestroyed()) return;
@@ -647,7 +694,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         Button btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
         Button btnConfirm = dialogView.findViewById(R.id.btnDialogConfirm);
 
-        // Varsayılan geçici seçim: 1 saat sonrası
         tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
 
         if (btn1Hour != null) {
@@ -741,8 +787,8 @@ public class not_alma_sayfa extends AppCompatActivity {
             }
         }
 
-        if (btnToolScroll != null) {
-            btnToolScroll.setColorFilter(mode == DrawingView.ToolMode.SCROLL ? 0xFF0284C7 : 0xFF475569);
+        if (btnToolEraser != null) {
+            btnToolEraser.setColorFilter(mode == DrawingView.ToolMode.ERASER ? 0xFF0284C7 : 0xFF475569);
         }
 
         if (btnToolSelect != null) {
@@ -751,10 +797,6 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolLasso != null) {
             btnToolLasso.setColorFilter(mode == DrawingView.ToolMode.LASSO ? 0xFF0284C7 : 0xFF475569);
-        }
-
-        if (btnToolEraser != null) {
-            btnToolEraser.setColorFilter(mode == DrawingView.ToolMode.ERASER ? 0xFF0284C7 : 0xFF475569);
         }
     }
 
@@ -880,115 +922,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
-    @SuppressLint("InflateParams")
-    private void showShapePickerDialog() {
-        if (isFinishing() || isDestroyed()) return;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_shape_picker, null);
-        builder.setView(dialogView);
-
-        AlertDialog dialog = builder.create();
-
-        Button btnSquare = dialogView.findViewById(R.id.btnShapeSquare);
-        Button btnRectangle = dialogView.findViewById(R.id.btnShapeRectangle);
-        Button btnCircle = dialogView.findViewById(R.id.btnShapeCircle);
-        Button btnLine = dialogView.findViewById(R.id.btnShapeLine);
-
-        if (btnSquare != null) {
-            btnSquare.setOnClickListener(v -> {
-                activeMode = DrawingView.ToolMode.SQUARE;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                dialog.dismiss();
-                showStrokeSizeDialog("Kare Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
-            });
-        }
-
-        if (btnRectangle != null) {
-            btnRectangle.setOnClickListener(v -> {
-                activeMode = DrawingView.ToolMode.RECTANGLE;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                dialog.dismiss();
-                showStrokeSizeDialog("Dikdörtgen Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
-            });
-        }
-
-        if (btnCircle != null) {
-            btnCircle.setOnClickListener(v -> {
-                activeMode = DrawingView.ToolMode.CIRCLE;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                dialog.dismiss();
-                showStrokeSizeDialog("Daire Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
-            });
-        }
-
-        if (btnLine != null) {
-            btnLine.setOnClickListener(v -> {
-                activeMode = DrawingView.ToolMode.LINE;
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
-                updateActiveToolUI(activeMode);
-                dialog.dismiss();
-                showStrokeSizeDialog("Çizgi Kalınlığı", 2f, 40f, 4f, 10f, 20f);
-            });
-        }
-
-        dialog.show();
-    }
-
-    @SuppressLint("InflateParams")
-    private void showTableCreationDialog() {
-        if (isFinishing() || isDestroyed()) return;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_table_config, null);
-        builder.setView(dialogView);
-
-        AlertDialog dialog = builder.create();
-
-        EditText etRows = dialogView.findViewById(R.id.etRows);
-        EditText etCols = dialogView.findViewById(R.id.etCols);
-        Button btnCreateTable = dialogView.findViewById(R.id.btnCreateTable);
-
-        if (btnCreateTable != null) {
-            btnCreateTable.setOnClickListener(v -> {
-                String rowStr = etRows != null ? etRows.getText().toString().trim() : "";
-                String colStr = etCols != null ? etCols.getText().toString().trim() : "";
-
-                if (TextUtils.isEmpty(rowStr) || TextUtils.isEmpty(colStr)) {
-                    Toast.makeText(this, "Lütfen satır ve sütun sayılarını girin", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                try {
-                    int rows = Integer.parseInt(rowStr);
-                    int cols = Integer.parseInt(colStr);
-
-                    if (rows <= 0 || cols <= 0 || rows > 50 || cols > 20) {
-                        Toast.makeText(this, "Geçerli bir boyut girin (Maks: 50 satır, 20 sütun)", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (globalDrawingCanvas != null) {
-                        float currentCanvasOffsetY = globalDrawingCanvas.getOffsetY();
-                        float spawnX = 60f;
-                        float spawnY = -currentCanvasOffsetY + 140f;
-                        globalDrawingCanvas.addTableToCanvas(spawnX, spawnY, rows, cols);
-                    }
-
-                    Toast.makeText(this, "Tablo eklendi. Hücreye tıklayarak yazabilirsiniz.", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-                } catch (NumberFormatException e) {
-                    Toast.makeText(this, "Lütfen sadece geçerli sayısal değerler girin", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        dialog.show();
-    }
-
     private void autoSaveNote() {
         String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
         if (TextUtils.isEmpty(title)) {
@@ -1007,8 +940,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         notentity note = new notentity(title, "Çizim Notu", currentCategory, "#0284C7", currentTime);
         note.isPinned = isPinned;
         note.blocks = blocks;
-
-        // Geçici not alanlarını entity'ye aktar:
         note.isEphemeral = isEphemeral;
         note.expireTimestamp = expireTimestamp;
 

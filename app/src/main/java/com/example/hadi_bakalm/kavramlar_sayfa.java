@@ -80,7 +80,6 @@ public class kavramlar_sayfa extends AppCompatActivity {
 
         chipContainer = findViewById(R.id.conceptChipContainer);
         recyclerView = findViewById(R.id.recyclerViewMainCategories);
-        txtConceptCountBadge = findViewById(R.id.txtConceptCountBadge);
         btnSearchConcept = findViewById(R.id.btnSearchConcept);
 
         searchBarContainer = findViewById(R.id.searchBarContainer);
