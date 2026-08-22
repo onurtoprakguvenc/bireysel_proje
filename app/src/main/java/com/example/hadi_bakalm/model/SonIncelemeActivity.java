@@ -7,6 +7,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -35,6 +36,7 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private static final Locale TR_LOCALE = new Locale("tr", "TR");
 
     private LinearLayout btnClearHistory;
+    private ImageButton btnOpenNoteEditor;
     private EditText etSearchHistory;
     private SonIncelemeAdapter adapter;
     private final List<SonIncelemeModel> tumListe = new ArrayList<>();
@@ -51,7 +53,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_son_inceleme);
 
-        // Alt navigasyon çökme ihtimaline karşı güvenli çağrı
         try {
             NavigationHelper.setupBottomNavigation(this);
         } catch (Exception ignored) {
@@ -60,6 +61,7 @@ public class SonIncelemeActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(this);
 
         initViews();
+        setupClickListeners();
         setupRecyclerView();
         setupFilterChips();
         setupSearch();
@@ -68,10 +70,21 @@ public class SonIncelemeActivity extends AppCompatActivity {
 
     private void initViews() {
         btnClearHistory = findViewById(R.id.btnClearHistory);
+        btnOpenNoteEditor = findViewById(R.id.btnOpenNoteEditor);
         etSearchHistory = findViewById(R.id.etSearchHistory);
         chipAll = findViewById(R.id.chipAll);
         chipConcepts = findViewById(R.id.chipConcepts);
         chipTexts = findViewById(R.id.chipTexts);
+    }
+
+    private void setupClickListeners() {
+        if (btnOpenNoteEditor != null) {
+            btnOpenNoteEditor.setOnClickListener(v -> {
+                Intent intent = new Intent(SonIncelemeActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
     }
 
     private void setupRecyclerView() {
@@ -313,7 +326,6 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private void updateSingleChip(LinearLayout chip, boolean isActive, String countText) {
         if (chip == null) return;
 
-        // Arka plan stillerini projenin standart stilleriyle eşitle
         chip.setBackgroundResource(isActive ? R.drawable.bg_black_pill : R.drawable.bg_chip_inactive);
 
         TextView titleView = null;

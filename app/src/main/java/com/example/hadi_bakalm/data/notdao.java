@@ -51,12 +51,15 @@ public interface notdao {
     // =========================================================================
 
     // Süresi dolan geçici notları Geri Dönüşüm Kutusuna taşı
-    @Query("UPDATE user_notes SET isInTrash = 1, trashedTimestamp = :currentTime WHERE isEphemeral = 1 AND expireTimestamp <= :currentTime AND isInTrash = 0")
+    // Süresi dolan geçici notları Geri Dönüşüm Kutusuna taşı
+    @Query("UPDATE user_notes SET isInTrash = 1, trashedTimestamp = :currentTime WHERE isEphemeral = 1 AND expireTimestamp > 0 AND expireTimestamp <= :currentTime AND isInTrash = 0")
     void moveExpiredNotesToTrash(long currentTime);
 
     // Çöp kutusunda 7 günden fazla beklemiş notları kalıcı olarak tamamen sil
     @Query("DELETE FROM user_notes WHERE isInTrash = 1 AND trashedTimestamp <= :thresholdTime")
     void purgeOldDeletedNotes(long thresholdTime);
+
+
 
     // Geri Dönüşüm Kutusu ekranı için çöpteki notları listeleme
     @Query("SELECT * FROM user_notes WHERE isInTrash = 1 ORDER BY trashedTimestamp DESC")

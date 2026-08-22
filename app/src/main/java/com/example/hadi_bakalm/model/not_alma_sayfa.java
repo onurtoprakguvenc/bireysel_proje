@@ -6,11 +6,14 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -49,6 +52,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class not_alma_sayfa extends AppCompatActivity {
@@ -56,10 +60,13 @@ public class not_alma_sayfa extends AppCompatActivity {
     private static final String TAG = "not_alma_sayfa";
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd MMM, HH:mm", new Locale("tr", "TR"));
+    private static final SimpleDateFormat EXPIRY_FORMAT = new SimpleDateFormat("dd MMM yyyy, HH:mm", new Locale("tr", "TR"));
 
     private ImageButton btnCloseEditor;
     private ImageButton btnPinNote;
     private ImageButton btnEphemeralTimer;
+    private LinearLayout containerEphemeralBadge;
+    private TextView tvEphemeralBadge;
     private ImageButton btnGridToggle;
     private EditText etNoteTitle;
 
@@ -99,6 +106,15 @@ public class not_alma_sayfa extends AppCompatActivity {
     private float pendingNewTextY = 0f;
     private boolean isCreatingNewText = false;
 
+    private final Handler liveTimerHandler = new Handler(Looper.getMainLooper());
+    private final Runnable liveTimerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateLiveBadgeUI();
+            liveTimerHandler.postDelayed(this, 1000);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,6 +135,20 @@ public class not_alma_sayfa extends AppCompatActivity {
                 saveNoteAndExit();
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        liveTimerHandler.post(liveTimerRunnable);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        liveTimerHandler.removeCallbacks(liveTimerRunnable);
+        commitInlineText();
+        autoSaveNote();
     }
 
     private void setupImagePicker() {
@@ -151,17 +181,12 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        commitInlineText();
-        autoSaveNote();
-    }
-
     private void initViews() {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
         btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer);
+        containerEphemeralBadge = findViewById(R.id.containerEphemeralBadge);
+        tvEphemeralBadge = findViewById(R.id.tvEphemeralBadge);
         btnGridToggle = findViewById(R.id.btnGridToggle);
         etNoteTitle = findViewById(R.id.etNoteTitle);
 
@@ -190,9 +215,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (incomingIsEphemeral && incomingExpireTimestamp > 0) {
             this.isEphemeral = true;
             this.expireTimestamp = incomingExpireTimestamp;
-            if (btnEphemeralTimer != null) {
-                btnEphemeralTimer.setColorFilter(0xFFD32F2F);
-            }
         }
 
         currentNoteId = intent.getIntExtra("EXTRA_NOTE_ID", -1);
@@ -226,9 +248,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                             btnPinNote.setColorFilter(isPinned ? 0xFFEAB308 : 0xFF94A3B8);
                         }
 
-                        if (btnEphemeralTimer != null && isEphemeral) {
-                            btnEphemeralTimer.setColorFilter(0xFFD32F2F);
-                        }
+                        updateLiveBadgeUI();
 
                         if (existingNote.blocks != null && globalDrawingCanvas != null) {
                             for (NoteBlockModel block : existingNote.blocks) {
@@ -240,7 +260,50 @@ public class not_alma_sayfa extends AppCompatActivity {
                     });
                 }
             });
+        } else {
+            updateLiveBadgeUI();
         }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void updateLiveBadgeUI() {
+        if (!isEphemeral || expireTimestamp <= 0) {
+            if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.GONE);
+            if (btnEphemeralTimer != null) {
+                btnEphemeralTimer.setVisibility(View.VISIBLE);
+                btnEphemeralTimer.setColorFilter(0xFF64748B);
+            }
+            return;
+        }
+
+        long diff = expireTimestamp - System.currentTimeMillis();
+        if (diff <= 0) {
+            if (tvEphemeralBadge != null) tvEphemeralBadge.setText("Süresi Doldu");
+            if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.VISIBLE);
+            if (btnEphemeralTimer != null) btnEphemeralTimer.setVisibility(View.GONE);
+            return;
+        }
+
+        long totalSeconds = diff / 1000;
+        long days = totalSeconds / (24 * 3600);
+        long hours = (totalSeconds % (24 * 3600)) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        String formattedTime;
+        if (days > 0) {
+            formattedTime = days + " gün " + hours + " sa";
+        } else if (hours > 0) {
+            formattedTime = hours + " sa " + minutes + " dk";
+        } else if (minutes > 0) {
+            formattedTime = minutes + " dk " + seconds + " sn";
+        } else {
+            formattedTime = seconds + " sn kaldı";
+        }
+
+        if (tvEphemeralBadge != null) tvEphemeralBadge.setText(formattedTime);
+        if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.VISIBLE);
+        if (btnEphemeralTimer != null) btnEphemeralTimer.setVisibility(View.GONE);
     }
 
     private void setupInlineEditorListener() {
@@ -497,7 +560,14 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (btnEphemeralTimer != null) {
             btnEphemeralTimer.setOnClickListener(v -> {
                 commitInlineText();
-                showEphemeralDialog();
+                showEphemeralSelectionDialog();
+            });
+        }
+
+        if (containerEphemeralBadge != null) {
+            containerEphemeralBadge.setOnClickListener(v -> {
+                commitInlineText();
+                showEphemeralSelectionDialog();
             });
         }
 
@@ -685,89 +755,129 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Net Kalan Süre Gösterimli Geçici Not Ayarlama Diyaloğu
+     */
     @SuppressLint({"InflateParams", "SetTextI18n"})
-    private void showEphemeralDialog() {
+    private void showEphemeralSelectionDialog() {
         if (isFinishing() || isDestroyed()) return;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.gecici_not_uyari, null);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_gecici_sure_secimi, null);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
-
-        TextView txtDialogMessage = dialogView.findViewById(R.id.txtDialogMessage);
-        Button btn1Hour = dialogView.findViewById(R.id.btnDuration1Hour);
-        Button btn24Hours = dialogView.findViewById(R.id.btnDuration24Hours);
-        Button btnCustom = dialogView.findViewById(R.id.btnDurationCustom);
-        Button btnCancel = dialogView.findViewById(R.id.btnDialogCancel);
-        Button btnConfirm = dialogView.findViewById(R.id.btnDialogConfirm);
-
-        tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
-
-        if (btn1Hour != null) {
-            btn1Hour.setOnClickListener(v -> {
-                tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
-                if (txtDialogMessage != null) {
-                    txtDialogMessage.setText("Süre: 1 Saat sonra Geri Dönüşüm Kutusuna taşınacak.");
-                }
-            });
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
-        if (btn24Hours != null) {
-            btn24Hours.setOnClickListener(v -> {
-                tempSelectedExpireTimestamp = System.currentTimeMillis() + (24 * 60 * 60 * 1000L);
-                if (txtDialogMessage != null) {
-                    txtDialogMessage.setText("Süre: 24 Saat sonra Geri Dönüşüm Kutusuna taşınacak.");
-                }
-            });
+        TextView txtSelectedExpiryInfo = dialogView.findViewById(R.id.txtSelectedExpiryInfo);
+        TextView btnQuick1Hour = dialogView.findViewById(R.id.btnQuick1Hour);
+        TextView btnQuick24Hours = dialogView.findViewById(R.id.btnQuick24Hours);
+        TextView btnQuick3Days = dialogView.findViewById(R.id.btnQuick3Days);
+        TextView btnCustomDateTime = dialogView.findViewById(R.id.btnCustomDateTime);
+
+        TextView btnCancelExpiry = dialogView.findViewById(R.id.btnCancelExpiry);
+        TextView btnConfirmExpiry = dialogView.findViewById(R.id.btnConfirmExpiry);
+
+        if (isEphemeral && expireTimestamp > System.currentTimeMillis()) {
+            tempSelectedExpireTimestamp = expireTimestamp;
+            txtSelectedExpiryInfo.setText("Mevcut Kapanış: " + EXPIRY_FORMAT.format(new Date(tempSelectedExpireTimestamp)));
+        } else {
+            // Varsayılan: 5 Dakika Sonrası
+            tempSelectedExpireTimestamp = System.currentTimeMillis() + (5 * 60 * 1000L);
+            txtSelectedExpiryInfo.setText("Süre: 5 Dakika sonra (" + EXPIRY_FORMAT.format(new Date(tempSelectedExpireTimestamp)) + ")");
         }
 
-        if (btnCustom != null) {
-            btnCustom.setOnClickListener(v -> {
-                Calendar takvim = Calendar.getInstance();
-                DatePickerDialog datePicker = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-                    takvim.set(Calendar.YEAR, year);
-                    takvim.set(Calendar.MONTH, month);
-                    takvim.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        btnQuick1Hour.setText("1 Saat");
+        btnQuick1Hour.setOnClickListener(v -> {
+            tempSelectedExpireTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
+            setDurationTabActive(btnQuick1Hour, btnQuick24Hours, btnQuick3Days, btnCustomDateTime);
+            txtSelectedExpiryInfo.setText("Süre: 1 Saat sonra (" + EXPIRY_FORMAT.format(new Date(tempSelectedExpireTimestamp)) + ")");
+        });
 
-                    TimePickerDialog timePicker = new TimePickerDialog(this, (timeView, hourOfDay, minute) -> {
-                        takvim.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                        takvim.set(Calendar.MINUTE, minute);
-                        takvim.set(Calendar.SECOND, 0);
+        btnQuick24Hours.setOnClickListener(v -> {
+            tempSelectedExpireTimestamp = System.currentTimeMillis() + (24 * 60 * 60 * 1000L);
+            setDurationTabActive(btnQuick24Hours, btnQuick1Hour, btnQuick3Days, btnCustomDateTime);
+            txtSelectedExpiryInfo.setText("Süre: 24 Saat sonra (" + EXPIRY_FORMAT.format(new Date(tempSelectedExpireTimestamp)) + ")");
+        });
 
-                        long chosenTime = takvim.getTimeInMillis();
-                        if (chosenTime > System.currentTimeMillis()) {
-                            tempSelectedExpireTimestamp = chosenTime;
-                            if (txtDialogMessage != null) {
-                                txtDialogMessage.setText("Bitiş: " + dayOfMonth + "/" + (month + 1) + "/" + year + " " + String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute));
-                            }
-                        } else {
-                            Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
-                        }
-                    }, takvim.get(Calendar.HOUR_OF_DAY), takvim.get(Calendar.MINUTE), true);
-                    timePicker.show();
-                }, takvim.get(Calendar.YEAR), takvim.get(Calendar.MONTH), takvim.get(Calendar.DAY_OF_MONTH));
-                datePicker.show();
-            });
-        }
+        btnQuick3Days.setOnClickListener(v -> {
+            tempSelectedExpireTimestamp = System.currentTimeMillis() + (3 * 24 * 60 * 60 * 1000L);
+            setDurationTabActive(btnQuick3Days, btnQuick1Hour, btnQuick24Hours, btnCustomDateTime);
+            txtSelectedExpiryInfo.setText("Süre: 3 Gün sonra (" + EXPIRY_FORMAT.format(new Date(tempSelectedExpireTimestamp)) + ")");
+        });
 
-        if (btnCancel != null) {
-            btnCancel.setOnClickListener(v -> dialog.dismiss());
-        }
+        btnCustomDateTime.setOnClickListener(v -> {
+            final Calendar secilenZaman = Calendar.getInstance();
 
-        if (btnConfirm != null) {
-            btnConfirm.setOnClickListener(v -> {
-                isEphemeral = true;
-                expireTimestamp = tempSelectedExpireTimestamp;
-                if (btnEphemeralTimer != null) {
-                    btnEphemeralTimer.setColorFilter(0xFFD32F2F);
-                }
-                Toast.makeText(this, "Not geçici olarak ayarlandı", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            });
-        }
+            DatePickerDialog datePicker = new DatePickerDialog(
+                    this,
+                    (view, year, month, dayOfMonth) -> {
+                        secilenZaman.set(Calendar.YEAR, year);
+                        secilenZaman.set(Calendar.MONTH, month);
+                        secilenZaman.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                        TimePickerDialog timePicker = new TimePickerDialog(
+                                this,
+                                (timeView, hourOfDay, minute) -> {
+                                    secilenZaman.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                                    secilenZaman.set(Calendar.MINUTE, minute);
+                                    secilenZaman.set(Calendar.SECOND, 0);
+                                    secilenZaman.set(Calendar.MILLISECOND, 0);
+
+                                    long chosen = secilenZaman.getTimeInMillis();
+                                    if (chosen > System.currentTimeMillis()) {
+                                        tempSelectedExpireTimestamp = chosen;
+                                        setDurationTabActive(btnCustomDateTime, btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
+                                        txtSelectedExpiryInfo.setText("Bitiş Anı: " + EXPIRY_FORMAT.format(new Date(chosen)));
+                                    } else {
+                                        Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
+                                    }
+                                },
+                                secilenZaman.get(Calendar.HOUR_OF_DAY),
+                                secilenZaman.get(Calendar.MINUTE),
+                                true
+                        );
+                        timePicker.setTitle("Kapanma Saatini Seçin");
+                        timePicker.show();
+                    },
+                    secilenZaman.get(Calendar.YEAR),
+                    secilenZaman.get(Calendar.MONTH),
+                    secilenZaman.get(Calendar.DAY_OF_MONTH)
+            );
+            datePicker.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+            datePicker.setTitle("Kapanma Tarihini Seçin");
+            datePicker.show();
+        });
+
+        btnCancelExpiry.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirmExpiry.setOnClickListener(v -> {
+            if (tempSelectedExpireTimestamp <= System.currentTimeMillis()) {
+                Toast.makeText(this, "Geçerli bir ileri zaman seçilmedi.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            this.isEphemeral = true;
+            this.expireTimestamp = tempSelectedExpireTimestamp;
+            this.currentCategory = "Geçici";
+
+            updateLiveBadgeUI();
+            Toast.makeText(this, "Geçici süre ayarlandı: " + EXPIRY_FORMAT.format(new Date(expireTimestamp)), Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
 
         dialog.show();
+    }
+
+    private void setDurationTabActive(TextView active, TextView... inactives) {
+        active.setBackgroundResource(R.drawable.bg_chip_active);
+        active.setTextColor(Color.WHITE);
+        for (TextView in : inactives) {
+            in.setBackgroundResource(R.drawable.bg_chip_inactive);
+            in.setTextColor(Color.parseColor("#475569"));
+        }
     }
 
     private void updateActiveToolUI(DrawingView.ToolMode mode) {
@@ -951,8 +1061,8 @@ public class not_alma_sayfa extends AppCompatActivity {
         notentity note = new notentity(title, "Çizim Notu", currentCategory, "#0284C7", currentTime);
         note.isPinned = isPinned;
         note.blocks = blocks;
-        note.isEphemeral = isEphemeral;
-        note.expireTimestamp = expireTimestamp;
+        note.isEphemeral = this.isEphemeral;
+        note.expireTimestamp = this.expireTimestamp;
 
         if (noteDao != null) {
             final int idToUpdate = currentNoteId;

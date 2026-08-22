@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.asil_ana_sayfa);
 
@@ -82,21 +83,6 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
         setupSearchListener();
         setupPeriodicCleanupWorker();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (noteDao != null) {
-            DB_EXECUTOR.execute(() -> {
-                noteDao.moveExpiredNotesToTrash(System.currentTimeMillis());
-                loadNotesFromDatabase();
-                loadDynamicCategoryChips();
-            });
-        } else {
-            loadNotesFromDatabase();
-            loadDynamicCategoryChips();
-        }
     }
 
     private void setupPeriodicCleanupWorker() {
@@ -110,6 +96,74 @@ public class MainActivity extends AppCompatActivity {
                 ExistingPeriodicWorkPolicy.KEEP,
                 cleanupRequest
         );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshAllNotesFromDb();
+    }
+
+    private void refreshAllNotesFromDb() {
+        if (noteDao == null) return;
+
+        DB_EXECUTOR.execute(() -> {
+            // 1. Önce süresi dolanları çöpe taşı
+            long now = System.currentTimeMillis();
+            noteDao.moveExpiredNotesToTrash(now);
+
+            // 2. Ardından güncel aktif notları oku
+            List<notentity> dbEntities = noteDao.getAllNotes();
+            List<NoteModel> updatedList = mapEntitiesToModels(dbEntities);
+            List<String> dynamicCategories = extractDynamicCategories(dbEntities);
+
+            // 3. UI'ı tek seferde güncelle
+            runOnUiThread(() -> {
+                applyListUpdate(updatedList);
+                renderCategoryChips(dynamicCategories);
+            });
+        });
+    }
+
+    private void renderCategoryChips(List<String> dynamicCategories) {
+        if (categoryChipContainer == null) return;
+
+        categoryChipContainer.removeAllViews();
+        for (String categoryName : dynamicCategories) {
+            TextView chip = new TextView(this);
+            chip.setText(categoryName);
+            chip.setTextSize(12f);
+            chip.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(0, 0, dpToPx(8), 0);
+            chip.setLayoutParams(params);
+
+            if (categoryName.equalsIgnoreCase("Tümü")) {
+                chip.setBackgroundResource(R.drawable.bg_chip_active);
+                chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+            } else {
+                chip.setBackgroundResource(R.drawable.bg_chip_inactive);
+                chip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+            }
+
+            chip.setOnClickListener(v -> {
+                resetChipStyles();
+                chip.setBackgroundResource(R.drawable.bg_chip_active);
+                chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+
+                if (categoryName.equalsIgnoreCase("Tümü")) {
+                    refreshAllNotesFromDb();
+                } else {
+                    filterNotesByCategory(categoryName);
+                }
+            });
+
+            categoryChipContainer.addView(chip);
+        }
     }
 
     private void initViews() {

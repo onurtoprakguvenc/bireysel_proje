@@ -5,11 +5,15 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -64,6 +68,10 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         setupSearchAndFilters();
     }
 
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -80,6 +88,17 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // 1. Sağ Üstteki Kalem Simgesi -> Notlar Ana Ekranına (MainActivity) Geçiş
+        ImageButton btnOpenNoteEditor = findViewById(R.id.btnOpenNoteEditor);
+        if (btnOpenNoteEditor != null) {
+            btnOpenNoteEditor.setOnClickListener(v -> {
+                Intent intent = new Intent(kaydet_ana_sayfa.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            });
+        }
+
+        // 2. Geri Butonu
         ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> {
@@ -91,6 +110,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
             });
         }
 
+        // 3. Filtre Butonları
         if (btnFilterAll != null) {
             btnFilterAll.setOnClickListener(v -> {
                 selectedType = "ALL";

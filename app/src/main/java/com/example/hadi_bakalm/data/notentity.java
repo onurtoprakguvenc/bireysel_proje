@@ -20,11 +20,7 @@ public class notentity {
     public String category;
     public String colorHex;
     public String timestamp;
-    public boolean isPinned;
-
-    // Çöp kutusu ve silinme takip alanları
-    public boolean isDeleted = false;
-    public long deletedTimestamp = 0L;
+    public boolean isPinned = false;
 
     public String imagePath;
     public String drawingBlobPath;
@@ -34,11 +30,17 @@ public class notentity {
     public List<NoteBlockModel> blocks;
 
     // --- GEÇİCİ NOT VE GERİ DÖNÜŞÜM KUTUSU ALANLARI ---
-    public boolean isEphemeral;       // Notun geçici olup olmadığını belirten bayrak
-    public long expireTimestamp;       // Notun süresinin dolup çöpe taşınacağı zaman damgası (milisaniye)
-    public boolean isInTrash;          // Notun çöp kutusunda olup olmadığını belirten bayrak
-    public long trashedTimestamp;      // Notun çöp kutusuna girdiği anın zaman damgası (milisaniye)
+    public boolean isEphemeral = false;
+    public long expireTimestamp = 0L;
+    public boolean isInTrash = false;
+    public long trashedTimestamp = 0L;
 
+    // Room için parametresiz varsayılan constructor (Şart)
+    public notentity() {
+        this.blocks = new ArrayList<>();
+    }
+
+    @Ignore
     public notentity(String title, String content, String category, String colorHex, String timestamp) {
         this.title = title != null ? title : "";
         this.content = content != null ? content : "";
@@ -47,20 +49,9 @@ public class notentity {
         this.timestamp = timestamp != null ? timestamp : "";
         this.isPinned = false;
         this.blocks = new ArrayList<>();
-
-        // Varsayılan geçici not değerleri (Kalıcı not)
         this.isEphemeral = false;
         this.expireTimestamp = 0L;
         this.isInTrash = false;
         this.trashedTimestamp = 0L;
-    }
-
-    @Ignore
-    @SuppressWarnings("unused")
-    public notentity(String title, String content, String category, String colorHex, String timestamp, List<NoteBlockModel> blocks) {
-        this(title, content, category, colorHex, timestamp);
-        if (blocks != null) {
-            this.blocks = blocks;
-        }
     }
 }
