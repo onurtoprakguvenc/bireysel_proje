@@ -245,4 +245,9 @@
     <string name="_3_gun">3 Gün</string>
     <string name="ozel_tarih_ve_saat_sec">📅 Özel Tarih ve Saat Seç...</string>
     <string name="notu_olustur">Notu Oluştur</string>
+    <string name="gecici_fikir_notu">Geçici Fikir Notu</string>
+    <string name="_6_g_n_kald">6 gün kaldı</string>
+    <string name="bu_notun_suresi_doldugu_icin_geri_donusum_kutusuna_tasınd">Bu notun süresi dolduğu için geri dönüşüm kutusuna taşındı...</string>
+    <string name="silindi_d_n_14_20">Silindi: Dün 14:20</string>
+    <string name="geri_yukle">Geri Yükle</string>
 </resources>

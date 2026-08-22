@@ -39,7 +39,7 @@ public interface notdao {
     @Delete
     void deleteNote(notentity note);
 
-    // Nesne oluşturmadan doğrudan ID ile hafif silme
+    // Nesne oluşturmadan doğrudan ID ile silme
     @Query("DELETE FROM user_notes WHERE id = :id")
     void deleteNoteById(int id);
 
@@ -65,4 +65,12 @@ public interface notdao {
     // Çöpteki bir notu geri yükleme (Geri Dönüşüm Kutusundan çıkarma)
     @Query("UPDATE user_notes SET isInTrash = 0, trashedTimestamp = 0, isEphemeral = 0, expireTimestamp = 0 WHERE id = :id")
     void restoreNoteFromTrash(int id);
+
+    // Çöp kutusundaki tüm notları tek seferde kalıcı olarak temizleme
+    @Query("DELETE FROM user_notes WHERE isInTrash = 1")
+    void emptyTrash();
+
+    // Notu silmeyip Geri Dönüşüm Kutusuna taşıma (Soft Delete)
+    @Query("UPDATE user_notes SET isInTrash = 1, trashedTimestamp = :currentTime WHERE id = :id")
+    void moveToTrash(int id, long currentTime);
 }

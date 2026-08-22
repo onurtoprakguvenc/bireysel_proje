@@ -79,6 +79,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private ImageButton btnToolSelect;
     private ImageButton btnToolLasso;
 
+    private boolean isSaving = false;
     private boolean isPinned = false;
     private int currentNoteId = -1;
 
@@ -183,7 +184,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent == null) return;
 
-        // Geçici not verilerini oku
         boolean incomingIsEphemeral = intent.getBooleanExtra("EXTRA_IS_EPHEMERAL", false);
         long incomingExpireTimestamp = intent.getLongExtra("EXTRA_EXPIRE_TIMESTAMP", 0L);
 
@@ -191,7 +191,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             this.isEphemeral = true;
             this.expireTimestamp = incomingExpireTimestamp;
             if (btnEphemeralTimer != null) {
-                btnEphemeralTimer.setColorFilter(0xFFD32F2F); // Geçici ikonunu kırmızı yapar
+                btnEphemeralTimer.setColorFilter(0xFFD32F2F);
             }
         }
 
@@ -476,6 +476,14 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
+        }
+
+        ImageButton btnToolShapes = findViewById(R.id.btnToolShapes);
+        if (btnToolShapes != null) {
+            btnToolShapes.setOnClickListener(v -> {
+                commitInlineText();
+                showShapePickerDialog();
+            });
         }
 
         if (btnPinNote != null) {
@@ -922,7 +930,10 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
-    private void autoSaveNote() {
+    private synchronized void autoSaveNote() {
+        if (isSaving) return;
+        isSaving = true;
+
         String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
         if (TextUtils.isEmpty(title)) {
             title = "Başlıksız Not";
@@ -946,20 +957,25 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (noteDao != null) {
             final int idToUpdate = currentNoteId;
             DB_EXECUTOR.execute(() -> {
-                if (idToUpdate != -1) {
-                    note.id = idToUpdate;
-                    noteDao.updateNote(note);
-                } else {
-                    long newId = noteDao.insertNote(note);
-                    currentNoteId = (int) newId;
+                try {
+                    if (idToUpdate != -1) {
+                        note.id = idToUpdate;
+                        noteDao.updateNote(note);
+                    } else {
+                        long newId = noteDao.insertNote(note);
+                        currentNoteId = (int) newId;
+                    }
+                } finally {
+                    isSaving = false;
                 }
             });
+        } else {
+            isSaving = false;
         }
     }
 
     private void saveNoteAndExit() {
         commitInlineText();
-        autoSaveNote();
         finish();
     }
 
@@ -1100,6 +1116,60 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnClose != null) {
             btnClose.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
+
+    @SuppressLint("InflateParams")
+    private void showShapePickerDialog() {
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_shape_picker, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        Button btnSquare = dialogView.findViewById(R.id.btnShapeSquare);
+        Button btnRectangle = dialogView.findViewById(R.id.btnShapeRectangle);
+        Button btnCircle = dialogView.findViewById(R.id.btnShapeCircle);
+        Button btnLine = dialogView.findViewById(R.id.btnShapeLine);
+
+        if (btnSquare != null) {
+            btnSquare.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.SQUARE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnRectangle != null) {
+            btnRectangle.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.RECTANGLE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnCircle != null) {
+            btnCircle.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.CIRCLE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                dialog.dismiss();
+            });
+        }
+
+        if (btnLine != null) {
+            btnLine.setOnClickListener(v -> {
+                activeMode = DrawingView.ToolMode.LINE;
+                if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
+                updateActiveToolUI(activeMode);
+                dialog.dismiss();
+            });
         }
 
         dialog.show();

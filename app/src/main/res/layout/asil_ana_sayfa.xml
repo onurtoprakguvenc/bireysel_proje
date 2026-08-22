@@ -31,7 +31,19 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp">
 
-            <!-- 1. Sağ Buton Grubu (Yuvarlak Kapsüller) -->
+            <!-- 1. Sol Başlık Alanı -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:text="@string/notlarim"
+                android:textColor="#0F172A"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <!-- 2. Sağ Buton Grubu (Kompakt Kapsüller) -->
             <LinearLayout
                 android:id="@+id/headerActions"
                 android:layout_width="wrap_content"
@@ -41,12 +53,25 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Kahve Ismarlama / Bağış Butonu (Üst Bar Kapsülü) -->
+                <!-- Geri Dönüşüm Kutusu -->
+                <ImageButton
+                    android:id="@+id/btnTrashCan"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:contentDescription="Geri Dönüşüm"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_trash"
+                    app:tint="#64748B" />
+
+                <!-- Bağış Yap -->
                 <ImageButton
                     android:id="@+id/fabDonateCoffee"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="6dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="4dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#FEF3C7"
                     android:contentDescription="@string/bagis_yap"
@@ -54,16 +79,16 @@
                     android:src="@drawable/ic_coffe_support"
                     app:tint="#D97706" />
 
-                <!-- KÖPRÜ: Zihinsel Kütüphaneye Geçiş Butonu (Canlı Durum Noktalı) -->
+                <!-- Zihinsel Kütüphane -->
                 <FrameLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp">
+                    android:layout_marginEnd="4dp">
 
                     <ImageButton
                         android:id="@+id/btnLibraryBridge"
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
                         android:background="@drawable/bg_chip_inactive"
                         android:backgroundTint="#E0F2FE"
                         android:contentDescription="@string/kutuphane_koprusu"
@@ -71,10 +96,9 @@
                         android:src="@drawable/ic_brain"
                         app:tint="#0284C7" />
 
-                    <!-- Aktif Durum / Senkron Noktası -->
                     <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
+                        android:layout_width="7dp"
+                        android:layout_height="7dp"
                         android:layout_gravity="top|end"
                         android:layout_marginTop="2dp"
                         android:layout_marginEnd="2dp"
@@ -82,69 +106,17 @@
                         app:tint="#10B981" />
                 </FrameLayout>
 
-                <!-- Görünüm Değiştirme (Grid/List) -->
+                <!-- Grid / List Görünümü -->
                 <ImageButton
                     android:id="@+id/btnToggleLayout"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/duzeni_degistir"
                     android:padding="8dp"
                     android:src="@drawable/ic_grid"
                     app:tint="#64748B" />
-            </LinearLayout>
-
-            <!-- 2. Sol Başlık ve Sayaç Alanı -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="8dp"
-                android:layout_toStartOf="@id/headerActions"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/notlarim"
-                        android:textColor="#0F172A"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-
-                    <!-- Not Sayacı Rozeti (Örn: 4 Not) -->
-                    <TextView
-                        android:id="@+id/tvNoteCountBadge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:backgroundTint="#E0F2FE"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp"
-                        android:text="4 Not"
-                        android:textColor="#0284C7"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Alt Güncelleme / Bilgi Metni -->
-                <TextView
-                    android:id="@+id/tvNoteCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Son güncelleme bugün 12:43"
-                    android:textColor="#94A3B8"
-                    android:textSize="12sp" />
             </LinearLayout>
 
         </RelativeLayout>

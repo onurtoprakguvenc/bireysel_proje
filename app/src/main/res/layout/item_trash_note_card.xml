@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_settings_card"
+    android:backgroundTint="#FFFFFF"
+    android:elevation="1dp"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Not Başlığı -->
+        <TextView
+            android:id="@+id/tvTrashTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/tvRemainingDays"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/gecici_fikir_notu"
+            android:textColor="#0F172A"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Kalan Süre Rozeti (Örn: 6 gün kaldı) -->
+        <TextView
+            android:id="@+id/tvRemainingDays"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/bg_chip_inactive"
+            android:backgroundTint="#FEF3C7"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="@string/_6_g_n_kald"
+            android:textColor="#D97706"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <!-- Not İçerik Önizlemesi -->
+    <TextView
+        android:id="@+id/tvTrashContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="@string/bu_notun_suresi_doldugu_icin_geri_donusum_kutusuna_tasınd"
+        android:textColor="#64748B"
+        android:textSize="12sp" />
+
+    <!-- Çizgi Ayracı -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="12dp"
+        android:background="#F1F5F9" />
+
+    <!-- Alt Aksiyon Butonları -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvDeletedDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/silindi_d_n_14_20"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <!-- Geri Yükle Butonu -->
+        <TextView
+            android:id="@+id/btnRestoreNote"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_chip_inactive"
+            android:backgroundTint="#E0F2FE"
+            android:gravity="center"
+            android:paddingHorizontal="12dp"
+            android:text="@string/geri_yukle"
+            android:textColor="#0284C7"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <!-- Kalıcı Olarak Sil Butonu -->
+        <ImageButton
+            android:id="@+id/btnDeletePermanently"
+            android:layout_width="32dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_chip_inactive"
+            android:backgroundTint="#FEE2E2"
+            android:contentDescription="@string/app_name"
+            android:padding="6dp"
+            android:src="@drawable/ic_trash"
+            app:tint="#DC2626" />
+    </LinearLayout>
+
+</LinearLayout>

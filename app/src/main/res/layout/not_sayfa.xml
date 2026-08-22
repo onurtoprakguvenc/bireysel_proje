@@ -51,16 +51,6 @@
                 android:textColor="#0F172A"
                 android:textSize="16sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSaveStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/kaydedildi_12_43"
-                android:textColor="#10B981"
-                android:textSize="10sp"
-                android:textStyle="bold" />
         </LinearLayout>
 
         <ImageButton
@@ -281,6 +271,17 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/ic_lasso"
+                        app:tint="#64748B" />
+
+                    <!-- Geri Eklenen Şekil Çizme Butonu -->
+                    <ImageButton
+                        android:id="@+id/btnToolShapes"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/ic_shapes"
                         app:tint="#64748B" />
                 </LinearLayout>
 

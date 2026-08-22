@@ -398,6 +398,10 @@ public class DrawingView extends View {
     // 4. RENDER DÖNGÜSÜ
     // =========================================================================
 
+    // =========================================================================
+    // DÜZELTİLMİŞ RENDER DÖNGÜSÜ
+    // =========================================================================
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -410,12 +414,15 @@ public class DrawingView extends View {
             renderGrid(canvas);
         }
 
+        // 1. ÖNCE ŞEKİLLERİ ÇİZ
+        renderShapes(canvas);
+
+        // 2. SONRA KALEM VE SİLGİ DARBELERİNİ ÇİZ (Böylece silgi şeklin üstünü de temizler)
         for (StrokeItem stroke : strokes) {
             canvas.drawPath(stroke.path, stroke.paint);
         }
 
-        renderShapes(canvas);
-
+        // Aktif çizilen yol
         if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL &&
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
@@ -443,6 +450,31 @@ public class DrawingView extends View {
         }
 
         canvas.restore();
+    }
+
+    // =========================================================================
+    // DÜZELTİLMİŞ SİLGİ VE DARBE MANTIĞI
+    // =========================================================================
+
+
+
+    /**
+     * Silgi bir şeklin sınırlarına dokunduğunda şekli temizleyen metot
+     */
+    private void eraseShapesAt(float x, float y, float radius) {
+        RectF eraserRect = new RectF(x - radius, y - radius, x + radius, y + radius);
+        List<ShapeItem> toRemove = new ArrayList<>();
+
+        for (ShapeItem shape : shapes) {
+            if (RectF.intersects(shape.getBounds(), eraserRect)) {
+                toRemove.add(shape);
+            }
+        }
+
+        if (!toRemove.isEmpty()) {
+            shapes.removeAll(toRemove);
+            notifyChange();
+        }
     }
 
     private void renderGrid(Canvas canvas) {
@@ -1082,6 +1114,7 @@ public class DrawingView extends View {
             eraserY = y;
             activePath.lineTo(x, y);
             activePoints.add(new Point(x, y));
+
         } else if (currentToolMode == ToolMode.RECTANGLE) {
             activePath.reset();
             float left = Math.min(touchStartX, x);
@@ -1089,6 +1122,7 @@ public class DrawingView extends View {
             float right = Math.max(touchStartX, x);
             float bottom = Math.max(touchStartY, y);
             activePath.addRect(left, top, right, bottom, Path.Direction.CW);
+
         } else if (currentToolMode == ToolMode.SQUARE) {
             activePath.reset();
             float dx = x - touchStartX;
@@ -1099,6 +1133,7 @@ public class DrawingView extends View {
             float right = left + side;
             float bottom = top + side;
             activePath.addRect(left, top, right, bottom, Path.Direction.CW);
+
         } else if (currentToolMode == ToolMode.CIRCLE) {
             activePath.reset();
             float left = Math.min(touchStartX, x);
@@ -1106,28 +1141,20 @@ public class DrawingView extends View {
             float right = Math.max(touchStartX, x);
             float bottom = Math.max(touchStartY, y);
             activePath.addOval(new RectF(left, top, right, bottom), Path.Direction.CW);
+
         } else if (currentToolMode == ToolMode.LINE) {
             activePath.reset();
             activePath.moveTo(touchStartX, touchStartY);
             activePath.lineTo(x, y);
+
         } else {
             activePath.lineTo(x, y);
             activePoints.add(new Point(x, y));
         }
     }
 
-    private void finishStroke() {
-        if (currentToolMode == ToolMode.RECTANGLE || currentToolMode == ToolMode.SQUARE ||
-                currentToolMode == ToolMode.CIRCLE || currentToolMode == ToolMode.LINE) {
-            shapes.add(new ShapeItem(currentToolMode, touchStartX, touchStartY, lastMoveX, lastMoveY, currentColor, currentStrokeWidth));
-            undoneShapes.clear();
-            activePath = null;
-            activePaint = null;
-            activePoints = null;
-            notifyChange();
-            return;
-        }
 
+    private void finishStroke() {
         if (activePath == null) return;
 
         if (currentToolMode == ToolMode.ERASER) {
@@ -1138,7 +1165,16 @@ public class DrawingView extends View {
 
         undoneStrokes.clear();
         boolean isEraser = (currentToolMode == ToolMode.ERASER);
-        strokes.add(new StrokeItem(activePath, new Paint(activePaint), activePoints, activePaint.getColor(), activePaint.getStrokeWidth(), isEraser));
+
+        // Şekiller de dahil tüm çizimler tek bir birleşik Stroke katmanına aktarılır:
+        strokes.add(new StrokeItem(
+                activePath,
+                new Paint(activePaint),
+                activePoints != null ? activePoints : new ArrayList<>(),
+                activePaint.getColor(),
+                activePaint.getStrokeWidth(),
+                isEraser
+        ));
 
         activePath = null;
         activePaint = null;

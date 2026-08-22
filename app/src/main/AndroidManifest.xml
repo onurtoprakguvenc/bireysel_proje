@@ -18,6 +18,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".model.GeriDonusumActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".model.CrashActivity"
             android:exported="false"
             android:process=":crash_process"

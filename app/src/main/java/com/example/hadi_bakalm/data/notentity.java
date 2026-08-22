@@ -22,6 +22,10 @@ public class notentity {
     public String timestamp;
     public boolean isPinned;
 
+    // Çöp kutusu ve silinme takip alanları
+    public boolean isDeleted = false;
+    public long deletedTimestamp = 0L;
+
     public String imagePath;
     public String drawingBlobPath;
     public String voiceNotePath;

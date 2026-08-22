@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText etSearch;
     private ImageButton btnLibraryBridge;
     private ImageButton btnToggleLayout;
+    private ImageButton btnTrashCan; // Global olarak tanımlandı
     private FloatingActionButton fabAddNote;
     private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
@@ -66,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
 
     // Room Veritabanı
     private notdao noteDao;
+
+    private long selectedEphemeralTimestamp = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,9 +117,9 @@ public class MainActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
+        btnTrashCan = findViewById(R.id.btnTrashCan);
         fabAddNote = findViewById(R.id.fabAddNote);
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
-        tvNoteCount = findViewById(R.id.tvNoteCount);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
     }
 
@@ -167,10 +170,11 @@ public class MainActivity extends AppCompatActivity {
         if (noteDao == null) return;
 
         DB_EXECUTOR.execute(() -> {
-            noteDao.deleteNoteById(noteId);
+            // Doğrudan silmek yerine Çöp Kutusuna taşı:
+            noteDao.moveToTrash(noteId, System.currentTimeMillis());
 
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Not silindi", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Not çöp kutusuna taşındı", Toast.LENGTH_SHORT).show();
                 loadNotesFromDatabase();
                 loadDynamicCategoryChips();
             });
@@ -197,6 +201,14 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        if (btnTrashCan != null) {
+            btnTrashCan.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
         if (fabAddNote != null) {
             fabAddNote.setOnClickListener(v -> showCustomNoteCreationDialog());
         }
@@ -210,9 +222,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * not_ekleme.xml tasarımını tetikleyen özel diyalog
-     */
     @SuppressLint("InflateParams")
     private void showCustomNoteCreationDialog() {
         if (isFinishing() || isDestroyed()) return;
@@ -255,8 +264,8 @@ public class MainActivity extends AppCompatActivity {
         if (cardCategoryEphemeral != null) {
             cardCategoryEphemeral.setOnClickListener(v -> {
                 String title = etNewNoteTitle != null ? etNewNoteTitle.getText().toString().trim() : "";
-                openNoteEditor(title, "Geçici");
                 dialog.dismiss();
+                showEphemeralDurationDialog(title);
             });
         }
 
@@ -273,15 +282,6 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
                 String title = etNewNoteTitle != null ? etNewNoteTitle.getText().toString().trim() : "";
                 showCustomCategoryInputDialog(title);
-            });
-        }
-
-        // showCustomNoteCreationDialog içerisindeki cardCategoryEphemeral listener'ı:
-        if (cardCategoryEphemeral != null) {
-            cardCategoryEphemeral.setOnClickListener(v -> {
-                String title = etNewNoteTitle != null ? etNewNoteTitle.getText().toString().trim() : "";
-                dialog.dismiss();
-                showEphemeralDurationDialog(title);
             });
         }
 
@@ -313,6 +313,111 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("EXTRA_NOTE_TITLE", title);
         }
         intent.putExtra("EXTRA_NOTE_CATEGORY", category);
+        startActivity(intent);
+    }
+
+    @SuppressLint({"SetTextI18n", "InflateParams"})
+    private void showEphemeralDurationDialog(String noteTitle) {
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_gecici_sure_secimi, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        TextView txtSelectedExpiryInfo = dialogView.findViewById(R.id.txtSelectedExpiryInfo);
+        TextView btnQuick1Hour = dialogView.findViewById(R.id.btnQuick1Hour);
+        TextView btnQuick24Hours = dialogView.findViewById(R.id.btnQuick24Hours);
+        TextView btnQuick3Days = dialogView.findViewById(R.id.btnQuick3Days);
+        TextView btnCustomDateTime = dialogView.findViewById(R.id.btnCustomDateTime);
+
+        TextView btnCancelExpiry = dialogView.findViewById(R.id.btnCancelExpiry);
+        TextView btnConfirmExpiry = dialogView.findViewById(R.id.btnConfirmExpiry);
+
+        selectedEphemeralTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
+
+        btnQuick1Hour.setOnClickListener(v -> {
+            selectedEphemeralTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
+            setDurationTabActive(btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
+            txtSelectedExpiryInfo.setText("Süre: 1 Saat sonra geri dönüşüme taşınacak");
+        });
+
+        btnQuick24Hours.setOnClickListener(v -> {
+            selectedEphemeralTimestamp = System.currentTimeMillis() + (24 * 60 * 60 * 1000L);
+            setDurationTabActive(btnQuick24Hours, btnQuick1Hour, btnQuick3Days);
+            txtSelectedExpiryInfo.setText("Süre: 24 Saat sonra geri dönüşüme taşınacak");
+        });
+
+        btnQuick3Days.setOnClickListener(v -> {
+            selectedEphemeralTimestamp = System.currentTimeMillis() + (3 * 24 * 60 * 60 * 1000L);
+            setDurationTabActive(btnQuick3Days, btnQuick1Hour, btnQuick24Hours);
+            txtSelectedExpiryInfo.setText("Süre: 3 Gün sonra geri dönüşüme taşınacak");
+        });
+
+        btnCustomDateTime.setOnClickListener(v -> {
+            Calendar takvim = Calendar.getInstance();
+            DatePickerDialog datePicker = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+                takvim.set(Calendar.YEAR, year);
+                takvim.set(Calendar.MONTH, month);
+                takvim.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+                TimePickerDialog timePicker = new TimePickerDialog(this, (tView, hourOfDay, minute) -> {
+                    takvim.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    takvim.set(Calendar.MINUTE, minute);
+                    takvim.set(Calendar.SECOND, 0);
+
+                    long chosen = takvim.getTimeInMillis();
+                    if (chosen > System.currentTimeMillis()) {
+                        selectedEphemeralTimestamp = chosen;
+                        resetDurationTabs(btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
+                        txtSelectedExpiryInfo.setText("Bitiş: " + dayOfMonth + "/" + (month + 1) + "/" + year + " " + String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute));
+                    } else {
+                        Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
+                    }
+                }, takvim.get(Calendar.HOUR_OF_DAY), takvim.get(Calendar.MINUTE), true);
+                timePicker.show();
+            }, takvim.get(Calendar.YEAR), takvim.get(Calendar.MONTH), takvim.get(Calendar.DAY_OF_MONTH));
+            datePicker.show();
+        });
+
+        btnCancelExpiry.setOnClickListener(v -> dialog.dismiss());
+
+        btnConfirmExpiry.setOnClickListener(v -> {
+            dialog.dismiss();
+            openEphemeralNoteEditor(noteTitle, selectedEphemeralTimestamp);
+        });
+
+        dialog.show();
+    }
+
+    private void setDurationTabActive(TextView active, TextView... inactives) {
+        active.setBackgroundResource(R.drawable.bg_black_pill);
+        active.setTextColor(Color.WHITE);
+        for (TextView in : inactives) {
+            in.setBackgroundResource(R.drawable.bg_chip_inactive);
+            in.setTextColor(Color.parseColor("#475569"));
+        }
+    }
+
+    private void resetDurationTabs(TextView... tabs) {
+        for (TextView t : tabs) {
+            t.setBackgroundResource(R.drawable.bg_chip_inactive);
+            t.setTextColor(Color.parseColor("#475569"));
+        }
+    }
+
+    private void openEphemeralNoteEditor(String title, long expireTimestamp) {
+        Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
+        if (!title.isEmpty()) {
+            intent.putExtra("EXTRA_NOTE_TITLE", title);
+        }
+        intent.putExtra("EXTRA_NOTE_CATEGORY", "Geçici");
+        intent.putExtra("EXTRA_IS_EPHEMERAL", true);
+        intent.putExtra("EXTRA_EXPIRE_TIMESTAMP", expireTimestamp);
         startActivity(intent);
     }
 
@@ -483,113 +588,5 @@ public class MainActivity extends AppCompatActivity {
         if (tvNoteCount != null) {
             tvNoteCount.setText(String.format(TR_LOCALE, "Toplam %d kayıtlı not", count));
         }
-    }
-
-    private long selectedEphemeralTimestamp = 0L;
-
-    @SuppressLint({"SetTextI18n", "InflateParams"})
-    private void showEphemeralDurationDialog(String noteTitle) {
-        if (isFinishing() || isDestroyed()) return;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_gecici_sure_secimi, null);
-        builder.setView(dialogView);
-
-        AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        TextView txtSelectedExpiryInfo = dialogView.findViewById(R.id.txtSelectedExpiryInfo);
-        TextView btnQuick1Hour = dialogView.findViewById(R.id.btnQuick1Hour);
-        TextView btnQuick24Hours = dialogView.findViewById(R.id.btnQuick24Hours);
-        TextView btnQuick3Days = dialogView.findViewById(R.id.btnQuick3Days);
-        TextView btnCustomDateTime = dialogView.findViewById(R.id.btnCustomDateTime);
-
-        TextView btnCancelExpiry = dialogView.findViewById(R.id.btnCancelExpiry);
-        TextView btnConfirmExpiry = dialogView.findViewById(R.id.btnConfirmExpiry);
-
-        // Varsayılan: 1 Saat Sonrası
-        selectedEphemeralTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
-
-        btnQuick1Hour.setOnClickListener(v -> {
-            selectedEphemeralTimestamp = System.currentTimeMillis() + (60 * 60 * 1000L);
-            setDurationTabActive(btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
-            txtSelectedExpiryInfo.setText("Süre: 1 Saat sonra geri dönüşüme taşınacak");
-        });
-
-        btnQuick24Hours.setOnClickListener(v -> {
-            selectedEphemeralTimestamp = System.currentTimeMillis() + (24 * 60 * 60 * 1000L);
-            setDurationTabActive(btnQuick24Hours, btnQuick1Hour, btnQuick3Days);
-            txtSelectedExpiryInfo.setText("Süre: 24 Saat sonra geri dönüşüme taşınacak");
-        });
-
-        btnQuick3Days.setOnClickListener(v -> {
-            selectedEphemeralTimestamp = System.currentTimeMillis() + (3 * 24 * 60 * 60 * 1000L);
-            setDurationTabActive(btnQuick3Days, btnQuick1Hour, btnQuick24Hours);
-            txtSelectedExpiryInfo.setText("Süre: 3 Gün sonra geri dönüşüme taşınacak");
-        });
-
-        btnCustomDateTime.setOnClickListener(v -> {
-            Calendar takvim = Calendar.getInstance();
-            DatePickerDialog datePicker = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-                takvim.set(Calendar.YEAR, year);
-                takvim.set(Calendar.MONTH, month);
-                takvim.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-
-                TimePickerDialog timePicker = new TimePickerDialog(this, (tView, hourOfDay, minute) -> {
-                    takvim.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    takvim.set(Calendar.MINUTE, minute);
-                    takvim.set(Calendar.SECOND, 0);
-
-                    long chosen = takvim.getTimeInMillis();
-                    if (chosen > System.currentTimeMillis()) {
-                        selectedEphemeralTimestamp = chosen;
-                        resetDurationTabs(btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
-                        txtSelectedExpiryInfo.setText("Bitiş: " + dayOfMonth + "/" + (month + 1) + "/" + year + " " + String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute));
-                    } else {
-                        Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
-                    }
-                }, takvim.get(Calendar.HOUR_OF_DAY), takvim.get(Calendar.MINUTE), true);
-                timePicker.show();
-            }, takvim.get(Calendar.YEAR), takvim.get(Calendar.MONTH), takvim.get(Calendar.DAY_OF_MONTH));
-            datePicker.show();
-        });
-
-        btnCancelExpiry.setOnClickListener(v -> dialog.dismiss());
-
-        btnConfirmExpiry.setOnClickListener(v -> {
-            dialog.dismiss();
-            openEphemeralNoteEditor(noteTitle, selectedEphemeralTimestamp);
-        });
-
-        dialog.show();
-    }
-
-    private void setDurationTabActive(TextView active, TextView... inactives) {
-        active.setBackgroundResource(R.drawable.bg_black_pill);
-        active.setTextColor(Color.WHITE);
-        for (TextView in : inactives) {
-            in.setBackgroundResource(R.drawable.bg_chip_inactive);
-            in.setTextColor(Color.parseColor("#475569"));
-        }
-    }
-
-    private void resetDurationTabs(TextView... tabs) {
-        for (TextView t : tabs) {
-            t.setBackgroundResource(R.drawable.bg_chip_inactive);
-            t.setTextColor(Color.parseColor("#475569"));
-        }
-    }
-
-    private void openEphemeralNoteEditor(String title, long expireTimestamp) {
-        Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
-        if (!title.isEmpty()) {
-            intent.putExtra("EXTRA_NOTE_TITLE", title);
-        }
-        intent.putExtra("EXTRA_NOTE_CATEGORY", "Geçici");
-        intent.putExtra("EXTRA_IS_EPHEMERAL", true);
-        intent.putExtra("EXTRA_EXPIRE_TIMESTAMP", expireTimestamp);
-        startActivity(intent);
     }
 }
