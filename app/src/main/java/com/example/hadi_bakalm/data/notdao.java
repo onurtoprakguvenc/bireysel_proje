@@ -39,6 +39,10 @@ public interface notdao {
     @Delete
     void deleteNote(notentity note);
 
+    // Sabitleme durumunu tek bir sorguyla güncelleme (EKLENEN METOT)
+    @Query("UPDATE user_notes SET isPinned = :isPinned WHERE id = :id")
+    void updatePinStatus(int id, boolean isPinned);
+
     // Nesne oluşturmadan doğrudan ID ile silme
     @Query("DELETE FROM user_notes WHERE id = :id")
     void deleteNoteById(int id);
@@ -51,15 +55,12 @@ public interface notdao {
     // =========================================================================
 
     // Süresi dolan geçici notları Geri Dönüşüm Kutusuna taşı
-    // Süresi dolan geçici notları Geri Dönüşüm Kutusuna taşı
     @Query("UPDATE user_notes SET isInTrash = 1, trashedTimestamp = :currentTime WHERE isEphemeral = 1 AND expireTimestamp > 0 AND expireTimestamp <= :currentTime AND isInTrash = 0")
     void moveExpiredNotesToTrash(long currentTime);
 
     // Çöp kutusunda 7 günden fazla beklemiş notları kalıcı olarak tamamen sil
     @Query("DELETE FROM user_notes WHERE isInTrash = 1 AND trashedTimestamp <= :thresholdTime")
     void purgeOldDeletedNotes(long thresholdTime);
-
-
 
     // Geri Dönüşüm Kutusu ekranı için çöpteki notları listeleme
     @Query("SELECT * FROM user_notes WHERE isInTrash = 1 ORDER BY trashedTimestamp DESC")

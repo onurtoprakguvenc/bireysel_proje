@@ -35,7 +35,9 @@ public class DrawingView extends View {
 
     private static final String TAG = "DrawingView";
 
-    public enum ToolMode { PEN, HIGHLIGHTER, ERASER, SCROLL, SELECT, LASSO, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT }
+    public enum ToolMode {PEN, HIGHLIGHTER, ERASER, HAND, SELECT, LASSO, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT}
+
+    public enum PageGridMode {BLANK, GRID, HORIZONTAL_LINES, VERTICAL_LINES}
 
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
@@ -50,12 +52,16 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 1. SAHNE NESNELERİ (SCENE GRAPH ITEMS)
+    // 1. SAHNE NESNELERİ
     // =========================================================================
 
     public static class Point {
         public float x, y;
-        public Point(float x, float y) { this.x = x; this.y = y; }
+
+        public Point(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
     }
 
     public static class StrokeItem {
@@ -101,31 +107,27 @@ public class DrawingView extends View {
         }
 
         public RectF getExactGeometry() {
+            float left = Math.min(startX, endX);
+            float top = Math.min(startY, endY);
+            float right = Math.max(startX, endX);
+            float bottom = Math.max(startY, endY);
+
             if (shapeType == ToolMode.SQUARE) {
-                float dx = endX - startX;
-                float dy = endY - startY;
-                float side = Math.max(Math.abs(dx), Math.abs(dy));
-                float left = (dx < 0) ? startX - side : startX;
-                float top = (dy < 0) ? startY - side : startY;
+                float side = Math.max(right - left, bottom - top);
                 return new RectF(left, top, left + side, top + side);
-            } else {
-                float left = Math.min(startX, endX);
-                float top = Math.min(startY, endY);
-                float right = Math.max(startX, endX);
-                float bottom = Math.max(startY, endY);
-                return new RectF(left, top, right, bottom);
             }
+            return new RectF(left, top, right, bottom);
         }
 
         public RectF getBounds() {
             RectF geo = getExactGeometry();
-            float pad = Math.max(strokeWidth / 2f, 15f);
+            float pad = Math.max(strokeWidth, 24f);
             return new RectF(geo.left - pad, geo.top - pad, geo.right + pad, geo.bottom + pad);
         }
 
         public RectF getResizeHandle() {
             RectF geo = getExactGeometry();
-            return new RectF(geo.right - 25f, geo.bottom - 25f, geo.right + 25f, geo.bottom + 25f);
+            return new RectF(geo.right - 30f, geo.bottom - 30f, geo.right + 30f, geo.bottom + 30f);
         }
 
         public void offset(float dx, float dy) {
@@ -206,6 +208,7 @@ public class DrawingView extends View {
     public static class TableCell {
         public int row, col;
         public String text;
+
         public TableCell(int row, int col, String text) {
             this.row = row;
             this.col = col;
@@ -264,6 +267,7 @@ public class DrawingView extends View {
     public static class TableCellClickResult {
         public TableItem table;
         public int row, col;
+
         public TableCellClickResult(TableItem table, int row, int col) {
             this.table = table;
             this.row = row;
@@ -272,18 +276,20 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 2. TUVAL VERİ HAVUZU
+    // 2. TUVAL VERİ HAVUZU & İŞLEM GEÇMİŞİ
     // =========================================================================
 
     private final List<StrokeItem> strokes = new ArrayList<>();
-    private final List<StrokeItem> undoneStrokes = new ArrayList<>();
     private final List<ShapeItem> shapes = new ArrayList<>();
-    private final List<ShapeItem> undoneShapes = new ArrayList<>();
     private final List<ImageItem> images = new ArrayList<>();
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
-    private boolean isGridEnabled = false;
+    // Kronolojik geri/ileri alma geçmiş kuyruğu
+    private final List<Object> historyStack = new ArrayList<>();
+    private final List<Object> redoStack = new ArrayList<>();
+
+    private PageGridMode currentPageGridMode = PageGridMode.BLANK;
 
     private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
@@ -294,6 +300,7 @@ public class DrawingView extends View {
     private final RectF groupBounds = new RectF();
     private Path lassoPath = null;
     private boolean isDraggingGroup = false;
+    private boolean isResizingGroup = false;
     private float groupDragStartX, groupDragStartY;
 
     private int currentColor = 0xFF09090B;
@@ -301,7 +308,9 @@ public class DrawingView extends View {
     private ToolMode currentToolMode = ToolMode.PEN;
 
     private float scaleFactor = 1.0f;
+    private float offsetX = 0f;
     private float offsetY = 0f;
+    private float lastTouchX;
     private float lastTouchY;
     private ScaleGestureDetector scaleGestureDetector;
 
@@ -398,32 +407,22 @@ public class DrawingView extends View {
     // 4. RENDER DÖNGÜSÜ
     // =========================================================================
 
-    // =========================================================================
-    // DÜZELTİLMİŞ RENDER DÖNGÜSÜ
-    // =========================================================================
-
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
-        canvas.translate(0, offsetY);
+        canvas.translate(offsetX, offsetY);
 
-        if (isGridEnabled) {
-            renderGrid(canvas);
-        }
-
-        // 1. ÖNCE ŞEKİLLERİ ÇİZ
+        renderPageBackgroundGuides(canvas);
         renderShapes(canvas);
 
-        // 2. SONRA KALEM VE SİLGİ DARBELERİNİ ÇİZ (Böylece silgi şeklin üstünü de temizler)
         for (StrokeItem stroke : strokes) {
             canvas.drawPath(stroke.path, stroke.paint);
         }
 
-        // Aktif çizilen yol
-        if (activePath != null && activePaint != null && currentToolMode != ToolMode.SCROLL &&
+        if (activePath != null && activePaint != null && currentToolMode != ToolMode.HAND &&
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
         }
@@ -452,42 +451,28 @@ public class DrawingView extends View {
         canvas.restore();
     }
 
-    // =========================================================================
-    // DÜZELTİLMİŞ SİLGİ VE DARBE MANTIĞI
-    // =========================================================================
+    private void renderPageBackgroundGuides(Canvas canvas) {
+        if (currentPageGridMode == PageGridMode.BLANK) return;
 
-
-
-    /**
-     * Silgi bir şeklin sınırlarına dokunduğunda şekli temizleyen metot
-     */
-    private void eraseShapesAt(float x, float y, float radius) {
-        RectF eraserRect = new RectF(x - radius, y - radius, x + radius, y + radius);
-        List<ShapeItem> toRemove = new ArrayList<>();
-
-        for (ShapeItem shape : shapes) {
-            if (RectF.intersects(shape.getBounds(), eraserRect)) {
-                toRemove.add(shape);
-            }
-        }
-
-        if (!toRemove.isEmpty()) {
-            shapes.removeAll(toRemove);
-            notifyChange();
-        }
-    }
-
-    private void renderGrid(Canvas canvas) {
-        float gridSize = 60f;
-        float viewWidth = getWidth() / scaleFactor;
-        float viewHeight = (getHeight() / scaleFactor) - offsetY;
+        float lineSpacing = 64f;
+        float startX = -offsetX;
         float startY = -offsetY;
 
-        for (float x = 0; x < viewWidth; x += gridSize) {
-            canvas.drawLine(x, startY, x, startY + (getHeight() / scaleFactor), gridPaint);
-        }
-        for (float y = startY - (startY % gridSize); y < startY + (getHeight() / scaleFactor); y += gridSize) {
-            canvas.drawLine(0, y, viewWidth, y, gridPaint);
+        if (currentPageGridMode == PageGridMode.GRID) {
+            for (float x = startX - (startX % lineSpacing); x < startX + (getWidth() / scaleFactor); x += lineSpacing) {
+                canvas.drawLine(x, startY, x, startY + (getHeight() / scaleFactor), gridPaint);
+            }
+            for (float y = startY - (startY % lineSpacing); y < startY + (getHeight() / scaleFactor); y += lineSpacing) {
+                canvas.drawLine(startX, y, startX + (getWidth() / scaleFactor), y, gridPaint);
+            }
+        } else if (currentPageGridMode == PageGridMode.HORIZONTAL_LINES) {
+            for (float y = startY - (startY % lineSpacing); y < startY + (getHeight() / scaleFactor); y += lineSpacing) {
+                canvas.drawLine(startX, y, startX + (getWidth() / scaleFactor), y, gridPaint);
+            }
+        } else if (currentPageGridMode == PageGridMode.VERTICAL_LINES) {
+            for (float x = startX - (startX % lineSpacing); x < startX + (getWidth() / scaleFactor); x += lineSpacing) {
+                canvas.drawLine(x, startY, x, startY + (getHeight() / scaleFactor), gridPaint);
+            }
         }
     }
 
@@ -572,68 +557,74 @@ public class DrawingView extends View {
         }
     }
 
+    private RectF getGroupResizeHandle() {
+        return new RectF(groupBounds.right - 30f, groupBounds.bottom - 30f, groupBounds.right + 30f, groupBounds.bottom + 30f);
+    }
+
     private void renderGroupSelectionAndMenu(Canvas canvas) {
         canvas.drawRect(groupBounds, selectionBoxPaint);
+        canvas.drawCircle(groupBounds.right, groupBounds.bottom, 16f, handlePaint);
 
         float menuW = 120f;
-        float menuH = 64f;
+        float menuH = 56f;
         float menuX = groupBounds.left + (groupBounds.width() - menuW) / 2f;
-        float menuY = groupBounds.top - menuH - 20f;
+        float menuY = groupBounds.top - menuH - 16f;
 
         if (menuY < -offsetY + 10f) {
-            menuY = groupBounds.bottom + 20f;
+            menuY = groupBounds.bottom + 16f;
         }
 
         menuSizeDownBounds.setEmpty();
         menuSizeUpBounds.setEmpty();
         menuDeleteBounds.set(menuX, menuY, menuX + menuW, menuY + menuH);
-        canvas.drawRoundRect(menuDeleteBounds, 32f, 32f, menuBgPaint);
-        canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 40f, menuTextPaint);
+        canvas.drawRoundRect(menuDeleteBounds, 28f, 28f, menuBgPaint);
+        canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 36f, menuTextPaint);
     }
 
     private void renderSelectionAndFloatingMenu(Canvas canvas) {
         RectF bounds = new RectF();
         boolean isText = (selectedItem instanceof TextItem);
 
-        if (selectedItem instanceof ImageItem) {
+        if (selectedItem instanceof ShapeItem) {
+            ShapeItem s = (ShapeItem) selectedItem;
+            bounds = s.getExactGeometry();
+            canvas.drawCircle(bounds.right, bounds.bottom, 16f, handlePaint);
+        } else if (selectedItem instanceof ImageItem) {
             bounds = ((ImageItem) selectedItem).getBounds();
-            canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
+            canvas.drawCircle(bounds.right, bounds.bottom, 16f, handlePaint);
         } else if (selectedItem instanceof TextItem) {
             TextItem t = (TextItem) selectedItem;
             bounds = t.getBounds(freeTextPaint);
-        } else if (selectedItem instanceof ShapeItem) {
-            bounds = ((ShapeItem) selectedItem).getBounds();
-            canvas.drawCircle(bounds.right, bounds.bottom, 20f, handlePaint);
         }
 
         canvas.drawRect(bounds, selectionBoxPaint);
 
         float menuW = isText ? 240f : 120f;
-        float menuH = 64f;
+        float menuH = 56f;
         float menuX = bounds.left + (bounds.width() - menuW) / 2f;
-        float menuY = bounds.top - menuH - 20f;
+        float menuY = bounds.top - menuH - 16f;
 
         if (menuY < -offsetY + 10f) {
-            menuY = bounds.bottom + 20f;
+            menuY = bounds.bottom + 16f;
         }
 
         RectF menuRect = new RectF(menuX, menuY, menuX + menuW, menuY + menuH);
-        canvas.drawRoundRect(menuRect, 32f, 32f, menuBgPaint);
+        canvas.drawRoundRect(menuRect, 28f, 28f, menuBgPaint);
 
         if (isText) {
             menuSizeDownBounds.set(menuX, menuY, menuX + 80f, menuY + menuH);
-            canvas.drawText("A-", menuX + 40f, menuY + 40f, menuTextPaint);
+            canvas.drawText("A-", menuX + 40f, menuY + 36f, menuTextPaint);
 
             menuSizeUpBounds.set(menuX + 80f, menuY, menuX + 160f, menuY + menuH);
-            canvas.drawText("A+", menuX + 120f, menuY + 40f, menuTextPaint);
+            canvas.drawText("A+", menuX + 120f, menuY + 36f, menuTextPaint);
 
             menuDeleteBounds.set(menuX + 160f, menuY, menuX + 240f, menuY + menuH);
-            canvas.drawText("Sil", menuX + 200f, menuY + 40f, menuTextPaint);
+            canvas.drawText("Sil", menuX + 200f, menuY + 36f, menuTextPaint);
         } else {
             menuSizeDownBounds.setEmpty();
             menuSizeUpBounds.setEmpty();
             menuDeleteBounds.set(menuX, menuY, menuX + menuW, menuY + menuH);
-            canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 40f, menuTextPaint);
+            canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 36f, menuTextPaint);
         }
     }
 
@@ -663,7 +654,7 @@ public class DrawingView extends View {
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         scaleGestureDetector.onTouchEvent(event);
 
-        if (event.getPointerCount() > 1 || currentToolMode == ToolMode.SCROLL) {
+        if (event.getPointerCount() > 1 || currentToolMode == ToolMode.HAND) {
             handleScrollTouch(event);
             return true;
         }
@@ -672,7 +663,7 @@ public class DrawingView extends View {
             return false;
         }
 
-        float touchX = event.getX() / scaleFactor;
+        float touchX = (event.getX() / scaleFactor) - offsetX;
         float touchY = (event.getY() / scaleFactor) - offsetY;
 
         switch (event.getAction()) {
@@ -749,6 +740,33 @@ public class DrawingView extends View {
         return true;
     }
 
+    private void handleScrollTouch(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                lastTouchX = event.getX();
+                lastTouchY = event.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (!scaleGestureDetector.isInProgress()) {
+                    float newX = event.getX();
+                    float newY = event.getY();
+                    float dx = (newX - lastTouchX) / scaleFactor;
+                    float dy = (newY - lastTouchY) / scaleFactor;
+
+                    offsetX += dx;
+                    offsetY += dy;
+
+                    if (offsetY > 0) offsetY = 0;
+
+                    lastTouchX = newX;
+                    lastTouchY = newY;
+                    invalidate();
+                }
+                break;
+        }
+    }
+
     private void handleSelectDown(float x, float y) {
         selectedGroup.clear();
         groupBounds.setEmpty();
@@ -758,6 +776,7 @@ public class DrawingView extends View {
                 if (selectedItem instanceof ImageItem) images.remove((ImageItem) selectedItem);
                 else if (selectedItem instanceof TextItem) texts.remove((TextItem) selectedItem);
                 else if (selectedItem instanceof ShapeItem) shapes.remove((ShapeItem) selectedItem);
+                historyStack.remove(selectedItem);
                 selectedItem = null;
                 notifyChange();
                 invalidate();
@@ -778,21 +797,19 @@ public class DrawingView extends View {
                     return;
                 }
             }
-        }
 
-        if (selectedItem instanceof ImageItem) {
-            ImageItem img = (ImageItem) selectedItem;
-            if (img.getResizeHandle().contains(x, y)) {
-                isResizingImage = true;
-                return;
-            }
-        }
-
-        if (selectedItem instanceof ShapeItem) {
-            ShapeItem s = (ShapeItem) selectedItem;
-            if (s.getResizeHandle().contains(x, y)) {
-                isResizingImage = true;
-                return;
+            if (selectedItem instanceof ShapeItem) {
+                ShapeItem s = (ShapeItem) selectedItem;
+                if (s.getResizeHandle().contains(x, y)) {
+                    isResizingImage = true;
+                    return;
+                }
+            } else if (selectedItem instanceof ImageItem) {
+                ImageItem img = (ImageItem) selectedItem;
+                if (img.getResizeHandle().contains(x, y)) {
+                    isResizingImage = true;
+                    return;
+                }
             }
         }
 
@@ -839,17 +856,17 @@ public class DrawingView extends View {
 
     private void handleSelectMove(float x, float y) {
         if (isResizingImage && selectedItem != null) {
-            if (selectedItem instanceof ImageItem) {
+            if (selectedItem instanceof ShapeItem) {
+                ShapeItem s = (ShapeItem) selectedItem;
+                s.endX = x;
+                s.endY = y;
+                invalidate();
+            } else if (selectedItem instanceof ImageItem) {
                 ImageItem img = (ImageItem) selectedItem;
                 float newW = Math.max(80f, x - img.x);
                 float ratio = (float) img.bitmap.getHeight() / (float) img.bitmap.getWidth();
                 img.width = newW;
                 img.height = newW * ratio;
-                invalidate();
-            } else if (selectedItem instanceof ShapeItem) {
-                ShapeItem s = (ShapeItem) selectedItem;
-                s.endX = x;
-                s.endY = y;
                 invalidate();
             }
         } else if (isDraggingObject && selectedItem != null) {
@@ -892,11 +909,19 @@ public class DrawingView extends View {
                     else if (obj instanceof ImageItem) images.remove((ImageItem) obj);
                     else if (obj instanceof TextItem) texts.remove((TextItem) obj);
                     else if (obj instanceof TableItem) tables.remove((TableItem) obj);
+                    historyStack.remove(obj);
                 }
                 selectedGroup.clear();
                 groupBounds.setEmpty();
                 notifyChange();
                 invalidate();
+                return;
+            }
+
+            if (getGroupResizeHandle().contains(x, y)) {
+                isResizingGroup = true;
+                groupDragStartX = x;
+                groupDragStartY = y;
                 return;
             }
 
@@ -917,6 +942,51 @@ public class DrawingView extends View {
     }
 
     private void handleLassoMove(float x, float y) {
+        if (isResizingGroup && !selectedGroup.isEmpty()) {
+            float oldW = groupBounds.width();
+            float oldH = groupBounds.height();
+            if (oldW > 10f && oldH > 10f) {
+                float scaleX = (x - groupBounds.left) / oldW;
+                float scaleY = (y - groupBounds.top) / oldH;
+                float factor = Math.max(0.2f, Math.min(scaleX, scaleY));
+
+                float pivotX = groupBounds.left;
+                float pivotY = groupBounds.top;
+
+                for (Object obj : selectedGroup) {
+                    if (obj instanceof StrokeItem) {
+                        StrokeItem stroke = (StrokeItem) obj;
+                        for (Point p : stroke.points) {
+                            p.x = pivotX + (p.x - pivotX) * factor;
+                            p.y = pivotY + (p.y - pivotY) * factor;
+                        }
+                        Path newPath = new Path();
+                        for (int i = 0; i < stroke.points.size(); i++) {
+                            Point p = stroke.points.get(i);
+                            if (i == 0) newPath.moveTo(p.x, p.y);
+                            else newPath.lineTo(p.x, p.y);
+                        }
+                        stroke.path = newPath;
+                    } else if (obj instanceof ShapeItem) {
+                        ShapeItem s = (ShapeItem) obj;
+                        s.startX = pivotX + (s.startX - pivotX) * factor;
+                        s.startY = pivotY + (s.startY - pivotY) * factor;
+                        s.endX = pivotX + (s.endX - pivotX) * factor;
+                        s.endY = pivotY + (s.endY - pivotY) * factor;
+                    } else if (obj instanceof ImageItem) {
+                        ImageItem img = (ImageItem) obj;
+                        img.x = pivotX + (img.x - pivotX) * factor;
+                        img.y = pivotY + (img.y - pivotY) * factor;
+                        img.width *= factor;
+                        img.height *= factor;
+                    }
+                }
+                calculateGroupBounds();
+            }
+            invalidate();
+            return;
+        }
+
         if (isDraggingGroup) {
             float dx = x - groupDragStartX;
             float dy = y - groupDragStartY;
@@ -943,8 +1013,9 @@ public class DrawingView extends View {
     }
 
     private void handleLassoUp() {
-        if (isDraggingGroup) {
+        if (isDraggingGroup || isResizingGroup) {
             isDraggingGroup = false;
+            isResizingGroup = false;
             notifyChange();
             return;
         }
@@ -1056,25 +1127,6 @@ public class DrawingView extends View {
         groupBounds.set(minX - 16f, minY - 16f, maxX + 16f, maxY + 16f);
     }
 
-    private void handleScrollTouch(MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN:
-                lastTouchY = event.getY();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (!scaleGestureDetector.isInProgress()) {
-                    float newY = event.getY();
-                    float dy = (newY - lastTouchY) / scaleFactor;
-                    offsetY += dy;
-                    if (offsetY > 0) offsetY = 0;
-                    lastTouchY = newY;
-                    invalidate();
-                }
-                break;
-        }
-    }
-
     private void startStroke(float x, float y) {
         activePath = new Path();
         activePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -1153,7 +1205,6 @@ public class DrawingView extends View {
         }
     }
 
-
     private void finishStroke() {
         if (activePath == null) return;
 
@@ -1163,18 +1214,30 @@ public class DrawingView extends View {
             eraserY = -1f;
         }
 
-        undoneStrokes.clear();
-        boolean isEraser = (currentToolMode == ToolMode.ERASER);
+        redoStack.clear();
 
-        // Şekiller de dahil tüm çizimler tek bir birleşik Stroke katmanına aktarılır:
-        strokes.add(new StrokeItem(
-                activePath,
-                new Paint(activePaint),
-                activePoints != null ? activePoints : new ArrayList<>(),
-                activePaint.getColor(),
-                activePaint.getStrokeWidth(),
-                isEraser
-        ));
+        boolean isShape = (currentToolMode == ToolMode.RECTANGLE ||
+                currentToolMode == ToolMode.SQUARE ||
+                currentToolMode == ToolMode.CIRCLE ||
+                currentToolMode == ToolMode.LINE);
+
+        if (isShape) {
+            ShapeItem newShape = new ShapeItem(currentToolMode, touchStartX, touchStartY, lastMoveX, lastMoveY, currentColor, currentStrokeWidth);
+            shapes.add(newShape);
+            historyStack.add(newShape);
+        } else {
+            boolean isEraser = (currentToolMode == ToolMode.ERASER);
+            StrokeItem newStroke = new StrokeItem(
+                    activePath,
+                    new Paint(activePaint),
+                    activePoints != null ? activePoints : new ArrayList<>(),
+                    activePaint.getColor(),
+                    activePaint.getStrokeWidth(),
+                    isEraser
+            );
+            strokes.add(newStroke);
+            historyStack.add(newStroke);
+        }
 
         activePath = null;
         activePaint = null;
@@ -1190,16 +1253,16 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 6. KAMUYA AÇIK API
+    // 6. KAMUYA AÇIK KONTROL METOTLARI
     // =========================================================================
 
-    public void toggleGrid() {
-        this.isGridEnabled = !this.isGridEnabled;
+    public void setPageGridMode(PageGridMode mode) {
+        this.currentPageGridMode = mode;
         invalidate();
     }
 
-    public boolean isGridVisible() {
-        return this.isGridEnabled;
+    public PageGridMode getPageGridMode() {
+        return this.currentPageGridMode;
     }
 
     public void setToolMode(ToolMode mode) {
@@ -1212,6 +1275,10 @@ public class DrawingView extends View {
         invalidate();
     }
 
+    public ToolMode getCurrentToolMode() {
+        return this.currentToolMode;
+    }
+
     public void setColor(int color) {
         this.currentColor = color;
     }
@@ -1221,46 +1288,51 @@ public class DrawingView extends View {
     }
 
     public void undo() {
-        if (!shapes.isEmpty()) {
-            undoneShapes.add(shapes.remove(shapes.size() - 1));
-            notifyChange();
-            invalidate();
-            return;
+        if (historyStack.isEmpty()) return;
+
+        Object lastAction = historyStack.remove(historyStack.size() - 1);
+        redoStack.add(lastAction);
+
+        if (lastAction instanceof ShapeItem) {
+            shapes.remove(lastAction);
+        } else if (lastAction instanceof StrokeItem) {
+            strokes.remove(lastAction);
         }
-        if (!strokes.isEmpty()) {
-            undoneStrokes.add(strokes.remove(strokes.size() - 1));
-            notifyChange();
-            invalidate();
-        }
+
+        notifyChange();
+        invalidate();
     }
 
     public void redo() {
-        if (!undoneShapes.isEmpty()) {
-            shapes.add(undoneShapes.remove(undoneShapes.size() - 1));
-            notifyChange();
-            invalidate();
-            return;
+        if (redoStack.isEmpty()) return;
+
+        Object actionToRedo = redoStack.remove(redoStack.size() - 1);
+        historyStack.add(actionToRedo);
+
+        if (actionToRedo instanceof ShapeItem) {
+            shapes.add((ShapeItem) actionToRedo);
+        } else if (actionToRedo instanceof StrokeItem) {
+            strokes.add((StrokeItem) actionToRedo);
         }
-        if (!undoneStrokes.isEmpty()) {
-            strokes.add(undoneStrokes.remove(undoneStrokes.size() - 1));
-            notifyChange();
-            invalidate();
-        }
+
+        notifyChange();
+        invalidate();
     }
 
     public void clearCanvas() {
         strokes.clear();
-        undoneStrokes.clear();
         shapes.clear();
-        undoneShapes.clear();
         images.clear();
         texts.clear();
         tables.clear();
+        historyStack.clear();
+        redoStack.clear();
         selectedItem = null;
         selectedGroup.clear();
         groupBounds.setEmpty();
         lassoPath = null;
         activePath = null;
+        offsetX = 0f;
         offsetY = 0f;
         scaleFactor = 1.0f;
         editingTextItem = null;
@@ -1271,7 +1343,7 @@ public class DrawingView extends View {
 
     public void addImageToCanvas(Bitmap bitmap, String uriStr) {
         if (bitmap == null) return;
-        float startX = 80f;
+        float startX = 80f - offsetX;
         float startY = -offsetY + 150f;
         float targetWidth = 400f;
         float ratio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
@@ -1334,7 +1406,7 @@ public class DrawingView extends View {
     }
 
     public void addTableToCanvas(int rows, int cols) {
-        float startX = 60f;
+        float startX = 60f - offsetX;
         float startY = -offsetY + 140f;
         addTableToCanvas(startX, startY, rows, cols);
     }
@@ -1389,8 +1461,27 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    public float getScaleFactor() { return scaleFactor; }
-    public float getOffsetY() { return offsetY; }
+    public float getScaleFactor() {
+        return scaleFactor;
+    }
+
+    public float getOffsetX() {
+        return offsetX;
+    }
+
+    public float getOffsetY() {
+        return offsetY;
+    }
+
+    public void zoomIn() {
+        scaleFactor = Math.min(3.0f, scaleFactor + 0.25f);
+        invalidate();
+    }
+
+    public void zoomOut() {
+        scaleFactor = Math.max(0.5f, scaleFactor - 0.25f);
+        invalidate();
+    }
 
     // =========================================================================
     // 7. JSON SERİLEŞTİRME
@@ -1399,6 +1490,7 @@ public class DrawingView extends View {
     public String getDrawingJson() {
         try {
             JSONObject mainObj = new JSONObject();
+            mainObj.put("pageMode", currentPageGridMode.name());
             mainObj.put("paths", serializePaths());
             mainObj.put("shapes", serializeShapes());
             mainObj.put("tables", serializeTables());
@@ -1507,6 +1599,8 @@ public class DrawingView extends View {
             tables.clear();
             images.clear();
             texts.clear();
+            historyStack.clear();
+            redoStack.clear();
 
             if (!jsonStr.startsWith("{")) {
                 parseStrokes(new JSONArray(jsonStr));
@@ -1514,6 +1608,12 @@ public class DrawingView extends View {
             }
 
             JSONObject mainObj = new JSONObject(jsonStr);
+            if (mainObj.has("pageMode")) {
+                try {
+                    this.currentPageGridMode = PageGridMode.valueOf(mainObj.getString("pageMode"));
+                } catch (Exception ignored) {}
+            }
+
             if (mainObj.has("paths")) parseStrokes(mainObj.getJSONArray("paths"));
 
             if (mainObj.has("shapes")) {
@@ -1527,7 +1627,9 @@ public class DrawingView extends View {
                     float ey = (float) sObj.getDouble("endY");
                     int color = sObj.getInt("color");
                     float width = (float) sObj.getDouble("strokeWidth");
-                    shapes.add(new ShapeItem(type, sx, sy, ex, ey, color, width));
+                    ShapeItem s = new ShapeItem(type, sx, sy, ex, ey, color, width);
+                    shapes.add(s);
+                    historyStack.add(s);
                 }
             }
 
@@ -1618,7 +1720,59 @@ public class DrawingView extends View {
                 if (j == 0) path.moveTo(px, py);
                 else path.lineTo(px, py);
             }
-            strokes.add(new StrokeItem(path, paint, points, color, width, isEraser));
+            StrokeItem stroke = new StrokeItem(path, paint, points, color, width, isEraser);
+            strokes.add(stroke);
+            historyStack.add(stroke);
         }
+    }
+
+    public Bitmap exportThumbnail(int targetWidth, int targetHeight) {
+        if (targetWidth <= 0 || targetHeight <= 0) {
+            targetWidth = 600;
+            targetHeight = 200;
+        }
+
+        int viewWidth = getWidth() > 0 ? getWidth() : 1080;
+        int viewHeight = getHeight() > 0 ? getHeight() : 1920;
+
+        Bitmap fullBitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);
+        Canvas fullCanvas = new Canvas(fullBitmap);
+        fullCanvas.drawColor(Color.TRANSPARENT);
+        draw(fullCanvas);
+
+        int minX = viewWidth, minY = viewHeight, maxX = 0, maxY = 0;
+        boolean hasDrawing = false;
+
+        int[] pixels = new int[viewWidth * viewHeight];
+        fullBitmap.getPixels(pixels, 0, viewWidth, 0, 0, viewWidth, viewHeight);
+
+        for (int y = 0; y < viewHeight; y += 4) {
+            for (int x = 0; x < viewWidth; x += 4) {
+                int alpha = Color.alpha(pixels[y * viewWidth + x]);
+                if (alpha > 20) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                    hasDrawing = true;
+                }
+            }
+        }
+
+        if (!hasDrawing || minX >= maxX || minY >= maxY) {
+            return null;
+        }
+
+        int padding = 30;
+        minX = Math.max(0, minX - padding);
+        minY = Math.max(0, minY - padding);
+        maxX = Math.min(viewWidth, maxX + padding);
+        maxY = Math.min(viewHeight, maxY + padding);
+
+        int cropWidth = maxX - minX;
+        int cropHeight = maxY - minY;
+
+        Bitmap croppedBitmap = Bitmap.createBitmap(fullBitmap, minX, minY, cropWidth, cropHeight);
+        return Bitmap.createScaledBitmap(croppedBitmap, targetWidth, targetHeight, true);
     }
 }

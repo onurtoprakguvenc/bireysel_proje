@@ -53,7 +53,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Canlı Kalan Süre Rozeti ve İkon Kapsayıcısı -->
+        <!-- Canlı Kalan Süre Rozeti -->
         <LinearLayout
             android:id="@+id/containerEphemeralBadge"
             android:layout_width="wrap_content"
@@ -132,25 +132,118 @@
             android:textSize="18sp"
             android:visibility="gone" />
 
-        <!-- Izgara Aç/Kapa -->
-        <ImageButton
-            android:id="@+id/btnGridToggle"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+        <!-- Sağ Üst Sayfa Çizgi Modları Kapsayıcısı -->
+        <LinearLayout
+            android:id="@+id/containerPageGridModes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="top|end"
             android:layout_marginTop="12dp"
             android:layout_marginEnd="12dp"
             android:background="@drawable/bg_chip_inactive"
             android:backgroundTint="#FFFFFF"
-            android:contentDescription="@string/app_name"
-            android:elevation="2dp"
-            android:padding="8dp"
-            android:src="@drawable/ic_table"
-            app:tint="#64748B" />
+            android:elevation="3dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="3dp">
+
+            <!-- 0. Düz / Çizgisiz Sayfa Modu -->
+            <ImageButton
+                android:id="@+id/btnBlankPageToggle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Düz Sayfa"
+                android:padding="6dp"
+                android:src="@drawable/ic_blank_page"
+                app:tint="#0284C7" />
+
+            <!-- 1. Kareli Izgara Modu -->
+            <ImageButton
+                android:id="@+id/btnGridToggle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Kareli Mod"
+                android:padding="6dp"
+                android:src="@drawable/ic_table"
+                app:tint="#64748B" />
+
+            <!-- 2. Yatay Çizgili Defter Modu -->
+            <ImageButton
+                android:id="@+id/btnHorizontalLinesToggle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Yatay Çizgili Mod"
+                android:padding="6dp"
+                android:src="@drawable/ic_list"
+                app:tint="#64748B" />
+
+            <!-- 3. Dikey Çizgili Sütun Modu -->
+            <ImageButton
+                android:id="@+id/btnVerticalLinesToggle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Dikey Çizgili Mod"
+                android:padding="6dp"
+                android:rotation="90"
+                android:src="@drawable/ic_list"
+                app:tint="#64748B" />
+        </LinearLayout>
+
+        <!-- Manuel Zoom In (+) ve Zoom Out (-) Kapsayıcısı -->
+        <LinearLayout
+            android:id="@+id/containerZoomControls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="56dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_chip_inactive"
+            android:backgroundTint="#FFFFFF"
+            android:elevation="3dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="3dp">
+
+            <!-- Zoom In (+) -->
+            <ImageButton
+                android:id="@+id/btnZoomIn"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Yakınlaştır"
+                android:padding="6dp"
+                android:src="@drawable/ic_zoom_in"
+                app:tint="#64748B" />
+
+            <!-- Ara Ayırıcı Çizgi -->
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:layout_marginVertical="2dp"
+                android:background="#E2E8F0" />
+
+            <!-- Zoom Out (-) -->
+            <ImageButton
+                android:id="@+id/btnZoomOut"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Uzaklaştır"
+                android:padding="6dp"
+                android:src="@drawable/ic_zoom_out"
+                app:tint="#64748B" />
+        </LinearLayout>
     </FrameLayout>
 
     <!-- ================================================================= -->
-    <!-- ALT ARAÇ ÇUBUĞU (TEK SIRALI, TÜM ARAÇLAR DAHİL)                   -->
+    <!-- ALT ARAÇ ÇUBUĞU                                                   -->
     <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/editorFooterToolbar"
@@ -176,7 +269,7 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- 1. Geri Al / İleri Al -->
+                <!-- Geri Al / İleri Al -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
@@ -206,7 +299,7 @@
                         app:tint="#475569" />
                 </LinearLayout>
 
-                <!-- 2. Çizim ve Seçim Araçları -->
+                <!-- Çizim, El (Kaydırma) ve Seçim Araçları -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
@@ -217,10 +310,23 @@
                     android:orientation="horizontal"
                     android:paddingHorizontal="4dp">
 
+                    <!-- EL / KAYDIRMA ARACI -->
+                    <ImageButton
+                        android:id="@+id/btnToolHand"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Kaydırma Modu"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_hand"
+                        app:tint="#64748B" />
+
+                    <!-- Kalem -->
                     <FrameLayout
                         android:id="@+id/frameToolPen"
                         android:layout_width="28dp"
                         android:layout_height="28dp"
+                        android:layout_marginStart="4dp"
                         android:background="@drawable/bg_chip_inactive"
                         android:backgroundTint="#E2E8F0">
 
@@ -234,6 +340,7 @@
                             app:tint="#0F172A" />
                     </FrameLayout>
 
+                    <!-- Fosforlu Kalem -->
                     <FrameLayout
                         android:id="@+id/frameToolHighlighter"
                         android:layout_width="28dp"
@@ -251,6 +358,7 @@
                             app:tint="#64748B" />
                     </FrameLayout>
 
+                    <!-- Metin Aracı -->
                     <FrameLayout
                         android:id="@+id/frameToolText"
                         android:layout_width="28dp"
@@ -272,6 +380,7 @@
                             android:textStyle="bold" />
                     </FrameLayout>
 
+                    <!-- Silgi -->
                     <ImageButton
                         android:id="@+id/btnToolEraser"
                         android:layout_width="28dp"
@@ -282,6 +391,7 @@
                         android:src="@drawable/ic_eraser"
                         app:tint="#64748B" />
 
+                    <!-- Seçim İmleci -->
                     <ImageButton
                         android:id="@+id/btnToolSelect"
                         android:layout_width="28dp"
@@ -292,6 +402,7 @@
                         android:src="@drawable/ic_cursor"
                         app:tint="#64748B" />
 
+                    <!-- Kement -->
                     <ImageButton
                         android:id="@+id/btnToolLasso"
                         android:layout_width="28dp"
@@ -302,6 +413,7 @@
                         android:src="@drawable/ic_lasso"
                         app:tint="#64748B" />
 
+                    <!-- Şekiller -->
                     <ImageButton
                         android:id="@+id/btnToolShapes"
                         android:layout_width="28dp"
@@ -313,7 +425,7 @@
                         app:tint="#64748B" />
                 </LinearLayout>
 
-                <!-- 3. Ekleme Araçları -->
+                <!-- Ekleme Araçları -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
@@ -344,7 +456,7 @@
                         app:tint="#0284C7" />
                 </LinearLayout>
 
-                <!-- 4. Renk Paleti -->
+                <!-- Renk Paleti -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
@@ -399,7 +511,7 @@
                         android:src="@drawable/shape_color_circle_blue" />
                 </LinearLayout>
 
-                <!-- 5. Tuvali Temizle -->
+                <!-- Tuvali Temizle -->
                 <ImageButton
                     android:id="@+id/btnClearCanvas"
                     android:layout_width="36dp"

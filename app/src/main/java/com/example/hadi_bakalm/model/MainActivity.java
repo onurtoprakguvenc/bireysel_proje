@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,6 +36,8 @@ import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -48,13 +51,16 @@ public class MainActivity extends AppCompatActivity {
 
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Locale TR_LOCALE = new Locale("tr", "TR");
+    private static final String PREFS_NAME = "NoteAppSettingsPrefs";
+    private static final String KEY_SHOW_DONATE = "key_show_donate_btn";
+    private static final String KEY_DARK_MODE = "key_dark_mode_enabled";
 
     // Arayüz Elemanları
     private RecyclerView rvNotes;
     private EditText etSearch;
     private ImageButton btnLibraryBridge;
     private ImageButton btnToggleLayout;
-    private ImageButton btnTrashCan; // Global olarak tanımlandı
+    private ImageButton btnSettings;
     private FloatingActionButton fabAddNote;
     private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
@@ -72,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.asil_ana_sayfa);
 
@@ -102,22 +107,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         refreshAllNotesFromDb();
+        updateDonateButtonVisibility();
     }
 
     private void refreshAllNotesFromDb() {
         if (noteDao == null) return;
 
         DB_EXECUTOR.execute(() -> {
-            // 1. Önce süresi dolanları çöpe taşı
             long now = System.currentTimeMillis();
             noteDao.moveExpiredNotesToTrash(now);
 
-            // 2. Ardından güncel aktif notları oku
             List<notentity> dbEntities = noteDao.getAllNotes();
             List<NoteModel> updatedList = mapEntitiesToModels(dbEntities);
             List<String> dynamicCategories = extractDynamicCategories(dbEntities);
 
-            // 3. UI'ı tek seferde güncelle
             runOnUiThread(() -> {
                 applyListUpdate(updatedList);
                 renderCategoryChips(dynamicCategories);
@@ -129,6 +132,31 @@ public class MainActivity extends AppCompatActivity {
         if (categoryChipContainer == null) return;
 
         categoryChipContainer.removeAllViews();
+
+        // 1. En Başta Geri Dönüşüm Kutusu Çipi ("Tümü"nün Solunda)
+        TextView trashChip = new TextView(this);
+        trashChip.setText("🗑️ Çöp");
+        trashChip.setTextSize(12f);
+        trashChip.setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8));
+        trashChip.setBackgroundResource(R.drawable.bg_chip_inactive);
+        trashChip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+
+        LinearLayout.LayoutParams trashParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        trashParams.setMargins(0, 0, dpToPx(6), 0);
+        trashChip.setLayoutParams(trashParams);
+
+        trashChip.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
+        categoryChipContainer.addView(trashChip);
+
+        // 2. Dinamik Kategori Çipleri (Tümü ve Diğerleri)
         for (String categoryName : dynamicCategories) {
             TextView chip = new TextView(this);
             chip.setText(categoryName);
@@ -139,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            params.setMargins(0, 0, dpToPx(8), 0);
+            params.setMargins(0, 0, dpToPx(6), 0);
             chip.setLayoutParams(params);
 
             if (categoryName.equalsIgnoreCase("Tümü")) {
@@ -171,10 +199,19 @@ public class MainActivity extends AppCompatActivity {
         etSearch = findViewById(R.id.etSearch);
         btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
-        btnTrashCan = findViewById(R.id.btnTrashCan);
+        btnSettings = findViewById(R.id.btnSettings);
         fabAddNote = findViewById(R.id.fabAddNote);
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
+
+        updateDonateButtonVisibility();
+    }
+
+    private void updateDonateButtonVisibility() {
+        boolean showDonate = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_DONATE, true);
+        if (fabDonateCoffee != null) {
+            fabDonateCoffee.setVisibility(showDonate ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void setupRecyclerView() {
@@ -192,14 +229,17 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onItemLongClick(NoteModel note, int position) {
+            public void onPinClick(NoteModel note, int position) {
                 if (note == null) return;
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Notu Sil")
-                        .setMessage("\"" + note.getTitle() + "\" başlıklı notu silmek istediğinize emin misiniz?")
-                        .setPositiveButton("Sil", (dialog, which) -> deleteNoteFromDatabase(note.getId()))
-                        .setNegativeButton("İptal", null)
-                        .show();
+                boolean newPinnedState = !note.isPinned();
+                note.setPinned(newPinnedState);
+                toggleNotePinInDatabase(note.getId(), newPinnedState);
+            }
+
+            @Override
+            public void onDeleteClick(NoteModel note, int position) {
+                if (note == null) return;
+                deleteNoteFromDatabase(note.getId());
             }
         });
 
@@ -224,14 +264,43 @@ public class MainActivity extends AppCompatActivity {
         if (noteDao == null) return;
 
         DB_EXECUTOR.execute(() -> {
-            // Doğrudan silmek yerine Çöp Kutusuna taşı:
             noteDao.moveToTrash(noteId, System.currentTimeMillis());
 
             runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Not çöp kutusuna taşındı", Toast.LENGTH_SHORT).show();
+                loadNotesFromDatabase();
+                loadDynamicCategoryChips();
+
+                if (rvNotes != null) {
+                    Snackbar.make(rvNotes, "Not çöp kutusuna taşındı", Snackbar.LENGTH_LONG)
+                            .setAction("Geri Al", v -> restoreNote(noteId))
+                            .setActionTextColor(Color.parseColor("#38BDF8"))
+                            .show();
+                }
+            });
+        });
+    }
+
+    private void restoreNote(int noteId) {
+        if (noteDao == null) return;
+
+        DB_EXECUTOR.execute(() -> {
+            noteDao.restoreNoteFromTrash(noteId);
+            runOnUiThread(() -> {
                 loadNotesFromDatabase();
                 loadDynamicCategoryChips();
             });
+        });
+    }
+
+    private void toggleNotePinInDatabase(int noteId, boolean isPinned) {
+        if (noteDao == null) return;
+
+        DB_EXECUTOR.execute(() -> {
+            try {
+                noteDao.updatePinStatus(noteId, isPinned);
+            } catch (Exception ignored) {}
+
+            runOnUiThread(this::loadNotesFromDatabase);
         });
     }
 
@@ -255,12 +324,8 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        if (btnTrashCan != null) {
-            btnTrashCan.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
-                startActivity(intent);
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            });
+        if (btnSettings != null) {
+            btnSettings.setOnClickListener(v -> showNoteAppSettingsDialog());
         }
 
         if (fabAddNote != null) {
@@ -274,6 +339,82 @@ public class MainActivity extends AppCompatActivity {
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
         }
+    }
+
+    @SuppressLint("InflateParams")
+    private void showNoteAppSettingsDialog() {
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.not_ayarlar, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        ImageButton btnCloseSettings = dialogView.findViewById(R.id.btnCloseSettings);
+        MaterialSwitch switchDarkMode = dialogView.findViewById(R.id.switchDarkMode);
+        MaterialSwitch switchShowDonate = dialogView.findViewById(R.id.switchShowDonate);
+        LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
+        LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
+
+        // Bağış Butonu Durumu
+        boolean isDonateVisible = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_DONATE, true);
+        if (switchShowDonate != null) {
+            switchShowDonate.setChecked(isDonateVisible);
+            switchShowDonate.setOnCheckedChangeListener((btn, isChecked) -> {
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_SHOW_DONATE, isChecked).apply();
+                updateDonateButtonVisibility();
+            });
+        }
+
+        // Karanlık Tema Durumu
+        boolean isDarkMode = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_DARK_MODE, false);
+        if (switchDarkMode != null) {
+            switchDarkMode.setChecked(isDarkMode);
+            switchDarkMode.setOnCheckedChangeListener((btn, isChecked) -> {
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_DARK_MODE, isChecked).apply();
+                AppCompatDelegate.setDefaultNightMode(isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+            });
+        }
+
+        // Çöp Kutusunu Temizle Satırı
+        if (rowEmptyTrashDirect != null) {
+            rowEmptyTrashDirect.setOnClickListener(v -> {
+                dialog.dismiss();
+                confirmEmptyTrashDirectly();
+            });
+        }
+
+        // Bağış Sayfasına Git Satırı
+        if (rowOpenDonatePage != null) {
+            rowOpenDonatePage.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent(MainActivity.this, not_bagis_sayfa.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
+        if (btnCloseSettings != null) {
+            btnCloseSettings.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
+    }
+
+    private void confirmEmptyTrashDirectly() {
+        if (noteDao == null) return;
+
+        DB_EXECUTOR.execute(() -> {
+            noteDao.emptyTrash();
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Çöp kutusu tamamen boşaltıldı", Toast.LENGTH_SHORT).show();
+                loadNotesFromDatabase();
+            });
+        });
     }
 
     @SuppressLint("InflateParams")
@@ -516,45 +657,7 @@ public class MainActivity extends AppCompatActivity {
             List<notentity> allNotes = noteDao.getAllNotes();
             List<String> dynamicCategories = extractDynamicCategories(allNotes);
 
-            runOnUiThread(() -> {
-                categoryChipContainer.removeAllViews();
-
-                for (String categoryName : dynamicCategories) {
-                    TextView chip = new TextView(this);
-                    chip.setText(categoryName);
-                    chip.setTextSize(12f);
-                    chip.setPadding(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8));
-
-                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT
-                    );
-                    params.setMargins(0, 0, dpToPx(8), 0);
-                    chip.setLayoutParams(params);
-
-                    if (categoryName.equalsIgnoreCase("Tümü")) {
-                        chip.setBackgroundResource(R.drawable.bg_chip_active);
-                        chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
-                    } else {
-                        chip.setBackgroundResource(R.drawable.bg_chip_inactive);
-                        chip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-                    }
-
-                    chip.setOnClickListener(v -> {
-                        resetChipStyles();
-                        chip.setBackgroundResource(R.drawable.bg_chip_active);
-                        chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
-
-                        if (categoryName.equalsIgnoreCase("Tümü")) {
-                            loadNotesFromDatabase();
-                        } else {
-                            filterNotesByCategory(categoryName);
-                        }
-                    });
-
-                    categoryChipContainer.addView(chip);
-                }
-            });
+            runOnUiThread(() -> renderCategoryChips(dynamicCategories));
         });
     }
 

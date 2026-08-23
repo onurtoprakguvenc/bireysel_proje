@@ -11,14 +11,12 @@ public class NoteModel {
     private final String content;
     private final String date;
     private final String category;
-    private final boolean isPinned;
+    private boolean isPinned; // 'final' kaldırıldı
 
-    // 1. Standart Oluşturmalar İçin Kurucu Metot
     public NoteModel(String title, String content, String date, String category, boolean isPinned) {
         this(0, title, content, date, category, isPinned);
     }
 
-    // 2. Veritabanından Okurken ID Dahil Eden Kurucu Metot
     public NoteModel(int id, String title, String content, String date, String category, boolean isPinned) {
         this.id = id;
         this.title = (title != null) ? title : "";
@@ -54,6 +52,11 @@ public class NoteModel {
 
     public boolean isPinned() {
         return isPinned;
+    }
+
+    // EKLENEN SETTER METODU:
+    public void setPinned(boolean pinned) {
+        this.isPinned = pinned;
     }
 
     @Override

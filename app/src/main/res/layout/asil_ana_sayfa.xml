@@ -43,7 +43,7 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <!-- 2. Sağ Buton Grubu (Kompakt Kapsüller) -->
+            <!-- 2. Sağ Buton Grubu -->
             <LinearLayout
                 android:id="@+id/headerActions"
                 android:layout_width="wrap_content"
@@ -53,19 +53,6 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Geri Dönüşüm Kutusu -->
-                <ImageButton
-                    android:id="@+id/btnTrashCan"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:backgroundTint="#F1F5F9"
-                    android:contentDescription="Geri Dönüşüm"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_trash"
-                    app:tint="#64748B" />
-
                 <!-- Bağış Yap -->
                 <ImageButton
                     android:id="@+id/fabDonateCoffee"
@@ -73,11 +60,11 @@
                     android:layout_height="36dp"
                     android:layout_marginEnd="4dp"
                     android:background="@drawable/bg_chip_inactive"
-                    android:backgroundTint="#FEF3C7"
+                    android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/bagis_yap"
                     android:padding="8dp"
                     android:src="@drawable/ic_coffe_support"
-                    app:tint="#D97706" />
+                    app:tint="#64748B" />
 
                 <!-- Zihinsel Kütüphane -->
                 <FrameLayout
@@ -90,11 +77,11 @@
                         android:layout_width="36dp"
                         android:layout_height="36dp"
                         android:background="@drawable/bg_chip_inactive"
-                        android:backgroundTint="#E0F2FE"
+                        android:backgroundTint="#F1F5F9"
                         android:contentDescription="@string/kutuphane_koprusu"
                         android:padding="8dp"
                         android:src="@drawable/ic_brain"
-                        app:tint="#0284C7" />
+                        app:tint="#64748B" />
 
                     <View
                         android:layout_width="7dp"
@@ -111,17 +98,30 @@
                     android:id="@+id/btnToggleLayout"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
+                    android:layout_marginEnd="4dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/duzeni_degistir"
                     android:padding="8dp"
                     android:src="@drawable/ic_grid"
                     app:tint="#64748B" />
+
+                <!-- Ayarlar Dişli Butonu -->
+                <ImageButton
+                    android:id="@+id/btnSettings"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:contentDescription="@string/ayarlar"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_settings"
+                    app:tint="#64748B" />
             </LinearLayout>
 
         </RelativeLayout>
 
-        <!-- Arama Çubuğu (Hafif Gri Dolgu, Yuvarlak Hat) -->
+        <!-- Arama Çubuğu -->
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
@@ -140,7 +140,7 @@
             android:textColorHint="#94A3B8"
             android:textSize="13sp" />
 
-        <!-- Kategori Çipleri (Yatay Kaydırılabilir Kapsüller) -->
+        <!-- Kategori Çipleri (Çöp Kutusu En Başta / Tümü'nün Solunda) -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -154,7 +154,22 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Tümü Çipi (Aktif) -->
+                <!-- 1. Geri Dönüşüm Kutusu Çipi (Tümünün Hemen Solunda, Soft Göze Batmayan Vurgu) -->
+                <TextView
+                    android:id="@+id/chipTrashShortcut"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="🗑️ Çöp"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <!-- 2. Tümü Çipi (Aktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -168,7 +183,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <!-- Kategori Örnekleri (İnaktif) -->
+                <!-- 3. Kategori Örnekleri (İnaktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -216,6 +231,7 @@
                     android:text="İş"
                     android:textColor="#64748B"
                     android:textSize="12sp" />
+
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>
