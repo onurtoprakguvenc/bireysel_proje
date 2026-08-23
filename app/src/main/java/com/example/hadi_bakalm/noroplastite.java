@@ -16,10 +16,10 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,8 +54,8 @@ public class noroplastite extends AppCompatActivity {
 
     private ImageView btnBack;
     private ImageView btnMoreMenu;
-    private FrameLayout btnDialogues;
-    private FrameLayout btnImportance;
+    private RelativeLayout btnDialogues;
+    private RelativeLayout btnImportance;
     private View contentDialogues;
     private View contentImportance;
 
@@ -140,6 +140,10 @@ public class noroplastite extends AppCompatActivity {
             btnDialogues.setOnClickListener(v -> {
                 int visibility = contentDialogues.getVisibility();
                 contentDialogues.setVisibility(visibility == View.VISIBLE ? View.GONE : View.VISIBLE);
+                ImageView icArrow = btnDialogues.findViewById(R.id.icArrowDialogues);
+                if (icArrow != null) {
+                    icArrow.setRotation(visibility == View.VISIBLE ? 0f : 180f);
+                }
             });
         }
 
@@ -147,6 +151,10 @@ public class noroplastite extends AppCompatActivity {
             btnImportance.setOnClickListener(v -> {
                 int visibility = contentImportance.getVisibility();
                 contentImportance.setVisibility(visibility == View.VISIBLE ? View.GONE : View.VISIBLE);
+                ImageView icArrow = btnImportance.findViewById(R.id.icArrowImportance);
+                if (icArrow != null) {
+                    icArrow.setRotation(visibility == View.VISIBLE ? 0f : 180f);
+                }
             });
         }
 
@@ -262,13 +270,9 @@ public class noroplastite extends AppCompatActivity {
                 if (txtPersonalNote != null) {
                     if (!finalNote.trim().isEmpty()) {
                         txtPersonalNote.setText(finalNote);
-                        if (txtPersonalNote.getParent() != null && txtPersonalNote.getParent().getParent() instanceof View) {
-                            ((View) txtPersonalNote.getParent().getParent()).setVisibility(View.VISIBLE);
-                        }
+                        setParentCardVisibility(txtPersonalNote, View.VISIBLE);
                     } else {
-                        if (txtPersonalNote.getParent() != null && txtPersonalNote.getParent().getParent() instanceof View) {
-                            ((View) txtPersonalNote.getParent().getParent()).setVisibility(View.GONE);
-                        }
+                        setParentCardVisibility(txtPersonalNote, View.GONE);
                     }
                 }
 
@@ -276,16 +280,28 @@ public class noroplastite extends AppCompatActivity {
                 if (txtImportanceContent != null) txtImportanceContent.setText(finalImportance);
 
                 if (btnDialogues != null) {
-                    btnDialogues.setVisibility(!finalDialogues.trim().isEmpty() ? View.VISIBLE : View.GONE);
+                    setParentCardVisibility(btnDialogues, !finalDialogues.trim().isEmpty() ? View.VISIBLE : View.GONE);
                 }
 
                 if (btnImportance != null) {
-                    btnImportance.setVisibility(!finalImportance.trim().isEmpty() ? View.VISIBLE : View.GONE);
+                    setParentCardVisibility(btnImportance, !finalImportance.trim().isEmpty() ? View.VISIBLE : View.GONE);
                 }
 
                 updateSaveButtonUI();
             });
         });
+    }
+
+    private void setParentCardVisibility(View childView, int visibility) {
+        if (childView == null) return;
+        View current = childView;
+        while (current.getParent() instanceof View) {
+            current = (View) current.getParent();
+            if (current instanceof MaterialCardView) {
+                current.setVisibility(visibility);
+                break;
+            }
+        }
     }
 
     private kaydedilenler getConceptFromJSON(String targetTitle) {
@@ -364,37 +380,6 @@ public class noroplastite extends AppCompatActivity {
         View root = findViewById(R.id.topBar) != null ? (View) findViewById(R.id.topBar).getParent() : null;
         if (root != null) {
             root.setBackgroundColor(rootBgColor);
-        }
-
-        if (txtConceptDescription != null && txtConceptDescription.getParent() != null && txtConceptDescription.getParent().getParent() instanceof MaterialCardView) {
-            ((MaterialCardView) txtConceptDescription.getParent().getParent()).setCardBackgroundColor(cardBgColor);
-        }
-        if (txtPersonalNote != null && txtPersonalNote.getParent() != null && txtPersonalNote.getParent().getParent() instanceof MaterialCardView) {
-            ((MaterialCardView) txtPersonalNote.getParent().getParent()).setCardBackgroundColor(cardBgColor);
-        }
-        if (contentDialogues instanceof LinearLayout) {
-            contentDialogues.setBackgroundColor(cardBgColor);
-        }
-        if (contentImportance instanceof LinearLayout) {
-            contentImportance.setBackgroundColor(cardBgColor);
-        }
-
-        if (btnDialogues != null) {
-            btnDialogues.setBackgroundColor(theme.equals("KARANLIK") ? Color.parseColor("#FFFFFF") : Color.parseColor("#0F172A"));
-            TextView txtDiag = btnDialogues.findViewById(R.id.ornek_diyalog);
-            if (txtDiag != null) txtDiag.setTextColor(theme.equals("KARANLIK") ? Color.parseColor("#0F172A") : Color.parseColor("#FFFFFF"));
-            if (btnDialogues.getChildCount() > 1 && btnDialogues.getChildAt(1) instanceof ImageView) {
-                ((ImageView) btnDialogues.getChildAt(1)).setColorFilter(theme.equals("KARANLIK") ? Color.parseColor("#0F172A") : Color.parseColor("#FFFFFF"));
-            }
-        }
-
-        if (btnImportance != null) {
-            btnImportance.setBackgroundColor(theme.equals("KARANLIK") ? Color.parseColor("#FFFFFF") : Color.parseColor("#0F172A"));
-            TextView txtImp = btnImportance.findViewById(R.id.bu_kavram_onem);
-            if (txtImp != null) txtImp.setTextColor(theme.equals("KARANLIK") ? Color.parseColor("#0F172A") : Color.parseColor("#FFFFFF"));
-            if (btnImportance.getChildCount() > 1 && btnImportance.getChildAt(1) instanceof ImageView) {
-                ((ImageView) btnImportance.getChildAt(1)).setColorFilter(theme.equals("KARANLIK") ? Color.parseColor("#0F172A") : Color.parseColor("#FFFFFF"));
-            }
         }
 
         if (txtConceptTitle != null) txtConceptTitle.setTextColor(textColor);
@@ -482,7 +467,7 @@ public class noroplastite extends AppCompatActivity {
 
     private void updateSaveButtonUI() {
         if (txtKaydet != null && currentConcept != null) {
-            txtKaydet.setText(currentConcept.isSaved() ? "kaydedildi" : "kaydet");
+            txtKaydet.setText(currentConcept.isSaved() ? "Kaydedildi" : "Kaydet");
         }
     }
 
@@ -532,7 +517,6 @@ public class noroplastite extends AppCompatActivity {
 
         dialog.show();
     }
-
 
     @SuppressLint("InflateParams")
     private void showPopupMenu(View anchorView) {

@@ -15,18 +15,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.hadi_bakalm.adapter.ana_sayfa_adapter;
 import com.example.hadi_bakalm.model.KisiselMetinlerimActivity;
 import com.example.hadi_bakalm.model.MainActivity;
 import com.example.hadi_bakalm.model.NavigationHelper;
 import com.example.hadi_bakalm.model.bagis_sayfa;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 public class EskiMainActivity extends AppCompatActivity {
@@ -36,8 +32,8 @@ public class EskiMainActivity extends AppCompatActivity {
     private static final String KEY_DISCLAIMER_ACCEPTED = "is_disclaimer_accepted";
 
     private EditText searchBar;
-    private ana_sayfa_adapter adapter;
-    private final List<String> kategoriListesi = new ArrayList<>();
+    private MaterialCardView cardKavramlar;
+    private MaterialCardView cardKisiselMetinler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +43,7 @@ public class EskiMainActivity extends AppCompatActivity {
         NavigationHelper.setupBottomNavigation(this);
 
         initViews();
-        setupRecyclerView();
+        setupCategoryCards();
         setupSearch();
         checkAndShowDisclaimer();
     }
@@ -56,6 +52,9 @@ public class EskiMainActivity extends AppCompatActivity {
         ImageView btnBackToNotes = findViewById(R.id.btnBackToNotes);
         searchBar = findViewById(R.id.searchBar);
         FloatingActionButton btnSupportDonate = findViewById(R.id.btnSupportDonate);
+
+        cardKavramlar = findViewById(R.id.cardKavramlar);
+        cardKisiselMetinler = findViewById(R.id.cardKisiselMetinler);
 
         if (btnBackToNotes != null) {
             btnBackToNotes.setOnClickListener(v -> {
@@ -73,27 +72,20 @@ public class EskiMainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupRecyclerView() {
-        RecyclerView recyclerViewCategories = findViewById(R.id.recyclerViewCategories);
-        if (recyclerViewCategories == null) return;
-
-        recyclerViewCategories.setLayoutManager(new LinearLayoutManager(this));
-
-        kategoriListesi.clear();
-        kategoriListesi.add("Kavramlar");
-        kategoriListesi.add("Kişisel Metinlerim");
-
-        adapter = new ana_sayfa_adapter(kategoriListesi, kategoriAdi -> {
-            if (isFinishing() || isDestroyed()) return;
-
-            if ("Kavramlar".equals(kategoriAdi)) {
+    private void setupCategoryCards() {
+        if (cardKavramlar != null) {
+            cardKavramlar.setOnClickListener(v -> {
+                if (isFinishing() || isDestroyed()) return;
                 startActivity(new Intent(EskiMainActivity.this, kavramlar_sayfa.class));
-            } else if ("Kişisel Metinlerim".equals(kategoriAdi)) {
-                startActivity(new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class));
-            }
-        });
+            });
+        }
 
-        recyclerViewCategories.setAdapter(adapter);
+        if (cardKisiselMetinler != null) {
+            cardKisiselMetinler.setOnClickListener(v -> {
+                if (isFinishing() || isDestroyed()) return;
+                startActivity(new Intent(EskiMainActivity.this, KisiselMetinlerimActivity.class));
+            });
+        }
     }
 
     private void setupSearch() {
@@ -105,7 +97,7 @@ public class EskiMainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filter(s != null ? s.toString() : "");
+                filterCards(s != null ? s.toString() : "");
             }
 
             @Override
@@ -113,18 +105,21 @@ public class EskiMainActivity extends AppCompatActivity {
         });
     }
 
-    private void filter(String text) {
-        String query = text != null ? text.toLowerCase(TR_LOCALE).trim() : "";
-        List<String> filteredList = new ArrayList<>();
+    private void filterCards(String query) {
+        String cleanQuery = query != null ? query.toLowerCase(TR_LOCALE).trim() : "";
 
-        for (String item : kategoriListesi) {
-            if (item != null && item.toLowerCase(TR_LOCALE).contains(query)) {
-                filteredList.add(item);
-            }
+        if (cardKavramlar != null) {
+            boolean matchesKavramlar = cleanQuery.isEmpty()
+                    || "kavramlar".contains(cleanQuery)
+                    || "zihinsel modeller tanımlar çalışma kuralları".toLowerCase(TR_LOCALE).contains(cleanQuery);
+            cardKavramlar.setVisibility(matchesKavramlar ? View.VISIBLE : View.GONE);
         }
 
-        if (adapter != null) {
-            adapter.filterList(filteredList);
+        if (cardKisiselMetinler != null) {
+            boolean matchesMetinler = cleanQuery.isEmpty()
+                    || "kişisel metinlerim".contains(cleanQuery)
+                    || "deneyimler çıkarımlar manifestolar gözlemler".toLowerCase(TR_LOCALE).contains(cleanQuery);
+            cardKisiselMetinler.setVisibility(matchesMetinler ? View.VISIBLE : View.GONE);
         }
     }
 

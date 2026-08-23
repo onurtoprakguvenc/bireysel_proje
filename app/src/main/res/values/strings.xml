@@ -28,7 +28,7 @@
     <string name="vucut_icinde_yarattigi_etki">vücut içinde yarattığı etki</string>
     <string name="buraya_vucut_icinde_yarattigi_etki_gelecek">Buraya vücut içinde yarattığı etki içeriği gelecek.</string>
     <string name="baglantili_oldugu_diger_kavramlar">bağlantılı olduğu diğer kavramlar</string>
-    <string name="kaydet_butonu">kaydet\nbutonu\n(uygulama\niçinde ama)</string>
+    <string name="kaydet_butonu">kaydet</string>
     <string name="recycler_view_placeholder">(aşağıda sağa doğru alakalı diğer kavramlar sıralanır recycler view ile)</string>
 
     <!-- KATEGORİLER VE SAYFA BAŞLIKLARI -->

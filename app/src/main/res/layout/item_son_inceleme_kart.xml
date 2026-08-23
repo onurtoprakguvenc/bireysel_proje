@@ -5,25 +5,28 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
     app:cardBackgroundColor="#FFFFFF"
     app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
+    app:cardElevation="1dp"
     app:strokeColor="#F1F5F9"
-    app:strokeWidth="1dp"
-    tools:ignore="all">
+    app:strokeWidth="1dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="16dp">
 
+        <!-- SOL İKON KUTUSU -->
         <FrameLayout
             android:id="@+id/iconContainer"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:background="@drawable/bg_black_square_icon">
+            android:background="@drawable/bg_black_icon_box"
+            android:backgroundTint="#0F172A">
 
             <ImageView
                 android:id="@+id/imgItemIcon"
@@ -31,89 +34,84 @@
                 android:layout_height="20dp"
                 android:layout_gravity="center"
                 android:contentDescription="@null"
-                android:src="@drawable/ic_document"
+                android:src="@drawable/ic_lightbulb"
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
-        <!-- Dokunma Alanı 48dp'ye Optimize Edilen Buton -->
+        <!-- SAĞ SİLME (ÇARPI) BUTONU -->
         <ImageView
-            android:id="@+id/btnRemoveSingleHistory"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:id="@+id/btnDeleteItem"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
+            android:layout_alignParentTop="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:contentDescription="@string/sil"
             android:focusable="true"
-            android:padding="12dp"
+            android:padding="6dp"
             android:src="@drawable/ic_close"
             app:tint="#94A3B8" />
 
+        <!-- ORTA İÇERİK BLOĞU -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="14dp"
             android:layout_marginEnd="8dp"
             android:layout_toEndOf="@id/iconContainer"
-            android:layout_toStartOf="@id/btnRemoveSingleHistory"
+            android:layout_toStartOf="@id/btnDeleteItem"
             android:orientation="vertical">
 
-            <LinearLayout
+            <!-- 1. BAŞLIK (TAM SATIR ALIR, SIKIŞMAZ) -->
+            <TextView
+                android:id="@+id/txtItemTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="İnatçılığı Yakıta Dönüştürmek" />
+
+            <!-- 2. ALT SATIRDAKİ ZARİF TÜR ETİKETİ (ROZET) -->
+            <TextView
+                android:id="@+id/txtItemBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#EEF2FF"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:textColor="#4F46E5"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                tools:text="Kişisel Metin" />
 
-                <TextView
-                    android:id="@+id/txtItemTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="@string/gecici"
-                    android:textColor="#0F172A"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/txtItemBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_badge_purple"
-                    android:paddingStart="8dp"
-                    android:paddingTop="2dp"
-                    android:paddingEnd="8dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/metin_etiket"
-                    android:textColor="#6366F1"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
+            <!-- 3. AÇIKLAMA METNİ -->
             <TextView
                 android:id="@+id/txtItemDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="@string/gecici"
-                android:textColor="#64748B"
-                android:textSize="12sp" />
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="o meşhur 'inatçılık' özelliğini alın ve zihinsel..." />
 
-            <!-- Çökmeyi Engelleyen Zaman/İnceleme Bilgisi -->
+            <!-- 4. ZAMAN ETİKETİ -->
             <TextView
-                android:id="@+id/txtReadTime"
+                android:id="@+id/txtItemTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/gecici"
+                android:layout_marginTop="3dp"
+                android:text="Son incelendi"
                 android:textColor="#94A3B8"
-                android:textSize="11sp" />
-
+                android:textSize="10sp" />
         </LinearLayout>
 
     </RelativeLayout>

@@ -40,7 +40,7 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
     }
 
     private void initViews() {
-        btnSubmitDonate = findViewById(R.id.btnSubmitDonate);
+        btnSubmitDonate = findViewById(R.id.btnSubmitDonation);
         ImageView btnBack = findViewById(R.id.btnBack);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
@@ -52,13 +52,12 @@ public class bagis_sayfa extends AppCompatActivity implements PurchasesUpdatedLi
     }
 
     private void setupCardClicks() {
-        bindDonationCard(R.id.card10, "₺10", "bagis_10");
-        bindDonationCard(R.id.card20, "₺20", "bagis_20");
-        bindDonationCard(R.id.card50, "₺50", "bagis_50");
-        bindDonationCard(R.id.card100, "₺100", "bagis_100");
-        bindDonationCard(R.id.card200, "₺200", "bagis_200");
-        bindDonationCard(R.id.card500, "₺500", "bagis_500");
-        bindDonationCard(R.id.card1000, "₺1000", "bagis_1000");
+        bindDonationCard(R.id.tier50, "₺50", "bagis_50");
+        bindDonationCard(R.id.tier100, "₺100", "bagis_100");
+        bindDonationCard(R.id.tier250, "₺250", "bagis_250");
+        bindDonationCard(R.id.tier500, "₺500", "bagis_500");
+        bindDonationCard(R.id.tier1000, "₺1000", "bagis_1000");
+        bindDonationCard(R.id.tier2500, "₺2500", "bagis_2500");
     }
 
     private void bindDonationCard(int viewId, String displayAmount, String productId) {

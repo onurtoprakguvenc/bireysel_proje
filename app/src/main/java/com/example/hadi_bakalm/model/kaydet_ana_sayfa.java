@@ -1,19 +1,17 @@
 package com.example.hadi_bakalm.model;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -66,10 +64,7 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
         setupClickListeners();
         setupRecyclerView();
         setupSearchAndFilters();
-    }
-
-    private int dpToPx(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density);
+        updateFilterUI(); // Başlangıç filtre durumunu uygula
     }
 
     @Override
@@ -253,19 +248,37 @@ public class kaydet_ana_sayfa extends AppCompatActivity {
     }
 
     private void updateFilterUI() {
-        setFilterButtonState(btnFilterAll, selectedType.equals("ALL"));
-        setFilterButtonState(btnFilterConcepts, selectedType.equals(TYPE_KAVRAM));
-        setFilterButtonState(btnFilterTexts, selectedType.equals(TYPE_METIN));
-    }
+        int activeBg = R.drawable.bg_chip_active;
+        int inactiveBg = R.drawable.bg_chip_inactive;
 
-    private void setFilterButtonState(TextView btn, boolean isSelected) {
-        if (btn == null) return;
-        if (isSelected) {
-            btn.setBackgroundResource(R.drawable.bg_black_pill);
-            btn.setTextColor(Color.WHITE);
-        } else {
-            btn.setBackgroundResource(R.drawable.bg_chip_inactive);
-            btn.setTextColor(Color.parseColor("#475569"));
+        int activeTextColor = Color.parseColor("#FFFFFF");
+        int inactiveTextColor = Color.parseColor("#475569");
+
+        ColorStateList activeTint = ColorStateList.valueOf(Color.parseColor("#0F172A"));
+        ColorStateList inactiveTint = ColorStateList.valueOf(Color.parseColor("#FFFFFF"));
+
+        // 1. Tümü Butonu
+        if (btnFilterAll != null) {
+            boolean isSelected = "ALL".equalsIgnoreCase(selectedType);
+            btnFilterAll.setBackgroundResource(isSelected ? activeBg : inactiveBg);
+            btnFilterAll.setBackgroundTintList(isSelected ? activeTint : inactiveTint);
+            btnFilterAll.setTextColor(isSelected ? activeTextColor : inactiveTextColor);
+        }
+
+        // 2. Kavramlar Butonu
+        if (btnFilterConcepts != null) {
+            boolean isSelected = TYPE_KAVRAM.equalsIgnoreCase(selectedType);
+            btnFilterConcepts.setBackgroundResource(isSelected ? activeBg : inactiveBg);
+            btnFilterConcepts.setBackgroundTintList(isSelected ? activeTint : inactiveTint);
+            btnFilterConcepts.setTextColor(isSelected ? activeTextColor : inactiveTextColor);
+        }
+
+        // 3. Metinler Butonu
+        if (btnFilterTexts != null) {
+            boolean isSelected = TYPE_METIN.equalsIgnoreCase(selectedType);
+            btnFilterTexts.setBackgroundResource(isSelected ? activeBg : inactiveBg);
+            btnFilterTexts.setBackgroundTintList(isSelected ? activeTint : inactiveTint);
+            btnFilterTexts.setTextColor(isSelected ? activeTextColor : inactiveTextColor);
         }
     }
 }

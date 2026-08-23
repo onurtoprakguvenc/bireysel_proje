@@ -181,12 +181,10 @@ public class kisisel_metin_okuma_sayfa extends AppCompatActivity {
         }
 
         TextView txtBaslik = findViewById(R.id.baslik);
-        TextView txtReadTime = findViewById(R.id.txtReadTime);
         TextView btnShareMainText = findViewById(R.id.btnShareMainText);
 
         if (txtBaslik != null) txtBaslik.setText(title);
         if (txtAciklama != null) txtAciklama.setText(content);
-        if (txtReadTime != null) txtReadTime.setText(readTime);
 
         if (btnShareMainText != null && txtAciklama != null) {
             String finalTitle = title;

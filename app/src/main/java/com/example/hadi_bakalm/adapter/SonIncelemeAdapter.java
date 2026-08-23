@@ -1,6 +1,5 @@
 package com.example.hadi_bakalm.adapter;
 
-import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,12 +12,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.model.SonIncelemeModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.ViewHolder> {
 
-    private final List<SonIncelemeModel> incelemeListesi = new ArrayList<>();
+    private List<SonIncelemeModel> itemList;
     private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -26,81 +24,82 @@ public class SonIncelemeAdapter extends RecyclerView.Adapter<SonIncelemeAdapter.
         void onDeleteClick(SonIncelemeModel item);
     }
 
-    public SonIncelemeAdapter(List<SonIncelemeModel> initialList, OnItemClickListener listener) {
-        if (initialList != null) {
-            this.incelemeListesi.addAll(initialList);
-        }
+    public SonIncelemeAdapter(List<SonIncelemeModel> itemList, OnItemClickListener listener) {
+        this.itemList = itemList;
         this.listener = listener;
+    }
+
+    public void updateList(List<SonIncelemeModel> newList) {
+        this.itemList = newList;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_son_inceleme_kart, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_son_inceleme_kart, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(incelemeListesi.get(position), listener);
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void updateList(List<SonIncelemeModel> newList) {
-        this.incelemeListesi.clear();
-        if (newList != null) {
-            this.incelemeListesi.addAll(newList);
-        }
-        notifyDataSetChanged();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @SuppressWarnings("unused")
-    public void filterList(List<SonIncelemeModel> filteredList) {
-        updateList(filteredList);
+        SonIncelemeModel item = itemList.get(position);
+        holder.bind(item, listener);
     }
 
     @Override
     public int getItemCount() {
-        return incelemeListesi.size();
+        return itemList != null ? itemList.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private final ImageView imgIcon;
-        private final ImageView btnRemove;
-        private final TextView txtTitle;
-        private final TextView txtBadge;
-        private final TextView txtDescription;
-        private final TextView txtTime;
+        ImageView imgIcon;
+        ImageView btnRemove;
+        TextView txtTitle;
+        TextView txtBadge;
+        TextView txtDescription;
+        TextView txtTime;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imgIcon = itemView.findViewById(R.id.imgItemIcon);
-            btnRemove = itemView.findViewById(R.id.btnRemoveSingleHistory);
+            btnRemove = itemView.findViewById(R.id.btnDeleteItem);
             txtTitle = itemView.findViewById(R.id.txtItemTitle);
             txtBadge = itemView.findViewById(R.id.txtItemBadge);
             txtDescription = itemView.findViewById(R.id.txtItemDescription);
-            txtTime = itemView.findViewById(R.id.txtReadTime);
+            txtTime = itemView.findViewById(R.id.txtItemTime);
         }
 
-        @SuppressLint("SetTextI18n")
         public void bind(SonIncelemeModel item, OnItemClickListener listener) {
             if (item == null) return;
 
-            txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
-            txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
-            txtTime.setText(item.getZaman() != null ? item.getZaman() : "");
+            if (txtTitle != null) {
+                txtTitle.setText(item.getBaslik() != null ? item.getBaslik() : "");
+            }
 
-            txtBadge.setBackgroundResource(R.drawable.bg_badge_purple);
+            if (txtDescription != null) {
+                txtDescription.setText(item.getAciklama() != null ? item.getAciklama() : "");
+            }
 
-            String tur = item.getTur() != null ? item.getTur().trim() : "";
-            if ("KAVRAM".equalsIgnoreCase(tur)) {
-                txtBadge.setText("Kavram");
-                imgIcon.setImageResource(R.drawable.ic_lightbulb);
-            } else {
-                txtBadge.setText("Metin");
-                imgIcon.setImageResource(R.drawable.ic_document);
+            if (txtBadge != null) {
+                String tur = item.getTur();
+                if ("Metin".equalsIgnoreCase(tur)) {
+                    txtBadge.setText("Kişisel Metin");
+                } else {
+                    txtBadge.setText("Kavram");
+                }
+            }
+
+            if (txtTime != null) {
+                txtTime.setText("Son incelendi");
+            }
+
+            if (imgIcon != null) {
+                if ("Metin".equalsIgnoreCase(item.getTur())) {
+                    imgIcon.setImageResource(R.drawable.ic_document);
+                } else {
+                    imgIcon.setImageResource(R.drawable.ic_lightbulb);
+                }
             }
 
             itemView.setOnClickListener(v -> {

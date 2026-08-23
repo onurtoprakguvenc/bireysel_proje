@@ -1,15 +1,13 @@
 package com.example.hadi_bakalm.model;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,15 +33,15 @@ public class SonIncelemeActivity extends AppCompatActivity {
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Locale TR_LOCALE = new Locale("tr", "TR");
 
-    private LinearLayout btnClearHistory;
+    private ImageButton btnClearHistory;
     private ImageButton btnOpenNoteEditor;
     private EditText etSearchHistory;
     private SonIncelemeAdapter adapter;
     private final List<SonIncelemeModel> tumListe = new ArrayList<>();
 
-    private LinearLayout chipAll;
-    private LinearLayout chipConcepts;
-    private LinearLayout chipTexts;
+    private TextView chipAll;
+    private TextView chipConcepts;
+    private TextView chipTexts;
     private String currentFilter = "Tümü";
 
     private AppDatabase db;
@@ -290,14 +288,9 @@ public class SonIncelemeActivity extends AppCompatActivity {
         String query = etSearchHistory != null ? etSearchHistory.getText().toString().toLowerCase(TR_LOCALE).trim() : "";
 
         List<SonIncelemeModel> filteredList = new ArrayList<>();
-        int conceptsCount = 0;
-        int textsCount = 0;
 
         for (SonIncelemeModel item : tumListe) {
             if (item == null || item.getTur() == null) continue;
-
-            if ("Kavram".equalsIgnoreCase(item.getTur())) conceptsCount++;
-            if ("Metin".equalsIgnoreCase(item.getTur())) textsCount++;
 
             boolean matchesType = "Tümü".equalsIgnoreCase(currentFilter) || item.getTur().equalsIgnoreCase(currentFilter);
             String baslik = item.getBaslik() != null ? item.getBaslik().toLowerCase(TR_LOCALE) : "";
@@ -310,52 +303,45 @@ public class SonIncelemeActivity extends AppCompatActivity {
             }
         }
 
-        updateChipCountsAndUI(tumListe.size(), conceptsCount, textsCount);
+        updateFilterChipUI();
 
         if (adapter != null) {
             adapter.updateList(filteredList);
         }
     }
 
-    private void updateChipCountsAndUI(int total, int concepts, int texts) {
-        updateSingleChip(chipAll, "Tümü".equalsIgnoreCase(currentFilter), String.valueOf(total));
-        updateSingleChip(chipConcepts, "Kavram".equalsIgnoreCase(currentFilter), String.valueOf(concepts));
-        updateSingleChip(chipTexts, "Metin".equalsIgnoreCase(currentFilter), String.valueOf(texts));
-    }
+    private void updateFilterChipUI() {
+        int activeBg = R.drawable.bg_chip_active;
+        int inactiveBg = R.drawable.bg_chip_inactive;
 
-    private void updateSingleChip(LinearLayout chip, boolean isActive, String countText) {
-        if (chip == null) return;
+        int activeTextColor = Color.parseColor("#FFFFFF");
+        int inactiveTextColor = Color.parseColor("#475569");
 
-        chip.setBackgroundResource(isActive ? R.drawable.bg_black_pill : R.drawable.bg_chip_inactive);
+        ColorStateList activeTint = ColorStateList.valueOf(Color.parseColor("#0F172A"));
+        ColorStateList inactiveTint = ColorStateList.valueOf(Color.parseColor("#FFFFFF"));
 
-        TextView titleView = null;
-        TextView countView = null;
-        ImageView iconView = null;
-
-        for (int i = 0; i < chip.getChildCount(); i++) {
-            View child = chip.getChildAt(i);
-            if (child instanceof ImageView) {
-                iconView = (ImageView) child;
-            } else if (child instanceof TextView) {
-                if (titleView == null) {
-                    titleView = (TextView) child;
-                } else {
-                    countView = (TextView) child;
-                }
-            }
+        // 1. Tümü
+        if (chipAll != null) {
+            boolean isActive = "Tümü".equalsIgnoreCase(currentFilter);
+            chipAll.setBackgroundResource(isActive ? activeBg : inactiveBg);
+            chipAll.setBackgroundTintList(isActive ? activeTint : inactiveTint);
+            chipAll.setTextColor(isActive ? activeTextColor : inactiveTextColor);
         }
 
-        if (titleView != null) {
-            titleView.setTextColor(isActive ? Color.WHITE : Color.parseColor("#475569"));
+        // 2. Kavramlar
+        if (chipConcepts != null) {
+            boolean isActive = "Kavram".equalsIgnoreCase(currentFilter);
+            chipConcepts.setBackgroundResource(isActive ? activeBg : inactiveBg);
+            chipConcepts.setBackgroundTintList(isActive ? activeTint : inactiveTint);
+            chipConcepts.setTextColor(isActive ? activeTextColor : inactiveTextColor);
         }
 
-        if (countView != null) {
-            countView.setText(countText);
-            countView.setTextColor(isActive ? Color.parseColor("#94A3B8") : Color.parseColor("#94A3B8"));
-        }
-
-        if (iconView != null) {
-            iconView.setColorFilter(isActive ? Color.WHITE : Color.parseColor("#64748B"));
+        // 3. Metinler
+        if (chipTexts != null) {
+            boolean isActive = "Metin".equalsIgnoreCase(currentFilter);
+            chipTexts.setBackgroundResource(isActive ? activeBg : inactiveBg);
+            chipTexts.setBackgroundTintList(isActive ? activeTint : inactiveTint);
+            chipTexts.setTextColor(isActive ? activeTextColor : inactiveTextColor);
         }
     }
 }

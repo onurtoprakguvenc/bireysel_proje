@@ -1,6 +1,7 @@
 package com.example.hadi_bakalm.model;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -42,22 +43,25 @@ public class not_bagis_sayfa extends AppCompatActivity implements PurchasesUpdat
     }
 
     private void initViews() {
-        btnSubmitDonate = findViewById(R.id.btnSubmitDonate);
+        btnSubmitDonate = findViewById(R.id.btnSubmitDonation);
     }
 
     private void setupClickListeners() {
-        ImageView btnBack = findViewById(R.id.btnBack);
+        // ID eşleşmesi düzeltildi (btnBack -> btnBackDonation veya ImageButton tanımı):
+        View btnBack = findViewById(R.id.btnBackDonation);
+        if (btnBack == null) {
+            btnBack = findViewById(R.id.btnBack); // Eski XML varyantı için yedek kontrol
+        }
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        bindCardClick(R.id.card10, "₺10", "bagis_10");
-        bindCardClick(R.id.card20, "₺20", "bagis_20");
-        bindCardClick(R.id.card50, "₺50", "bagis_50");
-        bindCardClick(R.id.card100, "₺100", "bagis_100");
-        bindCardClick(R.id.card200, "₺200", "bagis_200");
-        bindCardClick(R.id.card500, "₺500", "bagis_500");
-        bindCardClick(R.id.card1000, "₺1000", "bagis_1000");
+        bindCardClick(R.id.tier50, "₺50", "bagis_50");
+        bindCardClick(R.id.tier100, "₺100", "bagis_100");
+        bindCardClick(R.id.tier250, "₺250", "bagis_250");
+        bindCardClick(R.id.tier500, "₺500", "bagis_500");
+        bindCardClick(R.id.tier1000, "₺1000", "bagis_1000");
+        bindCardClick(R.id.tier2500, "₺2500", "bagis_2500");
 
         if (btnSubmitDonate != null) {
             btnSubmitDonate.setOnClickListener(v -> launchPurchaseFlow());
