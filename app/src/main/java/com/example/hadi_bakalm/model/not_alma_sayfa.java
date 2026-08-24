@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.graphics.Paint;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -64,15 +65,21 @@ public class not_alma_sayfa extends AppCompatActivity {
     private ImageButton btnCloseEditor;
     private ImageButton btnPinNote;
     private ImageButton btnEphemeralTimer;
+    private ImageButton btnLockCanvas;
     private LinearLayout containerEphemeralBadge;
     private TextView tvEphemeralBadge;
     private EditText etNoteTitle;
+
+    private ImageButton btnShareNote;
+    private ImageButton btnExportPdf;
+    private ImageButton btnSaveNote;
 
     // Sayfa Çizgi Modu Butonları
     private ImageButton btnBlankPageToggle;
     private ImageButton btnGridToggle;
     private ImageButton btnHorizontalLinesToggle;
     private ImageButton btnVerticalLinesToggle;
+    private ImageButton btnClearCanvas;
 
     private DrawingView globalDrawingCanvas;
     private EditText inlineTextEditor;
@@ -83,6 +90,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private FrameLayout frameToolHighlighter;
     private FrameLayout frameToolText;
     private TextView btnToolText;
+    private ImageView colorBlack, colorBlue, colorRed, colorGreen;
 
     private ImageButton btnToolHand;
     private ImageButton btnToolPen;
@@ -93,6 +101,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private boolean isSaving = false;
     private boolean isPinned = false;
+    private boolean isCanvasLocked = false;
     private int currentNoteId = -1;
 
     private boolean isEphemeral = false;
@@ -133,6 +142,8 @@ public class not_alma_sayfa extends AppCompatActivity {
         setupCanvasTouchListener();
         setupInlineEditorListener();
         loadInitialIntentData();
+
+        selectColor(0xFF09090B, colorBlack);
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -190,11 +201,19 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
         btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer);
+        btnLockCanvas = findViewById(R.id.btnLockCanvas);
         containerEphemeralBadge = findViewById(R.id.containerEphemeralBadge);
         tvEphemeralBadge = findViewById(R.id.tvEphemeralBadge);
         etNoteTitle = findViewById(R.id.etNoteTitle);
+        btnShareNote = findViewById(R.id.btnShareNote);
+        btnExportPdf = findViewById(R.id.btnExportPdf);
+        btnSaveNote = findViewById(R.id.btnSaveNote);
 
-        // Sayfa Çizgi Modu Butonları
+        colorBlack = findViewById(R.id.colorBlack);
+        colorBlue = findViewById(R.id.colorBlue);
+        colorRed = findViewById(R.id.colorRed);
+        colorGreen = findViewById(R.id.colorGreen);
+
         btnBlankPageToggle = findViewById(R.id.btnBlankPageToggle);
         btnGridToggle = findViewById(R.id.btnGridToggle);
         btnHorizontalLinesToggle = findViewById(R.id.btnHorizontalLinesToggle);
@@ -205,6 +224,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         frameToolPen = findViewById(R.id.frameToolPen);
         frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
+        btnClearCanvas = findViewById(R.id.btnClearCanvas);
         frameToolText = findViewById(R.id.frameToolText);
         btnToolText = findViewById(R.id.btnToolText);
 
@@ -507,7 +527,11 @@ public class not_alma_sayfa extends AppCompatActivity {
                         commitInlineText();
                     }
                 }
-                return false;
+                return false; // Dokunmayı DrawingView'ın kendi onTouchEvent metoduna devret
+            }
+
+            if (isCanvasLocked) {
+                return true; // Metin modundayken sayfa kilitliyse metin editörünü açma
             }
 
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -536,21 +560,47 @@ public class not_alma_sayfa extends AppCompatActivity {
         });
     }
 
+    private void shareAsText() {
+        String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
+        if (TextUtils.isEmpty(title)) {
+            title = "Başlıksız Not";
+        }
+
+        String canvasTexts = "";
+        if (globalDrawingCanvas != null) {
+            canvasTexts = globalDrawingCanvas.getAllTextContent();
+        }
+
+        String playStoreUrl = "https://play.google.com/store/apps/details?id=" + getPackageName();
+        String deepLinkUrl = "hadibakalim://note?id=" + currentNoteId;
+
+        StringBuilder shareBody = new StringBuilder();
+        shareBody.append("📝 ").append(title).append("\n\n");
+
+        if (!canvasTexts.isEmpty()) {
+            shareBody.append(canvasTexts).append("\n\n");
+        }
+
+        shareBody.append("Uygulamada Notu Aç:\n").append(deepLinkUrl).append("\n\n");
+        shareBody.append("Uygulamayı İndir:\n").append(playStoreUrl);
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareBody.toString());
+
+        startActivity(Intent.createChooser(shareIntent, "Notu Paylaş"));
+    }
+
     private void setupClickListeners() {
         ImageButton btnToolUndo = findViewById(R.id.btnToolUndo);
         ImageButton btnToolRedo = findViewById(R.id.btnToolRedo);
         ImageButton btnColorPicker = findViewById(R.id.btnColorPicker);
-        ImageButton btnClearCanvas = findViewById(R.id.btnClearCanvas);
         ImageButton btnZoomIn = findViewById(R.id.btnZoomIn);
         ImageButton btnZoomOut = findViewById(R.id.btnZoomOut);
 
         ImageButton btnAddTable = findViewById(R.id.btnAddTable);
         ImageButton btnAddImage = findViewById(R.id.btnAddImage);
-
-        ImageView colorBlack = findViewById(R.id.colorBlack);
-        ImageView colorBlue = findViewById(R.id.colorBlue);
-        ImageView colorRed = findViewById(R.id.colorRed);
-        ImageView colorGreen = findViewById(R.id.colorGreen);
 
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
@@ -564,9 +614,67 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnZoomOut.setOnClickListener(v -> globalDrawingCanvas.zoomOut());
         }
 
+        if (btnShareNote != null) {
+            btnShareNote.setOnClickListener(v -> {
+                commitInlineText();
+                shareAsText();
+            });
+        }
+
+        if (btnExportPdf != null) {
+            btnExportPdf.setOnClickListener(v -> {
+                commitInlineText();
+                String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "Not";
+                if (globalDrawingCanvas != null) {
+                    globalDrawingCanvas.exportToPdf(this, title);
+                }
+            });
+        }
+
+        if (btnLockCanvas != null) {
+            btnLockCanvas.setOnClickListener(v -> {
+                isCanvasLocked = !isCanvasLocked;
+                btnLockCanvas.setColorFilter(isCanvasLocked ? 0xFF0284C7 : 0xFF64748B);
+                Toast.makeText(this, isCanvasLocked ? "Sayfa kilitlendi (Salt okunur)" : "Kilit açıldı", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        if (btnSaveNote != null) {
+            btnSaveNote.setOnClickListener(v -> saveNoteAndExit());
+        }
+
+        if (colorBlack != null) {
+            colorBlack.setOnClickListener(v -> selectColor(0xFF09090B, colorBlack));
+        }
+
+        if (colorBlue != null) {
+            colorBlue.setOnClickListener(v -> selectColor(0xFF0284C7, colorBlue));
+        }
+
+        if (colorRed != null) {
+            colorRed.setOnClickListener(v -> selectColor(0xFFEF4444, colorRed));
+        }
+
+        if (colorGreen != null) {
+            colorGreen.setOnClickListener(v -> selectColor(0xFF10B981, colorGreen));
+        }
+
+        if (btnClearCanvas != null) {
+            btnClearCanvas.bringToFront();
+            btnClearCanvas.setOnClickListener(v -> {
+                if (isCanvasLocked) {
+                    Toast.makeText(this, "Sayfa kilitli, önce kilidi açın", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                commitInlineText();
+                showClearCanvasDialog();
+            });
+        }
+
         ImageButton btnToolShapes = findViewById(R.id.btnToolShapes);
         if (btnToolShapes != null) {
             btnToolShapes.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 showShapePickerDialog();
             });
@@ -594,7 +702,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 0. Düz / Çizgisiz Sayfa Modu Tıklaması
         if (btnBlankPageToggle != null && globalDrawingCanvas != null) {
             btnBlankPageToggle.setOnClickListener(v -> {
                 globalDrawingCanvas.setPageGridMode(DrawingView.PageGridMode.BLANK);
@@ -602,7 +709,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 1. Kareli Sayfa Modu Tıklaması
         if (btnGridToggle != null && globalDrawingCanvas != null) {
             btnGridToggle.setOnClickListener(v -> {
                 DrawingView.PageGridMode current = globalDrawingCanvas.getPageGridMode();
@@ -612,7 +718,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 2. Yatay Çizgili Sayfa Modu Tıklaması
         if (btnHorizontalLinesToggle != null && globalDrawingCanvas != null) {
             btnHorizontalLinesToggle.setOnClickListener(v -> {
                 DrawingView.PageGridMode current = globalDrawingCanvas.getPageGridMode();
@@ -622,7 +727,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 3. Dikey Çizgili Sayfa Modu Tıklaması
         if (btnVerticalLinesToggle != null && globalDrawingCanvas != null) {
             btnVerticalLinesToggle.setOnClickListener(v -> {
                 DrawingView.PageGridMode current = globalDrawingCanvas.getPageGridMode();
@@ -632,7 +736,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        // 4. El (Kaydırma/Pan) Aracı
         if (btnToolHand != null) {
             btnToolHand.setOnClickListener(v -> {
                 commitInlineText();
@@ -645,6 +748,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolSelect != null) {
             btnToolSelect.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.SELECT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -655,6 +759,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolLasso != null) {
             btnToolLasso.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.LASSO;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -665,6 +770,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolPen != null) {
             btnToolPen.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.PEN;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -675,6 +781,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolHighlighter != null) {
             btnToolHighlighter.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.HIGHLIGHTER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -685,6 +792,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolText != null) {
             btnToolText.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.TEXT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -695,6 +803,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolEraser != null) {
             btnToolEraser.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 activeMode = DrawingView.ToolMode.ERASER;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
@@ -705,6 +814,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolUndo != null && globalDrawingCanvas != null) {
             btnToolUndo.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 globalDrawingCanvas.undo();
             });
@@ -712,20 +822,15 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnToolRedo != null && globalDrawingCanvas != null) {
             btnToolRedo.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 globalDrawingCanvas.redo();
             });
         }
 
-        if (btnClearCanvas != null && globalDrawingCanvas != null) {
-            btnClearCanvas.setOnClickListener(v -> {
-                commitInlineText();
-                globalDrawingCanvas.clearCanvas();
-            });
-        }
-
         if (btnAddTable != null) {
             btnAddTable.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 showTableCreationDialog();
             });
@@ -733,6 +838,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnAddImage != null) {
             btnAddImage.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
                 commitInlineText();
                 if (imagePickerLauncher != null) {
                     imagePickerLauncher.launch("image/*");
@@ -741,32 +847,67 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
 
         if (btnColorPicker != null) {
-            btnColorPicker.setOnClickListener(v -> showColorPickerDialog());
+            btnColorPicker.setOnClickListener(v -> {
+                if (isCanvasLocked) return;
+                showColorPickerDialog();
+            });
+        }
+    }
+
+    private void selectColor(int color, ImageView selectedView) {
+        if (globalDrawingCanvas != null) {
+            globalDrawingCanvas.setColor(color);
         }
 
-        if (colorBlack != null) {
-            colorBlack.setOnClickListener(v -> {
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF09090B);
+        ImageView[] allColors = {colorBlack, colorBlue, colorRed, colorGreen};
+        for (ImageView img : allColors) {
+            if (img != null) {
+                img.setBackground(null);
+                img.setPadding(4, 4, 4, 4);
+            }
+        }
+
+        if (selectedView != null) {
+            GradientDrawable border = new GradientDrawable();
+            border.setShape(GradientDrawable.OVAL);
+            border.setColor(Color.TRANSPARENT);
+            border.setStroke(6, 0xFF0284C7);
+            selectedView.setBackground(border);
+            selectedView.setPadding(6, 6, 6, 6);
+        }
+    }
+
+    @SuppressLint("InflateParams")
+    private void showClearCanvasDialog() {
+        if (isFinishing() || isDestroyed()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_not_silme_uyari, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        Button btnCancelDelete = dialogView.findViewById(R.id.btnCancelDelete);
+        Button btnConfirmDelete = dialogView.findViewById(R.id.btnConfirmDelete);
+
+        if (btnCancelDelete != null) {
+            btnCancelDelete.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnConfirmDelete != null) {
+            btnConfirmDelete.setOnClickListener(v -> {
+                dialog.dismiss();
+                if (globalDrawingCanvas != null) {
+                    globalDrawingCanvas.clearCanvas();
+                    Toast.makeText(this, "Tuval temizlendi", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
-        if (colorBlue != null) {
-            colorBlue.setOnClickListener(v -> {
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF0284C7);
-            });
-        }
-
-        if (colorRed != null) {
-            colorRed.setOnClickListener(v -> {
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFFEF4444);
-            });
-        }
-
-        if (colorGreen != null) {
-            colorGreen.setOnClickListener(v -> {
-                if (globalDrawingCanvas != null) globalDrawingCanvas.setColor(0xFF10B981);
-            });
-        }
+        dialog.show();
     }
 
     private void updatePageGridButtonsUI(DrawingView.PageGridMode mode) {

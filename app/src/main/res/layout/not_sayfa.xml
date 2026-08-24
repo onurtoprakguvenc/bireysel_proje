@@ -19,12 +19,12 @@
         android:elevation="2dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="12dp">
+        android:paddingHorizontal="8dp">
 
         <ImageButton
             android:id="@+id/btnCloseEditor"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_chevron_left"
@@ -33,7 +33,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="8dp"
+            android:layout_marginHorizontal="6dp"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">
@@ -49,7 +49,7 @@
                 android:inputType="textCapSentences"
                 android:maxLines="1"
                 android:textColor="#0F172A"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -57,17 +57,17 @@
         <LinearLayout
             android:id="@+id/containerEphemeralBadge"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="34dp"
             android:background="@drawable/bg_chip_inactive"
             android:backgroundTint="#FEE2E2"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="6dp"
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
                 android:src="@android:drawable/ic_menu_recent_history"
                 app:tint="#DC2626" />
 
@@ -82,24 +82,70 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Geçici Not Sayacı Butonu -->
         <ImageButton
             android:id="@+id/btnEphemeralTimer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/app_name"
             android:src="@android:drawable/ic_menu_recent_history"
             app:tint="#64748B" />
 
+        <!-- Tuval Kilitle / Salt Okunur Butonu -->
+        <ImageButton
+            android:id="@+id/btnLockCanvas"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Sayfayı Kilitle"
+            android:src="@android:drawable/ic_lock_lock"
+            app:tint="#64748B" />
+
+        <!-- Sabitle Butonu -->
         <ImageButton
             android:id="@+id/btnPinNote"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="4dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_pin"
             app:tint="#64748B" />
+
+        <!-- PDF Olarak Kaydet / Aktar Butonu -->
+        <ImageButton
+            android:id="@+id/btnExportPdf"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="PDF Olarak Aktar"
+            android:src="@android:drawable/ic_menu_save"
+            app:tint="#DC2626" />
+
+        <!-- Paylaş Butonu -->
+        <ImageButton
+            android:id="@+id/btnShareNote"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_share"
+            app:tint="#64748B" />
+
+        <!-- Kaydet / Bitti Butonu -->
+        <ImageButton
+            android:id="@+id/btnSaveNote"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Kaydet"
+            android:src="@drawable/ic_check"
+            app:tint="#0284C7" />
     </LinearLayout>
 
     <!-- ================================================================= -->
@@ -147,7 +193,6 @@
             android:orientation="horizontal"
             android:padding="3dp">
 
-            <!-- 0. Düz / Çizgisiz Sayfa Modu -->
             <ImageButton
                 android:id="@+id/btnBlankPageToggle"
                 android:layout_width="32dp"
@@ -158,7 +203,6 @@
                 android:src="@drawable/ic_blank_page"
                 app:tint="#0284C7" />
 
-            <!-- 1. Kareli Izgara Modu -->
             <ImageButton
                 android:id="@+id/btnGridToggle"
                 android:layout_width="32dp"
@@ -170,7 +214,6 @@
                 android:src="@drawable/ic_table"
                 app:tint="#64748B" />
 
-            <!-- 2. Yatay Çizgili Defter Modu -->
             <ImageButton
                 android:id="@+id/btnHorizontalLinesToggle"
                 android:layout_width="32dp"
@@ -182,7 +225,6 @@
                 android:src="@drawable/ic_list"
                 app:tint="#64748B" />
 
-            <!-- 3. Dikey Çizgili Sütun Modu -->
             <ImageButton
                 android:id="@+id/btnVerticalLinesToggle"
                 android:layout_width="32dp"
@@ -211,7 +253,6 @@
             android:orientation="vertical"
             android:padding="3dp">
 
-            <!-- Zoom In (+) -->
             <ImageButton
                 android:id="@+id/btnZoomIn"
                 android:layout_width="32dp"
@@ -222,14 +263,12 @@
                 android:src="@drawable/ic_zoom_in"
                 app:tint="#64748B" />
 
-            <!-- Ara Ayırıcı Çizgi -->
             <View
                 android:layout_width="20dp"
                 android:layout_height="1dp"
                 android:layout_marginVertical="2dp"
                 android:background="#E2E8F0" />
 
-            <!-- Zoom Out (-) -->
             <ImageButton
                 android:id="@+id/btnZoomOut"
                 android:layout_width="32dp"
@@ -251,15 +290,20 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
-        android:elevation="8dp"
+        android:clickable="true"
+        android:elevation="16dp"
+        android:focusable="true"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
+        android:paddingHorizontal="8dp"
         android:paddingTop="8dp"
         android:paddingBottom="12dp">
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fadingEdgeLength="24dp"
+            android:fillViewport="true"
+            android:requiresFadingEdge="horizontal"
             android:scrollbars="none">
 
             <LinearLayout
@@ -310,7 +354,7 @@
                     android:orientation="horizontal"
                     android:paddingHorizontal="4dp">
 
-                    <!-- EL / KAYDIRMA ARACI -->
+                    <!-- El / Kaydırma -->
                     <ImageButton
                         android:id="@+id/btnToolHand"
                         android:layout_width="28dp"
@@ -413,7 +457,7 @@
                         android:src="@drawable/ic_lasso"
                         app:tint="#64748B" />
 
-                    <!-- Şekiller -->
+                    <!-- Geometrik Şekiller -->
                     <ImageButton
                         android:id="@+id/btnToolShapes"
                         android:layout_width="28dp"
@@ -422,6 +466,18 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/ic_shapes"
+                        app:tint="#64748B" />
+
+                    <!-- Otomatik Çizgi / Akıllı Şekil Düzeltme Aracı -->
+                    <ImageButton
+                        android:id="@+id/btnToolSnapShape"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Akıllı Çizim Modu"
+                        android:padding="5dp"
+                        android:src="@android:drawable/ic_menu_compass"
                         app:tint="#64748B" />
                 </LinearLayout>
 
@@ -469,42 +525,46 @@
 
                     <ImageView
                         android:id="@+id/colorBlack"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_marginEnd="6dp"
+                        android:padding="2dp"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/shape_color_circle_black" />
 
                     <ImageView
                         android:id="@+id/colorBlue"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_marginEnd="6dp"
+                        android:padding="2dp"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/shape_color_circle_blue" />
 
                     <ImageView
                         android:id="@+id/colorRed"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_marginEnd="6dp"
+                        android:padding="2dp"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/shape_color_circle_black"
                         app:tint="#EF4444" />
 
                     <ImageView
                         android:id="@+id/colorGreen"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_marginEnd="6dp"
+                        android:padding="2dp"
                         android:contentDescription="@string/app_name"
                         android:src="@drawable/shape_color_circle_black"
                         app:tint="#10B981" />
 
                     <ImageButton
                         android:id="@+id/btnColorPicker"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_marginStart="2dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/app_name"
@@ -518,7 +578,9 @@
                     android:layout_height="36dp"
                     android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
                     android:contentDescription="@string/app_name"
+                    android:focusable="true"
                     android:src="@drawable/ic_trash"
                     app:tint="#EF4444" />
 

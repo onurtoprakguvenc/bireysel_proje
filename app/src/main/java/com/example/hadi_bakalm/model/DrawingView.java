@@ -2,6 +2,7 @@ package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,12 +16,15 @@ import android.graphics.RectF;
 import android.graphics.Region;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -47,8 +51,24 @@ public class DrawingView extends View {
     private TextItem editingTextItem = null;
     private TableCellClickResult editingTableCell = null;
 
+    private boolean isLocked = false;
+
+    // Otomatik Şekil Düzeltme (Snap to Shape) Alanları
+    private final Handler snapShapeHandler = new Handler(Looper.getMainLooper());
+    private boolean isSnapShapeTriggered = false;
+    private final Runnable snapShapeRunnable = this::attemptSnapToShape;
+
     public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
         this.onDrawingChangeListener = listener;
+    }
+
+    public void setLocked(boolean locked) {
+        this.isLocked = locked;
+        invalidate();
+    }
+
+    public boolean isLocked() {
+        return this.isLocked;
     }
 
     // =========================================================================
@@ -285,7 +305,6 @@ public class DrawingView extends View {
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
-    // Kronolojik geri/ileri alma geçmiş kuyruğu
     private final List<Object> historyStack = new ArrayList<>();
     private final List<Object> redoStack = new ArrayList<>();
 
@@ -293,6 +312,7 @@ public class DrawingView extends View {
 
     private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
+    private final RectF menuCopyBounds = new RectF();
     private final RectF menuSizeUpBounds = new RectF();
     private final RectF menuSizeDownBounds = new RectF();
 
@@ -565,7 +585,7 @@ public class DrawingView extends View {
         canvas.drawRect(groupBounds, selectionBoxPaint);
         canvas.drawCircle(groupBounds.right, groupBounds.bottom, 16f, handlePaint);
 
-        float menuW = 120f;
+        float menuW = 220f;
         float menuH = 56f;
         float menuX = groupBounds.left + (groupBounds.width() - menuW) / 2f;
         float menuY = groupBounds.top - menuH - 16f;
@@ -574,11 +594,16 @@ public class DrawingView extends View {
             menuY = groupBounds.bottom + 16f;
         }
 
-        menuSizeDownBounds.setEmpty();
-        menuSizeUpBounds.setEmpty();
-        menuDeleteBounds.set(menuX, menuY, menuX + menuW, menuY + menuH);
-        canvas.drawRoundRect(menuDeleteBounds, 28f, 28f, menuBgPaint);
-        canvas.drawText("Sil", menuX + (menuW / 2f), menuY + 36f, menuTextPaint);
+        RectF totalMenuRect = new RectF(menuX, menuY, menuX + menuW, menuY + menuH);
+        canvas.drawRoundRect(totalMenuRect, 28f, 28f, menuBgPaint);
+
+        menuCopyBounds.set(menuX, menuY, menuX + 110f, menuY + menuH);
+        canvas.drawText("Kopyala", menuX + 55f, menuY + 36f, menuTextPaint);
+
+        canvas.drawLine(menuX + 110f, menuY + 12f, menuX + 110f, menuY + menuH - 12f, gridPaint);
+
+        menuDeleteBounds.set(menuX + 110f, menuY, menuX + 220f, menuY + menuH);
+        canvas.drawText("Sil", menuX + 165f, menuY + 36f, menuTextPaint);
     }
 
     private void renderSelectionAndFloatingMenu(Canvas canvas) {
@@ -655,11 +680,18 @@ public class DrawingView extends View {
         scaleGestureDetector.onTouchEvent(event);
 
         if (event.getPointerCount() > 1 || currentToolMode == ToolMode.HAND) {
+            snapShapeHandler.removeCallbacks(snapShapeRunnable);
             handleScrollTouch(event);
             return true;
         }
 
+        if (isLocked) {
+            snapShapeHandler.removeCallbacks(snapShapeRunnable);
+            return false;
+        }
+
         if (currentToolMode == ToolMode.TEXT) {
+            snapShapeHandler.removeCallbacks(snapShapeRunnable);
             return false;
         }
 
@@ -672,6 +704,7 @@ public class DrawingView extends View {
                 touchStartY = touchY;
                 lastMoveX = touchX;
                 lastMoveY = touchY;
+                isSnapShapeTriggered = false;
 
                 if (currentToolMode == ToolMode.SELECT) {
                     handleSelectDown(touchX, touchY);
@@ -687,9 +720,14 @@ public class DrawingView extends View {
                 selectedGroup.clear();
                 groupBounds.setEmpty();
                 startStroke(touchX, touchY);
+
+                if (currentToolMode == ToolMode.PEN || currentToolMode == ToolMode.HIGHLIGHTER) {
+                    snapShapeHandler.postDelayed(snapShapeRunnable, 600);
+                }
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                float moveDelta = (float) Math.hypot(touchX - lastMoveX, touchY - lastMoveY);
                 lastMoveX = touchX;
                 lastMoveY = touchY;
 
@@ -704,24 +742,20 @@ public class DrawingView extends View {
                 }
 
                 continueStroke(touchX, touchY);
+
+                if (moveDelta > 8f && !isSnapShapeTriggered) {
+                    snapShapeHandler.removeCallbacks(snapShapeRunnable);
+                    if (currentToolMode == ToolMode.PEN || currentToolMode == ToolMode.HIGHLIGHTER) {
+                        snapShapeHandler.postDelayed(snapShapeRunnable, 600);
+                    }
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
-                performClick();
-                if (currentToolMode == ToolMode.SELECT) {
-                    handleSelectUp();
-                    return true;
-                }
-
-                if (currentToolMode == ToolMode.LASSO) {
-                    handleLassoUp();
-                    return true;
-                }
-
-                finishStroke();
-                break;
-
             case MotionEvent.ACTION_CANCEL:
+                snapShapeHandler.removeCallbacks(snapShapeRunnable);
+                performClick();
+
                 if (currentToolMode == ToolMode.SELECT) {
                     handleSelectUp();
                     return true;
@@ -738,6 +772,61 @@ public class DrawingView extends View {
 
         invalidate();
         return true;
+    }
+
+    private void attemptSnapToShape() {
+        if (activePoints == null || activePoints.size() < 6 || activePath == null) return;
+        if (currentToolMode != ToolMode.PEN && currentToolMode != ToolMode.HIGHLIGHTER) return;
+
+        Point startP = activePoints.get(0);
+        Point endP = activePoints.get(activePoints.size() - 1);
+
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        float totalLength = 0f;
+        for (int i = 0; i < activePoints.size(); i++) {
+            Point p = activePoints.get(i);
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+            if (i > 0) {
+                Point prev = activePoints.get(i - 1);
+                totalLength += (float) Math.hypot(p.x - prev.x, p.y - prev.y);
+            }
+        }
+
+        float directDist = (float) Math.hypot(endP.x - startP.x, endP.y - startP.y);
+        float width = maxX - minX;
+        float height = maxY - minY;
+        float closeDistance = (float) Math.hypot(endP.x - startP.x, endP.y - startP.y);
+
+        // 1. DÜZ ÇİZGİ TANIMA
+        if (totalLength > 40f && directDist / totalLength > 0.88f) {
+            activePath.reset();
+            activePath.moveTo(startP.x, startP.y);
+            activePath.lineTo(endP.x, endP.y);
+            isSnapShapeTriggered = true;
+            invalidate();
+            return;
+        }
+
+        // 2. KAPALI GEOMETRİK ŞEKİLLER (Daire / Dikdörtgen)
+        if (closeDistance < 60f && width > 30f && height > 30f) {
+            float ratio = width / height;
+            // Daire / Elips
+            if (ratio >= 0.75f && ratio <= 1.35f) {
+                activePath.reset();
+                activePath.addOval(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
+                isSnapShapeTriggered = true;
+                invalidate();
+                return;
+            }
+            // Dikdörtgen / Kare
+            activePath.reset();
+            activePath.addRect(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
+            isSnapShapeTriggered = true;
+            invalidate();
+        }
     }
 
     private void handleScrollTouch(MotionEvent event) {
@@ -898,10 +987,74 @@ public class DrawingView extends View {
         }
     }
 
+    private void duplicateSelectedGroup() {
+        if (selectedGroup.isEmpty()) return;
+
+        List<Object> newClones = new ArrayList<>();
+        float offset = 40f;
+
+        for (Object obj : selectedGroup) {
+            if (obj instanceof StrokeItem) {
+                StrokeItem orig = (StrokeItem) obj;
+                Path newPath = new Path(orig.path);
+                newPath.offset(offset, offset);
+
+                List<Point> newPoints = new ArrayList<>();
+                for (Point p : orig.points) {
+                    newPoints.add(new Point(p.x + offset, p.y + offset));
+                }
+
+                StrokeItem clone = new StrokeItem(newPath, new Paint(orig.paint), newPoints, orig.color, orig.strokeWidth, orig.isEraser);
+                strokes.add(clone);
+                historyStack.add(clone);
+                newClones.add(clone);
+
+            } else if (obj instanceof ShapeItem) {
+                ShapeItem orig = (ShapeItem) obj;
+                ShapeItem clone = new ShapeItem(orig.shapeType, orig.startX + offset, orig.startY + offset, orig.endX + offset, orig.endY + offset, orig.color, orig.strokeWidth);
+                shapes.add(clone);
+                historyStack.add(clone);
+                newClones.add(clone);
+
+            } else if (obj instanceof TextItem) {
+                TextItem orig = (TextItem) obj;
+                TextItem clone = new TextItem(orig.x + offset, orig.y + offset, orig.text, orig.color, orig.textSize);
+                texts.add(clone);
+                newClones.add(clone);
+
+            } else if (obj instanceof ImageItem) {
+                ImageItem orig = (ImageItem) obj;
+                ImageItem clone = new ImageItem(orig.x + offset, orig.y + offset, orig.width, orig.height, orig.bitmap, orig.uriStr);
+                images.add(clone);
+                newClones.add(clone);
+
+            } else if (obj instanceof TableItem) {
+                TableItem orig = (TableItem) obj;
+                TableItem clone = new TableItem(orig.startX + offset, orig.startY + offset, orig.rows, orig.cols);
+                for (TableCell c : orig.cells) {
+                    clone.cells.add(new TableCell(c.row, c.col, c.text));
+                }
+                tables.add(clone);
+                newClones.add(clone);
+            }
+        }
+
+        selectedGroup.clear();
+        selectedGroup.addAll(newClones);
+        calculateGroupBounds();
+        notifyChange();
+        invalidate();
+    }
+
     private void handleLassoDown(float x, float y) {
         selectedItem = null;
 
         if (!selectedGroup.isEmpty()) {
+            if (menuCopyBounds.contains(x, y)) {
+                duplicateSelectedGroup();
+                return;
+            }
+
             if (menuDeleteBounds.contains(x, y)) {
                 for (Object obj : selectedGroup) {
                     if (obj instanceof StrokeItem) strokes.remove((StrokeItem) obj);
@@ -1200,8 +1353,10 @@ public class DrawingView extends View {
             activePath.lineTo(x, y);
 
         } else {
-            activePath.lineTo(x, y);
-            activePoints.add(new Point(x, y));
+            if (!isSnapShapeTriggered) {
+                activePath.lineTo(x, y);
+                activePoints.add(new Point(x, y));
+            }
         }
     }
 
@@ -1242,6 +1397,7 @@ public class DrawingView extends View {
         activePath = null;
         activePaint = null;
         activePoints = null;
+        isSnapShapeTriggered = false;
 
         notifyChange();
     }
@@ -1611,7 +1767,8 @@ public class DrawingView extends View {
             if (mainObj.has("pageMode")) {
                 try {
                     this.currentPageGridMode = PageGridMode.valueOf(mainObj.getString("pageMode"));
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             if (mainObj.has("paths")) parseStrokes(mainObj.getJSONArray("paths"));
@@ -1774,5 +1931,69 @@ public class DrawingView extends View {
 
         Bitmap croppedBitmap = Bitmap.createBitmap(fullBitmap, minX, minY, cropWidth, cropHeight);
         return Bitmap.createScaledBitmap(croppedBitmap, targetWidth, targetHeight, true);
+    }
+
+    public String getAllTextContent() {
+        if (texts.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (TextItem item : texts) {
+            if (item.text != null && !item.text.trim().isEmpty()) {
+                sb.append(item.text.trim()).append("\n");
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    public void exportToPdf(Context context, String title) {
+        if (context == null) return;
+
+        int viewWidth = getWidth() > 0 ? getWidth() : 1080;
+        int viewHeight = getHeight() > 0 ? getHeight() : 1920;
+
+        android.graphics.pdf.PdfDocument pdfDocument = new android.graphics.pdf.PdfDocument();
+        android.graphics.pdf.PdfDocument.PageInfo pageInfo =
+                new android.graphics.pdf.PdfDocument.PageInfo.Builder(viewWidth, viewHeight, 1).create();
+        android.graphics.pdf.PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+
+        Canvas pdfCanvas = page.getCanvas();
+        pdfCanvas.drawColor(Color.WHITE);
+        draw(pdfCanvas);
+
+        pdfDocument.finishPage(page);
+
+        String fileName = (title != null && !title.trim().isEmpty() ? title.trim() : "Not") + "_" + System.currentTimeMillis() + ".pdf";
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                android.content.ContentValues values = new android.content.ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS);
+
+                Uri uri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    java.io.OutputStream os = context.getContentResolver().openOutputStream(uri);
+                    if (os != null) {
+                        pdfDocument.writeTo(os);
+                        os.close();
+                    }
+                    Toast.makeText(context, "PDF İndirilenler klasörüne kaydedildi", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                java.io.File file = new java.io.File(
+                        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+                        fileName
+                );
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+                pdfDocument.writeTo(fos);
+                fos.close();
+                Toast.makeText(context, "PDF kaydedildi: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PDF kaydedilirken hata", e);
+            Toast.makeText(context, "PDF kaydedilemedi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            pdfDocument.close();
+        }
     }
 }
