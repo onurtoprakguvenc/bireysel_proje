@@ -209,6 +209,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         btnExportPdf = findViewById(R.id.btnExportPdf);
         btnSaveNote = findViewById(R.id.btnSaveNote);
 
+
         colorBlack = findViewById(R.id.colorBlack);
         colorBlue = findViewById(R.id.colorBlue);
         colorRed = findViewById(R.id.colorRed);
@@ -599,6 +600,8 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageButton btnZoomIn = findViewById(R.id.btnZoomIn);
         ImageButton btnZoomOut = findViewById(R.id.btnZoomOut);
 
+        View layoutRightSidePanel = findViewById(R.id.layoutRightSidePanel);
+        ImageButton btnToggleRightPanel = findViewById(R.id.btnToggleRightPanel);
         ImageButton btnAddTable = findViewById(R.id.btnAddTable);
         ImageButton btnAddImage = findViewById(R.id.btnAddImage);
 
@@ -612,6 +615,18 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (btnZoomOut != null && globalDrawingCanvas != null) {
             btnZoomOut.setOnClickListener(v -> globalDrawingCanvas.zoomOut());
+        }
+
+        if (btnToggleRightPanel != null && layoutRightSidePanel != null) {
+            btnToggleRightPanel.setOnClickListener(v -> {
+                if (layoutRightSidePanel.getVisibility() == View.VISIBLE) {
+                    layoutRightSidePanel.setVisibility(View.GONE);
+                    btnToggleRightPanel.setRotation(0f); // Sola bak (Açmak için)
+                } else {
+                    layoutRightSidePanel.setVisibility(View.VISIBLE);
+                    btnToggleRightPanel.setRotation(180f); // Sağa bak (Gizlemek için)
+                }
+            });
         }
 
         if (btnShareNote != null) {
