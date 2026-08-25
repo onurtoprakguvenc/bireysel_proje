@@ -82,8 +82,8 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
                 android:text="Göz yormayan koyu renk arayüzü etkinleştirir."
                 android:textColor="#64748B"
                 android:textSize="12sp" />
@@ -138,8 +138,8 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
                 android:text="Ana ekrandaki kahve butonunu gösterir veya gizler."
                 android:textColor="#64748B"
                 android:textSize="12sp" />
@@ -195,8 +195,8 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
                 android:text="Not içerik önizlemelerini kısaltarak daha çok not gösterir."
                 android:textColor="#64748B"
                 android:textSize="12sp" />
@@ -215,7 +215,56 @@
         android:layout_height="1dp"
         android:background="#F1F5F9" />
 
-    <!-- 4. AYAR: Çöp Kutusunu Boşalt (Hızlı Temizlik) -->
+    <!-- 4. AYAR: Geri Dönüşüm Kutusunu Aç -->
+    <LinearLayout
+        android:id="@+id/rowOpenTrashPage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_trash"
+            app:tint="#64748B" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Geri Dönüşüm Kutusu"
+                android:textColor="#1E293B"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
+                android:text="Silinen ve süresi dolan geçici notları görüntüleyin."
+                android:textColor="#64748B"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F1F5F9" />
+
+    <!-- 5. AYAR: Çöp Kutusunu Boşalt (Hızlı Temizlik) -->
     <LinearLayout
         android:id="@+id/rowEmptyTrashDirect"
         android:layout_width="match_parent"
@@ -251,8 +300,8 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
                 android:text="Silinmiş tüm notları tek dokunuşla kalıcı olarak siler."
                 android:textColor="#94A3B8"
                 android:textSize="12sp" />
@@ -264,7 +313,7 @@
         android:layout_height="1dp"
         android:background="#F1F5F9" />
 
-    <!-- 5. AKSİYON: Bir Kahve Ismarla Sayfası -->
+    <!-- 6. AKSİYON: Bir Kahve Ismarla Sayfası -->
     <LinearLayout
         android:id="@+id/rowOpenDonatePage"
         android:layout_width="match_parent"
@@ -300,8 +349,8 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_height="wrap_content"
                 android:text="Geliştiriciye destek olmak için bağış sayfasını aç."
                 android:textColor="#64748B"
                 android:textSize="12sp" />

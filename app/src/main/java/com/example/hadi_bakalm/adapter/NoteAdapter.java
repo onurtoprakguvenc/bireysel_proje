@@ -97,6 +97,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         private final TextView tvNoteContent;
         private final TextView tvNoteDate;
         private final TextView tvCategoryBadge;
+        private final TextView tvCardEphemeralBadge;
         private final ImageButton btnQuickPin;
         private final ImageButton btnQuickDelete;
         private final FrameLayout layoutDrawingPreview;
@@ -108,6 +109,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             tvNoteContent = itemView.findViewById(R.id.tvNoteContent);
             tvNoteDate = itemView.findViewById(R.id.tvNoteDate);
             tvCategoryBadge = itemView.findViewById(R.id.tvCategoryBadge);
+            tvCardEphemeralBadge = itemView.findViewById(R.id.tvCardEphemeralBadge);
 
             btnQuickPin = itemView.findViewById(R.id.btnPin);
             btnQuickDelete = itemView.findViewById(R.id.btnDeleteNote);
@@ -125,7 +127,8 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             // 1. Kategori Rozeti (Badge)
             String category = (note.getCategory() != null && !note.getCategory().trim().isEmpty()) ? note.getCategory() : "Genel";
             if (tvCategoryBadge != null) {
-                tvCategoryBadge.setText(getCategoryIcon(category) + " " + category);
+                String icon = getCategoryIcon(category);
+                tvCategoryBadge.setText(icon.isEmpty() ? category : icon + " " + category);
             }
 
             // 2. Çizim ve İçerik Kontrolü
@@ -133,11 +136,11 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             boolean hasBase64Image = content.startsWith("DRAWING_BASE64:") && content.length() > 20;
 
             if (hasBase64Image) {
-                // Görseli çöz ve sarı kutuyu aç
                 if (tvNoteContent != null) tvNoteContent.setVisibility(View.GONE);
 
                 if (imgDrawingPreview != null) {
-                    imgDrawingPreview.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    // Kırpılmayı önlemek için FIT_CENTER kullanıldı
+                    imgDrawingPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     try {
                         String cleanBase64 = content.replace("DRAWING_BASE64:", "").trim();
                         byte[] decodedString = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT);
@@ -154,12 +157,45 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                     }
                 }
             } else {
-                // Çizim görseli yoksa (boşsa ya da normal metin notuysa) sarı kutuyu tamamen kapat
                 if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
                 if (tvNoteContent != null) {
-                    tvNoteContent.setVisibility(View.VISIBLE);
-                    String displayText = "Çizim Notu".equals(content) ? "" : content;
-                    tvNoteContent.setText(displayText);
+                    String displayText = ("Çizim Notu".equals(content) || content.isEmpty()) ? "" : content;
+                    if (displayText.isEmpty()) {
+                        tvNoteContent.setVisibility(View.GONE);
+                    } else {
+                        tvNoteContent.setVisibility(View.VISIBLE);
+                        tvNoteContent.setText(displayText);
+                    }
+                }
+            }
+
+            if (tvCardEphemeralBadge != null) {
+                if (note.isEphemeral() && note.getExpireTimestamp() > 0) {
+                    long diff = note.getExpireTimestamp() - System.currentTimeMillis();
+                    if (diff <= 0) {
+                        tvCardEphemeralBadge.setText("Süresi Doldu");
+                        tvCardEphemeralBadge.setVisibility(View.VISIBLE);
+                    } else {
+                        long totalSeconds = diff / 1000;
+                        long days = totalSeconds / (24 * 3600);
+                        long hours = (totalSeconds % (24 * 3600)) / 3600;
+                        long minutes = (totalSeconds % 3600) / 60;
+
+                        String badgeText;
+                        if (days > 0) {
+                            badgeText = days + "g " + hours + "s";
+                        } else if (hours > 0) {
+                            badgeText = hours + "s " + minutes + "d";
+                        } else if (minutes > 0) {
+                            badgeText = minutes + " dk";
+                        } else {
+                            badgeText = "<1 dk";
+                        }
+                        tvCardEphemeralBadge.setText(badgeText);
+                        tvCardEphemeralBadge.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    tvCardEphemeralBadge.setVisibility(View.GONE);
                 }
             }
 
@@ -207,16 +243,16 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         private String getCategoryIcon(String category) {
             switch (category.toLowerCase(Locale.getDefault())) {
                 case "kişisel":
-                    return "🏷️";
+                    return "️";
                 case "çizim":
-                    return "🎨";
+                    return "";
                 case "geçici":
-                    return "⏱️";
+                    return "";
                 case "iş":
                 case "iş / okul":
-                    return "💼";
+                    return "";
                 default:
-                    return "📌";
+                    return "";
             }
         }
     }

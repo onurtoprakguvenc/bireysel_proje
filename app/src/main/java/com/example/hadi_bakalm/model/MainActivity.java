@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fabAddNote;
     private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
+
     private LinearLayout categoryChipContainer;
 
     // Adaptör ve Veri Yönetimi
@@ -133,30 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
         categoryChipContainer.removeAllViews();
 
-        // 1. En Başta Geri Dönüşüm Kutusu Çipi ("Tümü"nün Solunda)
-        TextView trashChip = new TextView(this);
-        trashChip.setText("🗑️ Çöp");
-        trashChip.setTextSize(12f);
-        trashChip.setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8));
-        trashChip.setBackgroundResource(R.drawable.bg_chip_inactive);
-        trashChip.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-
-        LinearLayout.LayoutParams trashParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        trashParams.setMargins(0, 0, dpToPx(6), 0);
-        trashChip.setLayoutParams(trashParams);
-
-        trashChip.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
-            startActivity(intent);
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
-
-        categoryChipContainer.addView(trashChip);
-
-        // 2. Dinamik Kategori Çipleri (Tümü ve Diğerleri)
+        // Dinamik Kategori Çipleri (Tümü ve Diğerleri)
         for (String categoryName : dynamicCategories) {
             TextView chip = new TextView(this);
             chip.setText(categoryName);
@@ -357,8 +335,19 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnCloseSettings = dialogView.findViewById(R.id.btnCloseSettings);
         MaterialSwitch switchDarkMode = dialogView.findViewById(R.id.switchDarkMode);
         MaterialSwitch switchShowDonate = dialogView.findViewById(R.id.switchShowDonate);
+        LinearLayout rowOpenTrashPage = dialogView.findViewById(R.id.rowOpenTrashPage);
         LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
         LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
+
+        // Geri Dönüşüm Kutusunu Aç
+        if (rowOpenTrashPage != null) {
+            rowOpenTrashPage.setOnClickListener(v -> {
+                dialog.dismiss();
+                Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
 
         // Bağış Butonu Durumu
         boolean isDonateVisible = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_DONATE, true);
@@ -702,7 +691,9 @@ public class MainActivity extends AppCompatActivity {
                             entity.content,
                             entity.timestamp,
                             entity.category,
-                            entity.isPinned
+                            entity.isPinned,
+                            entity.isEphemeral,
+                            entity.expireTimestamp
                     ));
                 }
             }

@@ -11,19 +11,27 @@ public class NoteModel {
     private final String content;
     private final String date;
     private final String category;
-    private boolean isPinned; // 'final' kaldırıldı
+    private boolean isPinned;
+    private boolean isEphemeral;
+    private long expireTimestamp;
 
     public NoteModel(String title, String content, String date, String category, boolean isPinned) {
-        this(0, title, content, date, category, isPinned);
+        this(0, title, content, date, category, isPinned, false, 0L);
     }
 
     public NoteModel(int id, String title, String content, String date, String category, boolean isPinned) {
+        this(id, title, content, date, category, isPinned, false, 0L);
+    }
+
+    public NoteModel(int id, String title, String content, String date, String category, boolean isPinned, boolean isEphemeral, long expireTimestamp) {
         this.id = id;
         this.title = (title != null) ? title : "";
         this.content = (content != null) ? content : "";
         this.date = (date != null) ? date : "";
         this.category = (category != null) ? category : "";
         this.isPinned = isPinned;
+        this.isEphemeral = isEphemeral;
+        this.expireTimestamp = expireTimestamp;
     }
 
     public int getId() {
@@ -54,9 +62,24 @@ public class NoteModel {
         return isPinned;
     }
 
-    // EKLENEN SETTER METODU:
     public void setPinned(boolean pinned) {
         this.isPinned = pinned;
+    }
+
+    public boolean isEphemeral() {
+        return isEphemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.isEphemeral = ephemeral;
+    }
+
+    public long getExpireTimestamp() {
+        return expireTimestamp;
+    }
+
+    public void setExpireTimestamp(long expireTimestamp) {
+        this.expireTimestamp = expireTimestamp;
     }
 
     @Override
@@ -66,6 +89,8 @@ public class NoteModel {
         NoteModel noteModel = (NoteModel) o;
         return id == noteModel.id &&
                 isPinned == noteModel.isPinned &&
+                isEphemeral == noteModel.isEphemeral &&
+                expireTimestamp == noteModel.expireTimestamp &&
                 Objects.equals(title, noteModel.title) &&
                 Objects.equals(content, noteModel.content) &&
                 Objects.equals(date, noteModel.date) &&
@@ -74,7 +99,7 @@ public class NoteModel {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, content, date, category, isPinned);
+        return Objects.hash(id, title, content, date, category, isPinned, isEphemeral, expireTimestamp);
     }
 
     @NonNull
@@ -85,6 +110,8 @@ public class NoteModel {
                 ", title='" + title + '\'' +
                 ", category='" + category + '\'' +
                 ", isPinned=" + isPinned +
+                ", isEphemeral=" + isEphemeral +
+                ", expireTimestamp=" + expireTimestamp +
                 '}';
     }
 }

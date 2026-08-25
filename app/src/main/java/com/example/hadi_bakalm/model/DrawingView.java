@@ -21,6 +21,7 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -43,6 +44,8 @@ public class DrawingView extends View {
 
     public enum PageGridMode {BLANK, GRID, HORIZONTAL_LINES, VERTICAL_LINES}
 
+    private enum SnappedType {NONE, LINE, CIRCLE, RECTANGLE}
+
     public interface OnDrawingChangeListener {
         void onDrawingChanged(String jsonContent);
     }
@@ -53,9 +56,12 @@ public class DrawingView extends View {
 
     private boolean isLocked = false;
 
-    // Otomatik Şekil Düzeltme (Snap to Shape) Alanları
+    // Otomatik Şekil Düzeltme (Snap to Shape) Motoru
     private final Handler snapShapeHandler = new Handler(Looper.getMainLooper());
     private boolean isSnapShapeTriggered = false;
+    private SnappedType currentSnappedType = SnappedType.NONE;
+    private float snapAnchorX = 0f, snapAnchorY = 0f;
+    private float snappedMinX, snappedMinY, snappedMaxX, snappedMaxY;
     private final Runnable snapShapeRunnable = this::attemptSnapToShape;
 
     public void setOnDrawingChangeListener(OnDrawingChangeListener listener) {
@@ -704,7 +710,10 @@ public class DrawingView extends View {
                 touchStartY = touchY;
                 lastMoveX = touchX;
                 lastMoveY = touchY;
+                snapAnchorX = touchX;
+                snapAnchorY = touchY;
                 isSnapShapeTriggered = false;
+                currentSnappedType = SnappedType.NONE;
 
                 if (currentToolMode == ToolMode.SELECT) {
                     handleSelectDown(touchX, touchY);
@@ -722,12 +731,12 @@ public class DrawingView extends View {
                 startStroke(touchX, touchY);
 
                 if (currentToolMode == ToolMode.PEN || currentToolMode == ToolMode.HIGHLIGHTER) {
-                    snapShapeHandler.postDelayed(snapShapeRunnable, 600);
+                    snapShapeHandler.postDelayed(snapShapeRunnable, 450);
                 }
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                float moveDelta = (float) Math.hypot(touchX - lastMoveX, touchY - lastMoveY);
+                float distFromAnchor = (float) Math.hypot(touchX - snapAnchorX, touchY - snapAnchorY);
                 lastMoveX = touchX;
                 lastMoveY = touchY;
 
@@ -743,10 +752,13 @@ public class DrawingView extends View {
 
                 continueStroke(touchX, touchY);
 
-                if (moveDelta > 8f && !isSnapShapeTriggered) {
+                // Kullanıcı belirgin hareket ettiğinde zamanlayıcıyı yeni duraksama noktası için tazele
+                if (distFromAnchor > 35f && !isSnapShapeTriggered) {
+                    snapAnchorX = touchX;
+                    snapAnchorY = touchY;
                     snapShapeHandler.removeCallbacks(snapShapeRunnable);
                     if (currentToolMode == ToolMode.PEN || currentToolMode == ToolMode.HIGHLIGHTER) {
-                        snapShapeHandler.postDelayed(snapShapeRunnable, 600);
+                        snapShapeHandler.postDelayed(snapShapeRunnable, 450);
                     }
                 }
                 break;
@@ -775,7 +787,7 @@ public class DrawingView extends View {
     }
 
     private void attemptSnapToShape() {
-        if (activePoints == null || activePoints.size() < 6 || activePath == null) return;
+        if (activePoints == null || activePoints.size() < 4 || activePath == null) return;
         if (currentToolMode != ToolMode.PEN && currentToolMode != ToolMode.HIGHLIGHTER) return;
 
         Point startP = activePoints.get(0);
@@ -801,30 +813,41 @@ public class DrawingView extends View {
         float closeDistance = (float) Math.hypot(endP.x - startP.x, endP.y - startP.y);
 
         // 1. DÜZ ÇİZGİ TANIMA
-        if (totalLength > 40f && directDist / totalLength > 0.88f) {
+        if (totalLength > 30f && (directDist / totalLength) > 0.76f) {
             activePath.reset();
             activePath.moveTo(startP.x, startP.y);
             activePath.lineTo(endP.x, endP.y);
             isSnapShapeTriggered = true;
+            currentSnappedType = SnappedType.LINE;
+
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             invalidate();
             return;
         }
 
-        // 2. KAPALI GEOMETRİK ŞEKİLLER (Daire / Dikdörtgen)
-        if (closeDistance < 60f && width > 30f && height > 30f) {
+        // 2. KAPALI GEOMETRİK ŞEKİLLER (Daire / Kare / Dikdörtgen)
+        float maxDimension = Math.max(width, height);
+        if ((closeDistance < (maxDimension * 0.45f) || closeDistance < 140f) && width > 25f && height > 25f) {
+            snappedMinX = minX;
+            snappedMinY = minY;
+            snappedMaxX = maxX;
+            snappedMaxY = maxY;
+
             float ratio = width / height;
-            // Daire / Elips
-            if (ratio >= 0.75f && ratio <= 1.35f) {
+            if (ratio >= 0.65f && ratio <= 1.55f) {
+                // Çember / Elips
                 activePath.reset();
                 activePath.addOval(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
-                isSnapShapeTriggered = true;
-                invalidate();
-                return;
+                currentSnappedType = SnappedType.CIRCLE;
+            } else {
+                // Dikdörtgen
+                activePath.reset();
+                activePath.addRect(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
+                currentSnappedType = SnappedType.RECTANGLE;
             }
-            // Dikdörtgen / Kare
-            activePath.reset();
-            activePath.addRect(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
+
             isSnapShapeTriggered = true;
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             invalidate();
         }
     }
@@ -1353,7 +1376,26 @@ public class DrawingView extends View {
             activePath.lineTo(x, y);
 
         } else {
-            if (!isSnapShapeTriggered) {
+            if (isSnapShapeTriggered) {
+                // Şekil kilitlendikten sonra parmak çekilmeden dinamik boyutlandırma
+                if (currentSnappedType == SnappedType.LINE && activePoints != null && !activePoints.isEmpty()) {
+                    Point startP = activePoints.get(0);
+                    activePath.reset();
+                    activePath.moveTo(startP.x, startP.y);
+                    activePath.lineTo(x, y);
+                } else if (currentSnappedType == SnappedType.CIRCLE || currentSnappedType == SnappedType.RECTANGLE) {
+                    float curMinX = Math.min(snappedMinX, x);
+                    float curMinY = Math.min(snappedMinY, y);
+                    float curMaxX = Math.max(snappedMaxX, x);
+                    float curMaxY = Math.max(snappedMaxY, y);
+                    activePath.reset();
+                    if (currentSnappedType == SnappedType.CIRCLE) {
+                        activePath.addOval(new RectF(curMinX, curMinY, curMaxX, curMaxY), Path.Direction.CW);
+                    } else {
+                        activePath.addRect(new RectF(curMinX, curMinY, curMaxX, curMaxY), Path.Direction.CW);
+                    }
+                }
+            } else {
                 activePath.lineTo(x, y);
                 activePoints.add(new Point(x, y));
             }
@@ -1398,6 +1440,7 @@ public class DrawingView extends View {
         activePaint = null;
         activePoints = null;
         isSnapShapeTriggered = false;
+        currentSnappedType = SnappedType.NONE;
 
         notifyChange();
     }

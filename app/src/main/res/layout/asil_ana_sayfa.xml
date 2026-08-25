@@ -155,19 +155,6 @@
                 android:orientation="horizontal">
 
                 <!-- 1. Geri Dönüşüm Kutusu Çipi (Tümünün Hemen Solunda, Soft Göze Batmayan Vurgu) -->
-                <TextView
-                    android:id="@+id/chipTrashShortcut"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/bg_chip_inactive"
-                    android:backgroundTint="#F1F5F9"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="6dp"
-                    android:text="🗑️ Çöp"
-                    android:textColor="#64748B"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
 
                 <!-- 2. Tümü Çipi (Aktif) -->
                 <TextView

@@ -1280,7 +1280,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             blocks.add(drawingBlock);
 
             try {
-                Bitmap thumb = globalDrawingCanvas.exportThumbnail(400, 140);
+                Bitmap thumb = globalDrawingCanvas.exportThumbnail(480, 270);
                 if (thumb != null) {
                     java.io.ByteArrayOutputStream byteArrayOutputStream = new java.io.ByteArrayOutputStream();
                     thumb.compress(Bitmap.CompressFormat.PNG, 80, byteArrayOutputStream);
