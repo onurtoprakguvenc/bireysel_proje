@@ -140,7 +140,7 @@
             android:textColorHint="#94A3B8"
             android:textSize="13sp" />
 
-        <!-- Kategori Çipleri (Çöp Kutusu En Başta / Tümü'nün Solunda) -->
+        <!-- Kategori Çipleri -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -154,9 +154,7 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- 1. Geri Dönüşüm Kutusu Çipi (Tümünün Hemen Solunda, Soft Göze Batmayan Vurgu) -->
-
-                <!-- 2. Tümü Çipi (Aktif) -->
+                <!-- Tümü Çipi (Aktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -170,7 +168,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <!-- 3. Kategori Örnekleri (İnaktif) -->
+                <!-- Kategori Örnekleri (İnaktif) -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -239,7 +237,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Yüzen Ekleme Butonu (Modern FAB) -->
+    <!-- 1. Hızlı Not / Anlık Karalama Butonu (Mini FAB - Sol Tarafta) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabQuickNote"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_pen"
+        app:tint="#0284C7"
+        app:backgroundTint="#E0F2FE"
+        app:fabCustomSize="46dp"
+        app:maxImageSize="20dp"
+        app:elevation="4dp"
+        android:contentDescription="Hızlı Not Al"
+        app:layout_constraintEnd_toStartOf="@id/fabAddNote"
+        app:layout_constraintTop_toTopOf="@id/fabAddNote"
+        app:layout_constraintBottom_toBottomOf="@id/fabAddNote" />
+
+    <!-- 2. Standart Yeni Not Ekleme Butonu (Ana FAB - Sağda) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddNote"
         android:layout_width="wrap_content"

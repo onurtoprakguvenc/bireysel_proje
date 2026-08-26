@@ -39,8 +39,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton btnToggleLayout;
     private ImageButton btnSettings;
     private FloatingActionButton fabAddNote;
+    private FloatingActionButton fabQuickNote;
     private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
 
@@ -179,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
         btnSettings = findViewById(R.id.btnSettings);
         fabAddNote = findViewById(R.id.fabAddNote);
+        fabQuickNote = findViewById(R.id.fabQuickNote);
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
 
@@ -306,8 +310,23 @@ public class MainActivity extends AppCompatActivity {
             btnSettings.setOnClickListener(v -> showNoteAppSettingsDialog());
         }
 
+        // 1. Klasik Not Ekleme (Diyalog ile Kategori / Başlık Seçimi)
         if (fabAddNote != null) {
             fabAddNote.setOnClickListener(v -> showCustomNoteCreationDialog());
+        }
+
+        // 2. Hızlı Not Al (Sıfır Sürtünme - Doğrudan Çizim Sayfasına Geçiş)
+        if (fabQuickNote != null) {
+            fabQuickNote.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
+                String timeStamp = new SimpleDateFormat("dd MMM, HH:mm", TR_LOCALE).format(new Date());
+                String defaultTitle = "Hızlı Not (" + timeStamp + ")";
+
+                intent.putExtra("EXTRA_NOTE_TITLE", defaultTitle);
+                intent.putExtra("EXTRA_NOTE_CATEGORY", "Hızlı Not");
+                intent.putExtra("EXTRA_NOTE_ID", -1);
+                startActivity(intent);
+            });
         }
 
         if (fabDonateCoffee != null) {
