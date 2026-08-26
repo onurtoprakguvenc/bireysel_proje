@@ -5,6 +5,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageDecoder;
@@ -61,18 +62,18 @@ public class not_alma_sayfa extends AppCompatActivity {
     private static final ExecutorService DB_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd MMM, HH:mm", new Locale("tr", "TR"));
     private static final SimpleDateFormat EXPIRY_FORMAT = new SimpleDateFormat("dd MMM yyyy, HH:mm", new Locale("tr", "TR"));
+    private static final String PREF_IS_ADVANCED_MODE = "pref_is_advanced_mode";
 
     private ImageButton btnCloseEditor;
     private ImageButton btnPinNote;
-    private ImageButton btnEphemeralTimer;
     private ImageButton btnLockCanvas;
     private LinearLayout containerEphemeralBadge;
     private TextView tvEphemeralBadge;
     private EditText etNoteTitle;
 
     private ImageButton btnShareNote;
-    private ImageButton btnExportPdf;
     private ImageButton btnSaveNote;
+    private ImageButton btnMoreOptions;
 
     // Sayfa Çizgi Modu Butonları
     private ImageButton btnBlankPageToggle;
@@ -139,6 +140,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         setupImagePicker();
         initViews();
         setupClickListeners();
+        setupEditorModeToggle();
         setupCanvasTouchListener();
         setupInlineEditorListener();
         loadInitialIntentData();
@@ -178,6 +180,39 @@ public class not_alma_sayfa extends AppCompatActivity {
         );
     }
 
+    private void setupEditorModeToggle() {
+        View layoutAdvancedToolsRow = findViewById(R.id.layoutAdvancedToolsRow);
+        View containerBasicColors = findViewById(R.id.containerBasicColors);
+        ImageButton btnToggleEditorMode = findViewById(R.id.btnToggleEditorMode);
+
+        if (btnToggleEditorMode == null || layoutAdvancedToolsRow == null) return;
+
+        SharedPreferences prefs = getSharedPreferences("NoteEditorPrefs", MODE_PRIVATE);
+        boolean isAdvanced = prefs.getBoolean(PREF_IS_ADVANCED_MODE, false);
+
+        applyEditorMode(isAdvanced, layoutAdvancedToolsRow, containerBasicColors, btnToggleEditorMode);
+
+        btnToggleEditorMode.setOnClickListener(v -> {
+            boolean newMode = (layoutAdvancedToolsRow.getVisibility() != View.VISIBLE);
+            prefs.edit().putBoolean(PREF_IS_ADVANCED_MODE, newMode).apply();
+            applyEditorMode(newMode, layoutAdvancedToolsRow, containerBasicColors, btnToggleEditorMode);
+        });
+    }
+
+    private void applyEditorMode(boolean isAdvanced, View advancedRow, View basicColors, ImageButton toggleBtn) {
+        if (isAdvanced) {
+            advancedRow.setVisibility(View.VISIBLE);
+            if (basicColors != null) basicColors.setVisibility(View.INVISIBLE);
+            toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE0F2FE));
+            toggleBtn.setColorFilter(0xFF0284C7);
+        } else {
+            advancedRow.setVisibility(View.GONE);
+            if (basicColors != null) basicColors.setVisibility(View.VISIBLE);
+            toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF1F5F9));
+            toggleBtn.setColorFilter(0xFF64748B);
+        }
+    }
+
     private void loadBitmapFromUri(Uri uri) {
         try {
             Bitmap bitmap;
@@ -200,15 +235,13 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void initViews() {
         btnCloseEditor = findViewById(R.id.btnCloseEditor);
         btnPinNote = findViewById(R.id.btnPinNote);
-        btnEphemeralTimer = findViewById(R.id.btnEphemeralTimer);
         btnLockCanvas = findViewById(R.id.btnLockCanvas);
         containerEphemeralBadge = findViewById(R.id.containerEphemeralBadge);
         tvEphemeralBadge = findViewById(R.id.tvEphemeralBadge);
         etNoteTitle = findViewById(R.id.etNoteTitle);
         btnShareNote = findViewById(R.id.btnShareNote);
-        btnExportPdf = findViewById(R.id.btnExportPdf);
         btnSaveNote = findViewById(R.id.btnSaveNote);
-
+        btnMoreOptions = findViewById(R.id.btnMoreOptions);
 
         colorBlack = findViewById(R.id.colorBlack);
         colorBlue = findViewById(R.id.colorBlue);
@@ -303,10 +336,6 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void updateLiveBadgeUI() {
         if (!isEphemeral || expireTimestamp <= 0) {
             if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.GONE);
-            if (btnEphemeralTimer != null) {
-                btnEphemeralTimer.setVisibility(View.VISIBLE);
-                btnEphemeralTimer.setColorFilter(0xFF64748B);
-            }
             return;
         }
 
@@ -314,7 +343,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (diff <= 0) {
             if (tvEphemeralBadge != null) tvEphemeralBadge.setText("Süresi Doldu");
             if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.VISIBLE);
-            if (btnEphemeralTimer != null) btnEphemeralTimer.setVisibility(View.GONE);
             return;
         }
 
@@ -337,7 +365,6 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         if (tvEphemeralBadge != null) tvEphemeralBadge.setText(formattedTime);
         if (containerEphemeralBadge != null) containerEphemeralBadge.setVisibility(View.VISIBLE);
-        if (btnEphemeralTimer != null) btnEphemeralTimer.setVisibility(View.GONE);
     }
 
     private void setupInlineEditorListener() {
@@ -528,11 +555,11 @@ public class not_alma_sayfa extends AppCompatActivity {
                         commitInlineText();
                     }
                 }
-                return false; // Dokunmayı DrawingView'ın kendi onTouchEvent metoduna devret
+                return false;
             }
 
             if (isCanvasLocked) {
-                return true; // Metin modundayken sayfa kilitliyse metin editörünü açma
+                return true;
             }
 
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -604,9 +631,36 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageButton btnToggleRightPanel = findViewById(R.id.btnToggleRightPanel);
         ImageButton btnAddTable = findViewById(R.id.btnAddTable);
         ImageButton btnAddImage = findViewById(R.id.btnAddImage);
+        ImageView colorBlackBasic = findViewById(R.id.colorBlackBasic);
+        ImageView colorBlueBasic = findViewById(R.id.colorBlueBasic);
+        ImageView colorRedBasic = findViewById(R.id.colorRedBasic);
 
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
+        }
+
+        if (btnMoreOptions != null) {
+            btnMoreOptions.setOnClickListener(v -> {
+                commitInlineText();
+                androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, v);
+                popup.getMenu().add(0, 1, 0, " Geçici Not Süresi");
+                popup.getMenu().add(0, 2, 1, " PDF Olarak Dışa Aktar");
+
+                popup.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == 1) {
+                        showEphemeralSelectionDialog();
+                        return true;
+                    } else if (item.getItemId() == 2) {
+                        String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "Not";
+                        if (globalDrawingCanvas != null) {
+                            globalDrawingCanvas.exportToPdf(this, title);
+                        }
+                        return true;
+                    }
+                    return false;
+                });
+                popup.show();
+            });
         }
 
         if (btnZoomIn != null && globalDrawingCanvas != null) {
@@ -617,14 +671,18 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnZoomOut.setOnClickListener(v -> globalDrawingCanvas.zoomOut());
         }
 
+        if (colorBlackBasic != null) colorBlackBasic.setOnClickListener(v -> selectColor(0xFF09090B, colorBlackBasic));
+        if (colorBlueBasic != null) colorBlueBasic.setOnClickListener(v -> selectColor(0xFF0284C7, colorBlueBasic));
+        if (colorRedBasic != null) colorRedBasic.setOnClickListener(v -> selectColor(0xFFEF4444, colorRedBasic));
+
         if (btnToggleRightPanel != null && layoutRightSidePanel != null) {
             btnToggleRightPanel.setOnClickListener(v -> {
                 if (layoutRightSidePanel.getVisibility() == View.VISIBLE) {
                     layoutRightSidePanel.setVisibility(View.GONE);
-                    btnToggleRightPanel.setRotation(0f); // Sola bak (Açmak için)
+                    btnToggleRightPanel.setRotation(0f);
                 } else {
                     layoutRightSidePanel.setVisibility(View.VISIBLE);
-                    btnToggleRightPanel.setRotation(180f); // Sağa bak (Gizlemek için)
+                    btnToggleRightPanel.setRotation(180f);
                 }
             });
         }
@@ -633,16 +691,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnShareNote.setOnClickListener(v -> {
                 commitInlineText();
                 shareAsText();
-            });
-        }
-
-        if (btnExportPdf != null) {
-            btnExportPdf.setOnClickListener(v -> {
-                commitInlineText();
-                String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "Not";
-                if (globalDrawingCanvas != null) {
-                    globalDrawingCanvas.exportToPdf(this, title);
-                }
             });
         }
 
@@ -700,13 +748,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 isPinned = !isPinned;
                 btnPinNote.setColorFilter(isPinned ? 0xFFEAB308 : 0xFF94A3B8);
                 Toast.makeText(this, isPinned ? "Not sabitlendi" : "Sabitleme kaldırıldı", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnEphemeralTimer != null) {
-            btnEphemeralTimer.setOnClickListener(v -> {
-                commitInlineText();
-                showEphemeralSelectionDialog();
             });
         }
 
@@ -874,7 +915,11 @@ public class not_alma_sayfa extends AppCompatActivity {
             globalDrawingCanvas.setColor(color);
         }
 
-        ImageView[] allColors = {colorBlack, colorBlue, colorRed, colorGreen};
+        ImageView colorBlackBasic = findViewById(R.id.colorBlackBasic);
+        ImageView colorBlueBasic = findViewById(R.id.colorBlueBasic);
+        ImageView colorRedBasic = findViewById(R.id.colorRedBasic);
+
+        ImageView[] allColors = {colorBlack, colorBlue, colorRed, colorGreen, colorBlackBasic, colorBlueBasic, colorRedBasic};
         for (ImageView img : allColors) {
             if (img != null) {
                 img.setBackground(null);

@@ -9,7 +9,7 @@
     tools:ignore="all">
 
     <!-- ================================================================= -->
-    <!-- ÜST BAR (HEADER)                                                  -->
+    <!-- ÜST BAR (HEADER - SADELEŞTİRİLMİŞ DÜZEN)                          -->
     <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/editorHeader"
@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="6dp"
             android:layout_weight="1"
-            android:gravity="center"
+            android:gravity="center_vertical"
             android:orientation="vertical">
 
             <EditText
@@ -43,21 +43,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@null"
-                android:gravity="center"
                 android:hint="@string/basliksiz_not"
                 android:importantForAutofill="no"
                 android:inputType="textCapSentences"
                 android:maxLines="1"
                 android:textColor="#0F172A"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Canlı Kalan Süre Rozeti -->
+        <!-- Canlı Kalan Süre Rozeti (Sadece Süre Varsa Görünür) -->
         <LinearLayout
             android:id="@+id/containerEphemeralBadge"
             android:layout_width="wrap_content"
-            android:layout_height="34dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="4dp"
             android:background="@drawable/bg_chip_inactive"
             android:backgroundTint="#FEE2E2"
             android:gravity="center_vertical"
@@ -82,22 +82,11 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Geçici Not Sayacı Butonu -->
-        <ImageButton
-            android:id="@+id/btnEphemeralTimer"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/app_name"
-            android:src="@android:drawable/ic_menu_recent_history"
-            app:tint="#64748B" />
-
         <!-- Tuval Kilitle / Salt Okunur Butonu -->
         <ImageButton
             android:id="@+id/btnLockCanvas"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:layout_marginStart="2dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Sayfayı Kilitle"
             android:src="@android:drawable/ic_lock_lock"
@@ -114,17 +103,6 @@
             android:src="@drawable/ic_pin"
             app:tint="#64748B" />
 
-        <!-- PDF Olarak Kaydet / Aktar Butonu -->
-        <ImageButton
-            android:id="@+id/btnExportPdf"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="2dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="PDF Olarak Aktar"
-            android:src="@android:drawable/ic_menu_save"
-            app:tint="#DC2626" />
-
         <!-- Paylaş Butonu -->
         <ImageButton
             android:id="@+id/btnShareNote"
@@ -136,12 +114,23 @@
             android:src="@drawable/ic_share"
             app:tint="#64748B" />
 
+        <!-- Daha Fazla / Ekstra Seçenekler (3 Nokta) -->
+        <ImageButton
+            android:id="@+id/btnMoreOptions"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Diğer Seçenekler"
+            android:src="@android:drawable/ic_menu_more"
+            app:tint="#64748B" />
+
         <!-- Kaydet / Bitti Butonu -->
         <ImageButton
             android:id="@+id/btnSaveNote"
             android:layout_width="38dp"
             android:layout_height="38dp"
-            android:layout_marginStart="2dp"
+            android:layout_marginStart="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Kaydet"
             android:src="@drawable/ic_check"
@@ -178,7 +167,7 @@
             android:textSize="18sp"
             android:visibility="gone" />
 
-        <!-- Sağ Üst: Katlanabilir Panel Kapsayıcısı (Ok + Şablon & Zoom) -->
+        <!-- Sağ Üst: Katlanabilir Panel Kapsayıcısı -->
         <LinearLayout
             android:id="@+id/containerCollapsibleRight"
             android:layout_width="wrap_content"
@@ -189,7 +178,6 @@
             android:gravity="top|end"
             android:orientation="horizontal">
 
-            <!-- Paneli Gizle / Aç Oku -->
             <ImageButton
                 android:id="@+id/btnToggleRightPanel"
                 android:layout_width="28dp"
@@ -205,14 +193,12 @@
                 android:rotation="180"
                 app:tint="#64748B" />
 
-            <!-- Gizlenebilir İçerik (Şablonlar ve Zoom) -->
             <LinearLayout
                 android:id="@+id/layoutRightSidePanel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Sayfa Çizgi Modları -->
                 <LinearLayout
                     android:id="@+id/containerPageGridModes"
                     android:layout_width="wrap_content"
@@ -269,7 +255,6 @@
                         app:tint="#64748B" />
                 </LinearLayout>
 
-                <!-- Manuel Zoom In (+) ve Zoom Out (-) -->
                 <LinearLayout
                     android:id="@+id/containerZoomControls"
                     android:layout_width="wrap_content"
@@ -314,7 +299,7 @@
     </FrameLayout>
 
     <!-- ================================================================= -->
-    <!-- ALT ARAÇ ÇUBUĞU (İKİLİ TABLO / SABİT 2 SATIR DÜZENİ)              -->
+    <!-- ALT ARAÇ ÇUBUĞU                                                   -->
     <!-- ================================================================= -->
     <LinearLayout
         android:id="@+id/editorFooterToolbar"
@@ -326,11 +311,11 @@
         android:elevation="16dp"
         android:focusable="true"
         android:orientation="vertical"
-        android:paddingHorizontal="10dp"
+        android:paddingHorizontal="8dp"
         android:paddingTop="6dp"
         android:paddingBottom="10dp">
 
-        <!-- 1. SATIR: Temel Çizim & İşlem Araçları -->
+        <!-- 1. SATIR: TEMEL ÇİZİM ARAÇLARI -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="38dp"
@@ -349,8 +334,8 @@
 
                 <ImageButton
                     android:id="@+id/btnToolUndo"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/app_name"
                     android:src="@drawable/ic_chevron_left"
@@ -358,8 +343,8 @@
 
                 <ImageButton
                     android:id="@+id/btnToolRedo"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/app_name"
                     android:rotation="180"
@@ -367,22 +352,21 @@
                     app:tint="#475569" />
             </LinearLayout>
 
-            <!-- Çizim Modları Grubu -->
+            <!-- Temel Araçlar -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
-                android:layout_weight="1"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_chip_inactive"
                 android:backgroundTint="#F1F5F9"
-                android:gravity="center"
-                android:orientation="horizontal">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="3dp">
 
                 <ImageButton
                     android:id="@+id/btnToolHand"
-                    android:layout_width="0dp"
+                    android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:layout_weight="1"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Kaydırma"
                     android:padding="5dp"
@@ -393,6 +377,7 @@
                     android:id="@+id/frameToolPen"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
+                    android:layout_marginStart="2dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#E2E8F0">
 
@@ -446,34 +431,87 @@
 
                 <ImageButton
                     android:id="@+id/btnToolEraser"
-                    android:layout_width="0dp"
+                    android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Silgi"
                     android:src="@drawable/ic_eraser"
                     app:tint="#64748B" />
             </LinearLayout>
 
-            <!-- Tuvali Sıfırla / Temizle -->
+            <!-- 1. Satırdaki 3'lü Renk Paleti (Gelişmiş Açılınca Gizlenir) -->
+            <LinearLayout
+                android:id="@+id/containerBasicColors"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#F1F5F9"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp">
+
+                <ImageView
+                    android:id="@+id/colorBlackBasic"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="Siyah"
+                    android:src="@drawable/shape_color_circle_black" />
+
+                <ImageView
+                    android:id="@+id/colorBlueBasic"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="Mavi"
+                    android:src="@drawable/shape_color_circle_blue" />
+
+                <ImageView
+                    android:id="@+id/colorRedBasic"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="Kırmızı"
+                    android:src="@drawable/shape_color_circle_black"
+                    app:tint="#EF4444" />
+            </LinearLayout>
+
+            <!-- Gelişmiş Mod Açma / Kapatma Butonu -->
+            <ImageButton
+                android:id="@+id/btnToggleEditorMode"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#F1F5F9"
+                android:contentDescription="Gelişmiş Mod"
+                android:padding="6dp"
+                android:src="@drawable/ic_tune"
+                app:tint="#0284C7" />
+
+            <!-- Çöp Kutusu -->
             <ImageButton
                 android:id="@+id/btnClearCanvas"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Temizle"
                 android:src="@drawable/ic_trash"
                 app:tint="#EF4444" />
         </LinearLayout>
 
-        <!-- 2. SATIR: Gelişmiş Şekiller, Ekleme ve Renk Paleti -->
+        <!-- 2. SATIR: GELİŞMİŞ ARAÇLAR & AŞAĞI İNEN 5'Lİ TAM RENK PALETİ -->
         <LinearLayout
+            android:id="@+id/layoutAdvancedToolsRow"
             android:layout_width="match_parent"
             android:layout_height="38dp"
             android:layout_marginTop="6dp"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <!-- Seçim ve Geometri Grubu -->
             <LinearLayout
@@ -483,7 +521,7 @@
                 android:backgroundTint="#F1F5F9"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="2dp">
+                android:paddingHorizontal="3dp">
 
                 <ImageButton
                     android:id="@+id/btnToolSelect"
@@ -498,7 +536,7 @@
                     android:id="@+id/btnToolLasso"
                     android:layout_width="26dp"
                     android:layout_height="26dp"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="3dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Kement"
                     android:src="@drawable/ic_lasso"
@@ -508,7 +546,7 @@
                     android:id="@+id/btnToolShapes"
                     android:layout_width="26dp"
                     android:layout_height="26dp"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="3dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Şekiller"
                     android:src="@drawable/ic_shapes"
@@ -524,7 +562,7 @@
                 android:backgroundTint="#F1F5F9"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="2dp">
+                android:paddingHorizontal="3dp">
 
                 <ImageButton
                     android:id="@+id/btnAddTable"
@@ -539,14 +577,14 @@
                     android:id="@+id/btnAddImage"
                     android:layout_width="26dp"
                     android:layout_height="26dp"
-                    android:layout_marginStart="2dp"
+                    android:layout_marginStart="3dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Görsel"
                     android:src="@drawable/ic_image"
                     app:tint="#0284C7" />
             </LinearLayout>
 
-            <!-- Renk Paleti (Kalan Alanı Doldurur) -->
+            <!-- 2. Satırdaki 5'li Tam Renk Paleti -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -560,38 +598,33 @@
 
                 <ImageView
                     android:id="@+id/colorBlack"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="4dp"
-                    android:padding="2dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:contentDescription="Siyah"
                     android:src="@drawable/shape_color_circle_black" />
 
                 <ImageView
                     android:id="@+id/colorBlue"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="4dp"
-                    android:padding="2dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="5dp"
                     android:contentDescription="Mavi"
                     android:src="@drawable/shape_color_circle_blue" />
 
                 <ImageView
                     android:id="@+id/colorRed"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="4dp"
-                    android:padding="2dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="5dp"
                     android:contentDescription="Kırmızı"
                     android:src="@drawable/shape_color_circle_black"
                     app:tint="#EF4444" />
 
                 <ImageView
                     android:id="@+id/colorGreen"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_marginEnd="4dp"
-                    android:padding="2dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="5dp"
                     android:contentDescription="Yeşil"
                     android:src="@drawable/shape_color_circle_black"
                     app:tint="#10B981" />
@@ -600,6 +633,7 @@
                     android:id="@+id/btnColorPicker"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
+                    android:layout_marginStart="5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Özel Renk"
                     android:src="@drawable/shape_color_circle_blue" />
