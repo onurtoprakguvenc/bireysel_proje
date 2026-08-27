@@ -428,35 +428,35 @@ public class not_alma_sayfa extends AppCompatActivity {
         commitInlineText();
         activeEditingTableCell = null;
 
+        if (globalDrawingCanvas == null) return;
+
+        float currentScale = globalDrawingCanvas.getScaleFactor();
+        float baseTextSize = (textObj != null && textObj.textSize > 0) ? textObj.textSize : 36f;
+
         if (textObj != null) {
             isCreatingNewText = false;
             activeEditingTextObj = textObj;
             inlineTextEditor.setText(textObj.text);
-            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, textObj.textSize > 0 ? textObj.textSize : 36f);
-            if (globalDrawingCanvas != null) {
-                globalDrawingCanvas.setEditingTextItem(textObj);
-            }
+            // Yazı boyutunu tuvalin anlık ölçeğiyle eşle
+            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, baseTextSize * currentScale);
+            globalDrawingCanvas.setEditingTextItem(textObj);
         } else {
             isCreatingNewText = true;
             activeEditingTextObj = null;
             pendingNewTextX = x;
             pendingNewTextY = y;
             inlineTextEditor.setText("");
-            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 36f);
-            if (globalDrawingCanvas != null) {
-                globalDrawingCanvas.setEditingTextItem(null);
-            }
+            // Yeni metin için ölçekli boyut
+            inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, baseTextSize * currentScale);
+            globalDrawingCanvas.setEditingTextItem(null);
         }
 
-        if (globalDrawingCanvas == null) return;
-
-        float scale = globalDrawingCanvas.getScaleFactor();
-        float screenX = (x + globalDrawingCanvas.getOffsetX()) * scale;
-        float textSize = (textObj != null && textObj.textSize > 0) ? textObj.textSize : 36f;
-        float screenY = ((y - textSize) + globalDrawingCanvas.getOffsetY()) * scale;
+        float screenX = (x + globalDrawingCanvas.getOffsetX()) * currentScale;
+        float screenY = ((y - baseTextSize) + globalDrawingCanvas.getOffsetY()) * currentScale;
 
         inlineTextEditor.setX(screenX);
         inlineTextEditor.setY(screenY);
+
         if (inlineTextEditor.getText() != null) {
             inlineTextEditor.setSelection(inlineTextEditor.getText().length());
         }
@@ -471,6 +471,9 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
+        // openInlineTableCellEditor içinde:
+        float currentScale = globalDrawingCanvas.getScaleFactor();
+        inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f * currentScale);
         if (result == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
 
         commitInlineText();

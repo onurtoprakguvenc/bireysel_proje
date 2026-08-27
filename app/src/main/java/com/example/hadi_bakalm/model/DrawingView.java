@@ -55,10 +55,12 @@ public class DrawingView extends View {
     private TableCellClickResult editingTableCell = null;
 
     private boolean isLocked = false;
+    private boolean isMultiTouchGesturing = false;
 
     // Otomatik Şekil Düzeltme (Snap to Shape) Motoru
     private final Handler snapShapeHandler = new Handler(Looper.getMainLooper());
     private boolean isSnapShapeTriggered = false;
+    private float dynamicCanvasHeight = 0f;
     private SnappedType currentSnappedType = SnappedType.NONE;
     private float snapAnchorX = 0f, snapAnchorY = 0f;
     private float snappedMinX, snappedMinY, snappedMaxX, snappedMaxY;
@@ -78,8 +80,20 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 1. SAHNE NESNELERİ
+    // 1. SAHNE VE GEÇMİŞ İŞLEM NESNELERİ
     // =========================================================================
+
+    public static class DeleteAction {
+        public List<Object> deletedItems = new ArrayList<>();
+
+        public DeleteAction(List<Object> items) {
+            this.deletedItems.addAll(items);
+        }
+
+        public DeleteAction(Object item) {
+            this.deletedItems.add(item);
+        }
+    }
 
     public static class Point {
         public float x, y;
@@ -284,6 +298,11 @@ public class DrawingView extends View {
             return new RectF(startX, startY, startX + getTotalWidth(textPaint), startY + (rows * cellHeight));
         }
 
+        public RectF getResizeHandle(Paint textPaint) {
+            RectF b = getBounds(textPaint);
+            return new RectF(b.right - 30f, b.bottom - 30f, b.right + 30f, b.bottom + 30f);
+        }
+
         public void offset(float dx, float dy) {
             startX += dx;
             startY += dy;
@@ -334,6 +353,9 @@ public class DrawingView extends View {
     private ToolMode currentToolMode = ToolMode.PEN;
 
     private float scaleFactor = 1.0f;
+    private static final float MIN_SCALE = 0.5f;
+    private static final float MAX_SCALE = 4.0f;
+
     private float offsetX = 0f;
     private float offsetY = 0f;
     private float lastTouchX;
@@ -421,12 +443,47 @@ public class DrawingView extends View {
         scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                float prevScale = scaleFactor;
                 scaleFactor *= detector.getScaleFactor();
-                scaleFactor = Math.max(0.5f, Math.min(scaleFactor, 3.0f));
+                scaleFactor = Math.max(MIN_SCALE, Math.min(scaleFactor, MAX_SCALE));
+
+                float focusX = detector.getFocusX();
+                float focusY = detector.getFocusY();
+
+                offsetX += (focusX / scaleFactor) - (focusX / prevScale);
+                offsetY += (focusY / scaleFactor) - (focusY / prevScale);
+
+                clampOffsets();
                 invalidate();
                 return true;
             }
         });
+    }
+
+    private void clampOffsets() {
+        float viewW = getWidth() > 0 ? getWidth() : 1080f;
+        float viewH = getHeight() > 0 ? getHeight() : 1920f;
+
+        // Yatayda kontrollü sınır
+        float maxOffsetX = viewW * 0.25f;
+        float minOffsetX = -(viewW * scaleFactor) * 0.5f;
+
+        // 1. Çizimlerin en alt noktası
+        float contentBottom = calculateContentBottomY();
+        // 2. Kullanıcının anlık indiği en alt derinlik
+        float currentScrollDepth = (-offsetY + (viewH / scaleFactor));
+
+        // Tuval yüksekliği hem çizimlere hem kullanıcının kaydırma derinliğine göre serbestçe büyür
+        float maxReachedBottom = Math.max(contentBottom, currentScrollDepth);
+        dynamicCanvasHeight = Math.max(viewH * 2.0f, maxReachedBottom + (viewH * 2.0f));
+
+        // Üst tavan (0 noktasının çok yukarısına fırlamasın)
+        float maxOffsetY = viewH * 0.15f;
+        // Alt taban: Kullanıcı aşağı indikçe sınır onun 2 ekran boyu önünden açılır
+        float minOffsetY = -dynamicCanvasHeight;
+
+        offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, offsetX));
+        offsetY = Math.max(minOffsetY, Math.min(maxOffsetY, offsetY));
     }
 
     // =========================================================================
@@ -442,6 +499,8 @@ public class DrawingView extends View {
         canvas.translate(offsetX, offsetY);
 
         renderPageBackgroundGuides(canvas);
+
+        int layerId = canvas.saveLayer(null, null);
         renderShapes(canvas);
 
         for (StrokeItem stroke : strokes) {
@@ -452,6 +511,8 @@ public class DrawingView extends View {
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
         }
+
+        canvas.restoreToCount(layerId);
 
         renderTables(canvas);
         renderImages(canvas);
@@ -623,6 +684,10 @@ public class DrawingView extends View {
         } else if (selectedItem instanceof ImageItem) {
             bounds = ((ImageItem) selectedItem).getBounds();
             canvas.drawCircle(bounds.right, bounds.bottom, 16f, handlePaint);
+        } else if (selectedItem instanceof TableItem) {
+            TableItem tbl = (TableItem) selectedItem;
+            bounds = tbl.getBounds(textPaint);
+            canvas.drawCircle(bounds.right, bounds.bottom, 16f, handlePaint);
         } else if (selectedItem instanceof TextItem) {
             TextItem t = (TextItem) selectedItem;
             bounds = t.getBounds(freeTextPaint);
@@ -672,7 +737,7 @@ public class DrawingView extends View {
     private float eraserX = -1f, eraserY = -1f;
 
     private boolean isDraggingObject = false;
-    private boolean isResizingImage = false;
+    private boolean isResizingObject = false;
     private float dragOffsetX, dragOffsetY;
 
     @Override
@@ -685,18 +750,36 @@ public class DrawingView extends View {
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         scaleGestureDetector.onTouchEvent(event);
 
-        if (event.getPointerCount() > 1 || currentToolMode == ToolMode.HAND) {
+        int action = event.getActionMasked();
+
+        if (event.getPointerCount() > 1 || action == MotionEvent.ACTION_POINTER_DOWN) {
+            isMultiTouchGesturing = true;
             snapShapeHandler.removeCallbacks(snapShapeRunnable);
+
+            activePath = null;
+            activePaint = null;
+            activePoints = null;
+            isSnapShapeTriggered = false;
+            currentSnappedType = SnappedType.NONE;
+
+            handleScrollTouch(event);
+            invalidate();
+            return true;
+        }
+
+        if (isMultiTouchGesturing) {
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                isMultiTouchGesturing = false;
+            }
+            return true;
+        }
+
+        if (currentToolMode == ToolMode.HAND) {
             handleScrollTouch(event);
             return true;
         }
 
-        if (isLocked) {
-            snapShapeHandler.removeCallbacks(snapShapeRunnable);
-            return false;
-        }
-
-        if (currentToolMode == ToolMode.TEXT) {
+        if (isLocked || currentToolMode == ToolMode.TEXT) {
             snapShapeHandler.removeCallbacks(snapShapeRunnable);
             return false;
         }
@@ -704,8 +787,9 @@ public class DrawingView extends View {
         float touchX = (event.getX() / scaleFactor) - offsetX;
         float touchY = (event.getY() / scaleFactor) - offsetY;
 
-        switch (event.getAction()) {
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
+                isMultiTouchGesturing = false;
                 touchStartX = touchX;
                 touchStartY = touchY;
                 lastMoveX = touchX;
@@ -752,7 +836,6 @@ public class DrawingView extends View {
 
                 continueStroke(touchX, touchY);
 
-                // Kullanıcı belirgin hareket ettiğinde zamanlayıcıyı yeni duraksama noktası için tazele
                 if (distFromAnchor > 35f && !isSnapShapeTriggered) {
                     snapAnchorX = touchX;
                     snapAnchorY = touchY;
@@ -812,7 +895,6 @@ public class DrawingView extends View {
         float height = maxY - minY;
         float closeDistance = (float) Math.hypot(endP.x - startP.x, endP.y - startP.y);
 
-        // 1. DÜZ ÇİZGİ TANIMA
         if (totalLength > 30f && (directDist / totalLength) > 0.76f) {
             activePath.reset();
             activePath.moveTo(startP.x, startP.y);
@@ -825,7 +907,6 @@ public class DrawingView extends View {
             return;
         }
 
-        // 2. KAPALI GEOMETRİK ŞEKİLLER (Daire / Kare / Dikdörtgen)
         float maxDimension = Math.max(width, height);
         if ((closeDistance < (maxDimension * 0.45f) || closeDistance < 140f) && width > 25f && height > 25f) {
             snappedMinX = minX;
@@ -835,12 +916,10 @@ public class DrawingView extends View {
 
             float ratio = width / height;
             if (ratio >= 0.65f && ratio <= 1.55f) {
-                // Çember / Elips
                 activePath.reset();
                 activePath.addOval(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
                 currentSnappedType = SnappedType.CIRCLE;
             } else {
-                // Dikdörtgen
                 activePath.reset();
                 activePath.addRect(new RectF(minX, minY, maxX, maxY), Path.Direction.CW);
                 currentSnappedType = SnappedType.RECTANGLE;
@@ -856,23 +935,24 @@ public class DrawingView extends View {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                lastTouchX = event.getX();
-                lastTouchY = event.getY();
+                int pIndex = event.getActionIndex();
+                lastTouchX = event.getX(pIndex);
+                lastTouchY = event.getY(pIndex);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (!scaleGestureDetector.isInProgress()) {
-                    float newX = event.getX();
-                    float newY = event.getY();
-                    float dx = (newX - lastTouchX) / scaleFactor;
-                    float dy = (newY - lastTouchY) / scaleFactor;
+                    float curX = event.getX();
+                    float curY = event.getY();
+                    float dx = (curX - lastTouchX) / scaleFactor;
+                    float dy = (curY - lastTouchY) / scaleFactor;
 
                     offsetX += dx;
                     offsetY += dy;
 
-                    if (offsetY > 0) offsetY = 0;
+                    clampOffsets();
 
-                    lastTouchX = newX;
-                    lastTouchY = newY;
+                    lastTouchX = curX;
+                    lastTouchY = curY;
                     invalidate();
                 }
                 break;
@@ -885,10 +965,7 @@ public class DrawingView extends View {
 
         if (selectedItem != null) {
             if (menuDeleteBounds.contains(x, y)) {
-                if (selectedItem instanceof ImageItem) images.remove((ImageItem) selectedItem);
-                else if (selectedItem instanceof TextItem) texts.remove((TextItem) selectedItem);
-                else if (selectedItem instanceof ShapeItem) shapes.remove((ShapeItem) selectedItem);
-                historyStack.remove(selectedItem);
+                deleteSingleSelectedItem(selectedItem);
                 selectedItem = null;
                 notifyChange();
                 invalidate();
@@ -913,13 +990,19 @@ public class DrawingView extends View {
             if (selectedItem instanceof ShapeItem) {
                 ShapeItem s = (ShapeItem) selectedItem;
                 if (s.getResizeHandle().contains(x, y)) {
-                    isResizingImage = true;
+                    isResizingObject = true;
                     return;
                 }
             } else if (selectedItem instanceof ImageItem) {
                 ImageItem img = (ImageItem) selectedItem;
                 if (img.getResizeHandle().contains(x, y)) {
-                    isResizingImage = true;
+                    isResizingObject = true;
+                    return;
+                }
+            } else if (selectedItem instanceof TableItem) {
+                TableItem tbl = (TableItem) selectedItem;
+                if (tbl.getResizeHandle(textPaint).contains(x, y)) {
+                    isResizingObject = true;
                     return;
                 }
             }
@@ -949,6 +1032,18 @@ public class DrawingView extends View {
             }
         }
 
+        for (int i = tables.size() - 1; i >= 0; i--) {
+            TableItem tbl = tables.get(i);
+            if (tbl.getBounds(textPaint).contains(x, y)) {
+                selectedItem = tbl;
+                isDraggingObject = true;
+                dragOffsetX = x - tbl.startX;
+                dragOffsetY = y - tbl.startY;
+                invalidate();
+                return;
+            }
+        }
+
         for (int i = texts.size() - 1; i >= 0; i--) {
             TextItem t = texts.get(i);
             RectF tBounds = t.getBounds(freeTextPaint);
@@ -966,8 +1061,19 @@ public class DrawingView extends View {
         invalidate();
     }
 
+    private void deleteSingleSelectedItem(Object item) {
+        if (item == null) return;
+        if (item instanceof ImageItem) images.remove((ImageItem) item);
+        else if (item instanceof TextItem) texts.remove((TextItem) item);
+        else if (item instanceof ShapeItem) shapes.remove((ShapeItem) item);
+        else if (item instanceof TableItem) tables.remove((TableItem) item);
+
+        redoStack.clear();
+        historyStack.add(new DeleteAction(item));
+    }
+
     private void handleSelectMove(float x, float y) {
-        if (isResizingImage && selectedItem != null) {
+        if (isResizingObject && selectedItem != null) {
             if (selectedItem instanceof ShapeItem) {
                 ShapeItem s = (ShapeItem) selectedItem;
                 s.endX = x;
@@ -979,6 +1085,14 @@ public class DrawingView extends View {
                 float ratio = (float) img.bitmap.getHeight() / (float) img.bitmap.getWidth();
                 img.width = newW;
                 img.height = newW * ratio;
+                invalidate();
+            } else if (selectedItem instanceof TableItem) {
+                TableItem tbl = (TableItem) selectedItem;
+                float newTotalW = Math.max(120f * tbl.cols, x - tbl.startX);
+                float newTotalH = Math.max(40f * tbl.rows, y - tbl.startY);
+
+                tbl.defaultCellWidth = newTotalW / tbl.cols;
+                tbl.cellHeight = newTotalH / tbl.rows;
                 invalidate();
             }
         } else if (isDraggingObject && selectedItem != null) {
@@ -993,6 +1107,10 @@ public class DrawingView extends View {
                 ImageItem img = (ImageItem) selectedItem;
                 img.x = x - dragOffsetX;
                 img.y = y - dragOffsetY;
+            } else if (selectedItem instanceof TableItem) {
+                TableItem tbl = (TableItem) selectedItem;
+                tbl.startX = x - dragOffsetX;
+                tbl.startY = y - dragOffsetY;
             } else if (selectedItem instanceof TextItem) {
                 TextItem t = (TextItem) selectedItem;
                 t.x = x - dragOffsetX;
@@ -1003,9 +1121,9 @@ public class DrawingView extends View {
     }
 
     private void handleSelectUp() {
-        if (isDraggingObject || isResizingImage) {
+        if (isDraggingObject || isResizingObject) {
             isDraggingObject = false;
-            isResizingImage = false;
+            isResizingObject = false;
             notifyChange();
         }
     }
@@ -1043,21 +1161,26 @@ public class DrawingView extends View {
                 TextItem orig = (TextItem) obj;
                 TextItem clone = new TextItem(orig.x + offset, orig.y + offset, orig.text, orig.color, orig.textSize);
                 texts.add(clone);
+                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof ImageItem) {
                 ImageItem orig = (ImageItem) obj;
                 ImageItem clone = new ImageItem(orig.x + offset, orig.y + offset, orig.width, orig.height, orig.bitmap, orig.uriStr);
                 images.add(clone);
+                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof TableItem) {
                 TableItem orig = (TableItem) obj;
                 TableItem clone = new TableItem(orig.startX + offset, orig.startY + offset, orig.rows, orig.cols);
+                clone.defaultCellWidth = orig.defaultCellWidth;
+                clone.cellHeight = orig.cellHeight;
                 for (TableCell c : orig.cells) {
                     clone.cells.add(new TableCell(c.row, c.col, c.text));
                 }
                 tables.add(clone);
+                historyStack.add(clone);
                 newClones.add(clone);
             }
         }
@@ -1079,14 +1202,17 @@ public class DrawingView extends View {
             }
 
             if (menuDeleteBounds.contains(x, y)) {
-                for (Object obj : selectedGroup) {
+                List<Object> itemsToDelete = new ArrayList<>(selectedGroup);
+                for (Object obj : itemsToDelete) {
                     if (obj instanceof StrokeItem) strokes.remove((StrokeItem) obj);
                     else if (obj instanceof ShapeItem) shapes.remove((ShapeItem) obj);
                     else if (obj instanceof ImageItem) images.remove((ImageItem) obj);
                     else if (obj instanceof TextItem) texts.remove((TextItem) obj);
                     else if (obj instanceof TableItem) tables.remove((TableItem) obj);
-                    historyStack.remove(obj);
                 }
+                redoStack.clear();
+                historyStack.add(new DeleteAction(itemsToDelete));
+
                 selectedGroup.clear();
                 groupBounds.setEmpty();
                 notifyChange();
@@ -1155,6 +1281,12 @@ public class DrawingView extends View {
                         img.y = pivotY + (img.y - pivotY) * factor;
                         img.width *= factor;
                         img.height *= factor;
+                    } else if (obj instanceof TableItem) {
+                        TableItem tbl = (TableItem) obj;
+                        tbl.startX = pivotX + (tbl.startX - pivotX) * factor;
+                        tbl.startY = pivotY + (tbl.startY - pivotY) * factor;
+                        tbl.defaultCellWidth *= factor;
+                        tbl.cellHeight *= factor;
                     }
                 }
                 calculateGroupBounds();
@@ -1254,6 +1386,34 @@ public class DrawingView extends View {
         calculateGroupBounds();
         lassoPath = null;
         invalidate();
+    }
+
+    private float calculateContentBottomY() {
+        float maxBottom = getHeight() > 0 ? getHeight() : 1920f;
+
+        for (StrokeItem s : strokes) {
+            for (Point p : s.points) {
+                if (p.y > maxBottom) maxBottom = p.y;
+            }
+        }
+        for (ShapeItem s : shapes) {
+            RectF b = s.getBounds();
+            if (b.bottom > maxBottom) maxBottom = b.bottom;
+        }
+        for (TableItem t : tables) {
+            RectF b = t.getBounds(textPaint);
+            if (b.bottom > maxBottom) maxBottom = b.bottom;
+        }
+        for (ImageItem img : images) {
+            RectF b = img.getBounds();
+            if (b.bottom > maxBottom) maxBottom = b.bottom;
+        }
+        for (TextItem txt : texts) {
+            RectF b = txt.getBounds(freeTextPaint);
+            if (b.bottom > maxBottom) maxBottom = b.bottom;
+        }
+
+        return maxBottom;
     }
 
     private void calculateGroupBounds() {
@@ -1377,7 +1537,6 @@ public class DrawingView extends View {
 
         } else {
             if (isSnapShapeTriggered) {
-                // Şekil kilitlendikten sonra parmak çekilmeden dinamik boyutlandırma
                 if (currentSnappedType == SnappedType.LINE && activePoints != null && !activePoints.isEmpty()) {
                     Point startP = activePoints.get(0);
                     activePath.reset();
@@ -1492,11 +1651,30 @@ public class DrawingView extends View {
         Object lastAction = historyStack.remove(historyStack.size() - 1);
         redoStack.add(lastAction);
 
-        if (lastAction instanceof ShapeItem) {
+        if (lastAction instanceof DeleteAction) {
+            DeleteAction da = (DeleteAction) lastAction;
+            for (Object item : da.deletedItems) {
+                if (item instanceof StrokeItem && !strokes.contains(item)) strokes.add((StrokeItem) item);
+                else if (item instanceof ShapeItem && !shapes.contains(item)) shapes.add((ShapeItem) item);
+                else if (item instanceof TableItem && !tables.contains(item)) tables.add((TableItem) item);
+                else if (item instanceof ImageItem && !images.contains(item)) images.add((ImageItem) item);
+                else if (item instanceof TextItem && !texts.contains(item)) texts.add((TextItem) item);
+            }
+        } else if (lastAction instanceof ShapeItem) {
             shapes.remove(lastAction);
         } else if (lastAction instanceof StrokeItem) {
             strokes.remove(lastAction);
+        } else if (lastAction instanceof TableItem) {
+            tables.remove(lastAction);
+        } else if (lastAction instanceof ImageItem) {
+            images.remove(lastAction);
+        } else if (lastAction instanceof TextItem) {
+            texts.remove(lastAction);
         }
+
+        selectedItem = null;
+        selectedGroup.clear();
+        groupBounds.setEmpty();
 
         notifyChange();
         invalidate();
@@ -1508,10 +1686,25 @@ public class DrawingView extends View {
         Object actionToRedo = redoStack.remove(redoStack.size() - 1);
         historyStack.add(actionToRedo);
 
-        if (actionToRedo instanceof ShapeItem) {
+        if (actionToRedo instanceof DeleteAction) {
+            DeleteAction da = (DeleteAction) actionToRedo;
+            for (Object item : da.deletedItems) {
+                if (item instanceof StrokeItem) strokes.remove((StrokeItem) item);
+                else if (item instanceof ShapeItem) shapes.remove((ShapeItem) item);
+                else if (item instanceof TableItem) tables.remove((TableItem) item);
+                else if (item instanceof ImageItem) images.remove((ImageItem) item);
+                else if (item instanceof TextItem) texts.remove((TextItem) item);
+            }
+        } else if (actionToRedo instanceof ShapeItem) {
             shapes.add((ShapeItem) actionToRedo);
         } else if (actionToRedo instanceof StrokeItem) {
             strokes.add((StrokeItem) actionToRedo);
+        } else if (actionToRedo instanceof TableItem) {
+            tables.add((TableItem) actionToRedo);
+        } else if (actionToRedo instanceof ImageItem) {
+            images.add((ImageItem) actionToRedo);
+        } else if (actionToRedo instanceof TextItem) {
+            texts.add((TextItem) actionToRedo);
         }
 
         notifyChange();
@@ -1548,6 +1741,8 @@ public class DrawingView extends View {
         float ratio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
         ImageItem item = new ImageItem(startX, startY, targetWidth, targetWidth * ratio, bitmap, uriStr);
         images.add(item);
+        historyStack.add(item);
+        redoStack.clear();
         selectedItem = item;
         currentToolMode = ToolMode.SELECT;
         notifyChange();
@@ -1558,6 +1753,8 @@ public class DrawingView extends View {
         if (text == null || text.trim().isEmpty()) return;
         TextItem t = new TextItem(x, y, text, color, 36f);
         texts.add(t);
+        historyStack.add(t);
+        redoStack.clear();
         selectedItem = t;
         notifyChange();
         invalidate();
@@ -1573,6 +1770,7 @@ public class DrawingView extends View {
     public void removeTextObject(TextItem item) {
         if (item == null) return;
         texts.remove(item);
+        deleteSingleSelectedItem(item);
         if (selectedItem == item) selectedItem = null;
         if (editingTextItem == item) editingTextItem = null;
         notifyChange();
@@ -1613,6 +1811,10 @@ public class DrawingView extends View {
     public void addTableToCanvas(float x, float y, int rows, int cols) {
         TableItem table = new TableItem(x, y, rows, cols);
         tables.add(table);
+        historyStack.add(table);
+        redoStack.clear();
+        selectedItem = table;
+        currentToolMode = ToolMode.SELECT;
         notifyChange();
         invalidate();
     }
@@ -1673,12 +1875,14 @@ public class DrawingView extends View {
     }
 
     public void zoomIn() {
-        scaleFactor = Math.min(3.0f, scaleFactor + 0.25f);
+        scaleFactor = Math.min(MAX_SCALE, scaleFactor + 0.25f);
+        clampOffsets();
         invalidate();
     }
 
     public void zoomOut() {
-        scaleFactor = Math.max(0.5f, scaleFactor - 0.25f);
+        scaleFactor = Math.max(MIN_SCALE, scaleFactor - 0.25f);
+        clampOffsets();
         invalidate();
     }
 
@@ -1747,6 +1951,8 @@ public class DrawingView extends View {
             tableObj.put("startY", table.startY);
             tableObj.put("rows", table.rows);
             tableObj.put("cols", table.cols);
+            tableObj.put("defaultCellWidth", table.defaultCellWidth);
+            tableObj.put("cellHeight", table.cellHeight);
 
             JSONArray cellsArray = new JSONArray();
             for (TableCell cell : table.cells) {
@@ -1838,6 +2044,12 @@ public class DrawingView extends View {
                 for (int i = 0; i < tablesArray.length(); i++) {
                     JSONObject obj = tablesArray.getJSONObject(i);
                     TableItem table = new TableItem((float) obj.getDouble("startX"), (float) obj.getDouble("startY"), obj.getInt("rows"), obj.getInt("cols"));
+                    if (obj.has("defaultCellWidth")) {
+                        table.defaultCellWidth = (float) obj.getDouble("defaultCellWidth");
+                    }
+                    if (obj.has("cellHeight")) {
+                        table.cellHeight = (float) obj.getDouble("cellHeight");
+                    }
                     if (obj.has("cells")) {
                         JSONArray cellsArray = obj.getJSONArray("cells");
                         for (int j = 0; j < cellsArray.length(); j++) {
