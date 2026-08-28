@@ -72,25 +72,19 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp">
 
-                    <ImageButton
-                        android:id="@+id/btnLibraryBridge"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:backgroundTint="#F1F5F9"
-                        android:contentDescription="@string/kutuphane_koprusu"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_brain"
-                        app:tint="#64748B" />
+                    <!--
+<ImageButton
+    android:id="@+id/btnLibraryBridge"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:background="@drawable/bg_chip_inactive"
+    android:backgroundTint="#F1F5F9"
+    android:contentDescription="@string/kutuphane_koprusu"
+    android:padding="8dp"
+    android:src="@drawable/ic_brain"
+    app:tint="#64748B" />
+-->
 
-                    <View
-                        android:layout_width="7dp"
-                        android:layout_height="7dp"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="2dp"
-                        android:layout_marginEnd="2dp"
-                        android:background="@drawable/shape_color_circle_black"
-                        app:tint="#10B981" />
                 </FrameLayout>
 
                 <!-- Grid / List Görünümü -->
