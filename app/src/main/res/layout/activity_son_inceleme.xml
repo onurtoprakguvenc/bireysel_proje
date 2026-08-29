@@ -55,62 +55,72 @@
 
             <ImageButton
                 android:id="@+id/btnClearHistory"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/temizle"
-                android:padding="8dp"
+                android:padding="13dp"
                 android:src="@drawable/ic_trash"
                 app:tint="@color/text_secondary" />
 
             <ImageButton
                 android:id="@+id/btnOpenNoteEditor"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/app_name"
-                android:padding="7dp"
+                android:padding="12dp"
                 android:src="@drawable/ic_pen"
                 app:tint="@color/text_primary" />
         </LinearLayout>
     </RelativeLayout>
 
     <!-- ARAMA ÇUBUĞU -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/searchLayout"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="wrap_content"
         android:layout_below="@id/headerLayout"
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="2dp"
-        android:layout_marginBottom="12dp"
-        android:background="@drawable/bg_search_bar"
-        android:backgroundTint="#FFFFFF"
-        android:elevation="1dp"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="14dp">
+        android:layout_marginBottom="12dp">
 
-        <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_search"
-            app:tint="@color/text_secondary" />
+        <LinearLayout
+            android:id="@+id/searchInnerBar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_search_bar"
+            android:backgroundTint="#FFFFFF"
+            android:elevation="1dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_max="488dp">
 
-        <EditText
-            android:id="@+id/etSearchHistory"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
-            android:background="@null"
-            android:hint="@string/gecmiste_ara"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_secondary"
-            android:textSize="13sp" />
-    </LinearLayout>
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_search"
+                app:tint="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/etSearchHistory"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:background="@null"
+                android:hint="@string/gecmiste_ara"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- FİLTRE ÇİPLERİ -->
     <LinearLayout
@@ -120,7 +130,7 @@
         android:layout_below="@id/searchLayout"
         android:layout_marginHorizontal="20dp"
         android:layout_marginBottom="12dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"/>
 
         <TextView
             android:id="@+id/chipAll"
@@ -136,35 +146,34 @@
             android:textSize="12sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/chipConcepts"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_chip_inactive"
-            android:backgroundTint="#FFFFFF"
-            android:elevation="1dp"
-            android:gravity="center"
-            android:paddingHorizontal="14dp"
-            android:text="@string/kavramlar"
-            android:textColor="#475569"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+    <TextView
+        android:id="@+id/chipConcepts"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:backgroundTint="#FFFFFF"
+        android:elevation="1dp"
+        android:gravity="center"
+        android:paddingHorizontal="14dp"
+        android:text="@string/kavramlar"
+        android:textColor="#334155"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/chipTexts"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
-            android:background="@drawable/bg_chip_inactive"
-            android:backgroundTint="#FFFFFF"
-            android:elevation="1dp"
-            android:gravity="center"
-            android:paddingHorizontal="14dp"
-            android:text="@string/metinler"
-            android:textColor="#475569"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/chipTexts"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_chip_inactive"
+        android:backgroundTint="#FFFFFF"
+        android:elevation="1dp"
+        android:gravity="center"
+        android:paddingHorizontal="14dp"
+        android:text="@string/metinler"
+        android:textColor="#334155"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <!-- GEÇMİŞ LİSTESİ -->
     <androidx.recyclerview.widget.RecyclerView

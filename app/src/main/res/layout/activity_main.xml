@@ -13,6 +13,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigation"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
         android:fillViewport="true"
         android:scrollbars="none">
 
@@ -56,15 +58,15 @@
 
                 <ImageView
                     android:id="@+id/btnBackToNotes"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:clickable="true"
                     android:contentDescription="@string/app_name"
                     android:focusable="true"
-                    android:padding="8dp"
+                    android:padding="12dp"
                     android:src="@drawable/ic_pen"
                     app:tint="@color/text_primary" />
             </RelativeLayout>
@@ -72,10 +74,12 @@
             <!-- ARAMA ÇUBUĞU -->
             <EditText
                 android:id="@+id/searchBar"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="20dp"
+                android:minWidth="390dp"
+                android:maxWidth="488dp"
                 android:background="@drawable/bg_search_bar"
                 android:drawableStart="@drawable/ic_search"
                 android:drawablePadding="12dp"
@@ -194,7 +198,8 @@
         app:backgroundTint="@color/text_primary"
         app:elevation="4dp"
         app:fabSize="normal"
-        app:tint="@color/bg_main" />
+        app:tint="#FFFFFF"
+        tools:ignore="ClassNameCheck" />
 
     <!-- 3. KISIM: ALT NAVİGASYON BARI -->
     <LinearLayout

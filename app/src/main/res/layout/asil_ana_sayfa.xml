@@ -7,8 +7,7 @@
     android:layout_height="match_parent"
     android:background="#F8FAFC"
     android:fitsSystemWindows="true"
-    tools:context=".model.MainActivity"
-    tools:ignore="all">
+    tools:context=".model.MainActivity">
 
     <!-- Üst Bar & Arama Alanı Kapsayıcısı -->
     <LinearLayout
@@ -38,6 +37,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/headerActions"
+                android:layout_marginEnd="8dp"
                 android:text="@string/notlarim"
                 android:textColor="#0F172A"
                 android:textSize="22sp"
@@ -56,59 +57,51 @@
                 <!-- Bağış Yap -->
                 <ImageButton
                     android:id="@+id/fabDonateCoffee"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="4dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/bagis_yap"
-                    android:padding="8dp"
+                    android:padding="13dp"
                     android:src="@drawable/ic_coffe_support"
                     app:tint="#64748B" />
 
                 <!-- Zihinsel Kütüphane -->
-                <FrameLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp">
-
-                    <!--
-<ImageButton
-    android:id="@+id/btnLibraryBridge"
-    android:layout_width="36dp"
-    android:layout_height="36dp"
-    android:background="@drawable/bg_chip_inactive"
-    android:backgroundTint="#F1F5F9"
-    android:contentDescription="@string/kutuphane_koprusu"
-    android:padding="8dp"
-    android:src="@drawable/ic_brain"
-    app:tint="#64748B" />
--->
-
-                </FrameLayout>
+                <ImageButton
+                    android:id="@+id/btnLibraryBridge"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#F1F5F9"
+                    android:contentDescription="@string/kutuphane_koprusu"
+                    android:padding="13dp"
+                    android:src="@drawable/ic_brain"
+                    app:tint="#64748B" />
 
                 <!-- Grid / List Görünümü -->
                 <ImageButton
                     android:id="@+id/btnToggleLayout"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_marginEnd="4dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/duzeni_degistir"
-                    android:padding="8dp"
+                    android:padding="13dp"
                     android:src="@drawable/ic_grid"
                     app:tint="#64748B" />
 
                 <!-- Ayarlar Dişli Butonu -->
                 <ImageButton
                     android:id="@+id/btnSettings"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
                     android:contentDescription="@string/ayarlar"
-                    android:padding="8dp"
+                    android:padding="13dp"
                     android:src="@drawable/ic_settings"
                     app:tint="#64748B" />
             </LinearLayout>
@@ -116,23 +109,32 @@
         </RelativeLayout>
 
         <!-- Arama Çubuğu -->
-        <EditText
-            android:id="@+id/etSearch"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_search_input"
-            android:backgroundTint="#F1F5F9"
-            android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="10dp"
-            android:drawableTint="#94A3B8"
-            android:hint="@string/notlarda_veya_etiketlerde_ara"
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:maxLines="1"
-            android:paddingHorizontal="14dp"
-            android:textColor="#1E293B"
-            android:textColorHint="#94A3B8"
-            android:textSize="13sp" />
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_search_input"
+                android:backgroundTint="#F1F5F9"
+                android:drawableStart="@drawable/ic_search"
+                android:drawablePadding="10dp"
+                android:drawableTint="#475569"
+                android:hint="@string/notlarda_veya_etiketlerde_ara"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingHorizontal="14dp"
+                android:textColor="#1E293B"
+                android:textColorHint="#475569"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_max="488dp" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- Kategori Çipleri -->
         <HorizontalScrollView
@@ -172,7 +174,7 @@
                     android:paddingHorizontal="14dp"
                     android:paddingVertical="6dp"
                     android:text="@string/kisisel"
-                    android:textColor="#64748B"
+                    android:textColor="#334155"
                     android:textSize="12sp" />
 
                 <TextView
@@ -184,8 +186,9 @@
                     android:paddingHorizontal="14dp"
                     android:paddingVertical="6dp"
                     android:text="Çizim"
-                    android:textColor="#64748B"
-                    android:textSize="12sp" />
+                    android:textColor="#334155"
+                    android:textSize="12sp"
+                    tools:ignore="HardcodedText" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -196,8 +199,9 @@
                     android:paddingHorizontal="14dp"
                     android:paddingVertical="6dp"
                     android:text="Geçici"
-                    android:textColor="#64748B"
-                    android:textSize="12sp" />
+                    android:textColor="#334155"
+                    android:textSize="12sp"
+                    tools:ignore="HardcodedText" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -208,8 +212,9 @@
                     android:paddingHorizontal="14dp"
                     android:paddingVertical="6dp"
                     android:text="İş"
-                    android:textColor="#64748B"
-                    android:textSize="12sp" />
+                    android:textColor="#334155"
+                    android:textSize="12sp"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
         </HorizontalScrollView>
@@ -248,7 +253,8 @@
         android:contentDescription="Hızlı Not Al"
         app:layout_constraintEnd_toStartOf="@id/fabAddNote"
         app:layout_constraintTop_toTopOf="@id/fabAddNote"
-        app:layout_constraintBottom_toBottomOf="@id/fabAddNote" />
+        app:layout_constraintBottom_toBottomOf="@id/fabAddNote"
+        tools:ignore="DefaultCustomViewAccessibility,HardcodedText" />
 
     <!-- 2. Standart Yeni Not Ekleme Butonu (Ana FAB - Sağda) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -267,6 +273,7 @@
         android:focusable="true"
         android:contentDescription="@string/yeni_not_ekle"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="DefaultCustomViewAccessibility"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

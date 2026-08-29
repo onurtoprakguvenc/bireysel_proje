@@ -6,8 +6,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFC"
-    android:fitsSystemWindows="true"
-    tools:ignore="all">
+    android:clipToPadding="false"
+    android:fitsSystemWindows="false">
+
+    <!-- Status bar yüksekliği kadar boşluk bırakan spacer -->
+    <View
+        android:id="@+id/statusBarSpacer"
+        android:layout_width="0dp"
+        android:layout_height="24dp"
+        android:background="#FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- ================================================================= -->
     <!-- ÜST BAR (HEADER CONTAINER)                                        -->
@@ -24,30 +34,49 @@
         android:paddingBottom="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/statusBarSpacer">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp">
 
+            <!-- Çöpü Boşalt Butonu (Kırmızı Kapsül) — önce tanımlanmalı ki soldaki ona göre hizalansın -->
+            <TextView
+                android:id="@+id/btnEmptyTrash"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#FEE2E2"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/tumunu_sil"
+                android:textColor="#B91C1C"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
             <!-- Geri Butonu & Başlık -->
             <LinearLayout
+                android:id="@+id/backTitleGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/btnEmptyTrash"
+                android:layout_marginEnd="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageButton
                     android:id="@+id/btnBackFromTrash"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="@drawable/bg_chip_inactive"
                     android:backgroundTint="#F1F5F9"
-                    android:contentDescription="@string/app_name"
-                    android:padding="8dp"
+                    android:contentDescription="@string/geri_don"
+                    android:padding="12dp"
                     android:src="@drawable/ic_chevron_left"
                     app:tint="#1E293B" />
 
@@ -60,7 +89,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Geri Dönüşüm"
+                        android:text="@string/geri_donusum"
                         android:textColor="#0F172A"
                         android:textSize="20sp"
                         android:textStyle="bold" />
@@ -70,47 +99,41 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Notlar 7 gün sonra otomatik silinir"
-                        android:textColor="#94A3B8"
+                        android:text="@string/notlar_7_gun_sonra_otomatik_silinir"
+                        android:textColor="#64748B"
                         android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>
-
-            <!-- Çöpü Boşalt Butonu (Kırmızı Kapsül) -->
-            <TextView
-                android:id="@+id/btnEmptyTrash"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@drawable/bg_chip_inactive"
-                android:backgroundTint="#FEE2E2"
-                android:gravity="center"
-                android:paddingHorizontal="14dp"
-                android:text="Tümünü Sil"
-                android:textColor="#DC2626"
-                android:textSize="12sp"
-                android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Arama Çubuğu -->
-        <EditText
-            android:id="@+id/etSearchTrash"
+        <!-- Arama Çubuğu: ConstraintLayout ile genişlik sınırlı -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="42dp"
-            android:background="@drawable/bg_search_input"
-            android:backgroundTint="#F1F5F9"
-            android:drawableStart="@drawable/ic_search"
-            android:drawablePadding="10dp"
-            android:drawableTint="#94A3B8"
-            android:hint="Çöp kutusunda ara..."
-            android:importantForAutofill="no"
-            android:inputType="text"
-            android:maxLines="1"
-            android:paddingHorizontal="14dp"
-            android:textColor="#1E293B"
-            android:textColorHint="#94A3B8"
-            android:textSize="13sp" />
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/etSearchTrash"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_search_input"
+                android:backgroundTint="#F1F5F9"
+                android:drawableStart="@drawable/ic_search"
+                android:drawablePadding="10dp"
+                android:drawableTint="#475569"
+                android:hint="@string/cop_kutusunda_ara"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingHorizontal="14dp"
+                android:textColor="#1E293B"
+                android:textColorHint="#475569"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_max="440dp"
+                app:layout_constraintWidth_percent="0.92" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
     <!-- ================================================================= -->
@@ -132,35 +155,23 @@
         tools:listitem="@layout/item_trash_note_card" />
 
     <!-- Boş Durum (Empty State) -->
-    <LinearLayout
+    <TextView
         android:id="@+id/layoutEmptyTrash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:drawableTopCompat="@drawable/ic_trash"
+        app:drawableTint="#64748B"
+        android:drawablePadding="12dp"
         android:gravity="center"
-        android:orientation="vertical"
+        android:text="@string/geri_donusum_kutusu_bos"
+        android:textColor="#64748B"
+        android:textSize="14sp"
+        android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/trashHeaderContainer">
-
-        <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:background="@drawable/bg_chip_inactive"
-            android:backgroundTint="#F1F5F9"
-            android:padding="16dp"
-            android:src="@drawable/ic_trash"
-            app:tint="#94A3B8" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Geri dönüşüm kutusu boş"
-            android:textColor="#64748B"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        app:layout_constraintTop_toBottomOf="@id/trashHeaderContainer"
+        app:layout_constraintVertical_bias="0.35" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

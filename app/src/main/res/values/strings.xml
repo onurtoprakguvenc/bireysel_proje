@@ -44,6 +44,7 @@
     <string name="noroloji">nöroloji</string>
     <string name="kategoriler">Kategoriler</string>
     <string name="tumu">Tümü</string>
+    <string name="geri_don">geri dön</string>
 
     <!-- GEÇİCİ / TASARIM İSKELE ELEMANLARI -->
     <string name="baslik_1">başlık 1</string>
@@ -250,4 +251,9 @@
     <string name="bu_notun_suresi_doldugu_icin_geri_donusum_kutusuna_tasınd">Bu notun süresi dolduğu için geri dönüşüm kutusuna taşındı...</string>
     <string name="silindi_d_n_14_20">Silindi: Dün 14:20</string>
     <string name="geri_yukle">Geri Yükle</string>
+    <string name="geri_donusum">Geri Dönüşüm</string>
+    <string name="notlar_7_gun_sonra_otomatik_silinir">Notlar 7 gün sonra otomatik silinir</string>
+    <string name="tumunu_sil">Tümünü Sil</string>
+    <string name="cop_kutusunda_ara">Çöp kutusunda ara...</string>
+    <string name="geri_donusum_kutusu_bos">Geri dönüşüm kutusu boş</string>
 </resources>

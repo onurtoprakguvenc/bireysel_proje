@@ -178,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         rvNotes = findViewById(R.id.rvNotes);
         etSearch = findViewById(R.id.etSearch);
-        btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
+        //btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
         btnSettings = findViewById(R.id.btnSettings);
         fabAddNote = findViewById(R.id.fabAddNote);
