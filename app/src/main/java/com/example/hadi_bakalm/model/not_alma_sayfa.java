@@ -22,8 +22,11 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.ActionMode;
@@ -64,7 +67,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -125,6 +127,8 @@ public class not_alma_sayfa extends AppCompatActivity {
     private long expireTimestamp = 0L;
     private long tempSelectedExpireTimestamp = 0L;
 
+    // Aktif Renk ve Kalınlık Tanımları
+    private int currentColor = 0xFF09090B;
     private float currentStrokeWidth = 8f;
     private DrawingView.ToolMode activeMode = DrawingView.ToolMode.PEN;
 
@@ -216,6 +220,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void makeSelectedTextBold(EditText editText) {
+        if (editText == null) return;
         int start = editText.getSelectionStart();
         int end = editText.getSelectionEnd();
 
@@ -234,6 +239,48 @@ public class not_alma_sayfa extends AppCompatActivity {
             if (!isAlreadyBold) {
                 spannable.setSpan(
                         new StyleSpan(Typeface.BOLD),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+            }
+        }
+    }
+
+    private void applyTextColorToSelection(int color) {
+        if (inlineTextEditor == null) return;
+        int start = inlineTextEditor.getSelectionStart();
+        int end = inlineTextEditor.getSelectionEnd();
+
+        if (start >= 0 && end > start) {
+            Spannable spannable = inlineTextEditor.getText();
+            spannable.setSpan(
+                    new ForegroundColorSpan(color),
+                    start,
+                    end,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+        }
+    }
+
+    private void applyHighlightColorToSelection(int highlightColor) {
+        if (inlineTextEditor == null) return;
+        int start = inlineTextEditor.getSelectionStart();
+        int end = inlineTextEditor.getSelectionEnd();
+
+        if (start >= 0 && end > start) {
+            Spannable spannable = inlineTextEditor.getText();
+            BackgroundColorSpan[] spans = spannable.getSpans(start, end, BackgroundColorSpan.class);
+            boolean hasHighlight = false;
+
+            for (BackgroundColorSpan span : spans) {
+                spannable.removeSpan(span);
+                hasHighlight = true;
+            }
+
+            if (!hasHighlight) {
+                spannable.setSpan(
+                        new BackgroundColorSpan(highlightColor),
                         start,
                         end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -335,33 +382,40 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
         inlineTextEditor = findViewById(R.id.inlineTextEditor);
-        inlineTextEditor.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
-            private static final int MENU_BOLD_ID = 1001;
 
-            @Override
-            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                menu.add(Menu.NONE, MENU_BOLD_ID, Menu.NONE, "Kalın");
-                return true;
-            }
+        if (inlineTextEditor != null) {
+            // İç boşlukları sıfırlayarak tuval ile tam eşliyoruz
+            inlineTextEditor.setPadding(0, 0, 0, 0);
+            inlineTextEditor.setIncludeFontPadding(false);
 
-            @Override
-            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                return false;
-            }
+            inlineTextEditor.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
+                private static final int MENU_BOLD_ID = 1001;
 
-            @Override
-            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                if (item.getItemId() == MENU_BOLD_ID) {
-                    makeSelectedTextBold(inlineTextEditor);
-                    mode.finish();
+                @Override
+                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                    menu.add(Menu.NONE, MENU_BOLD_ID, Menu.NONE, "Kalın");
                     return true;
                 }
-                return false;
-            }
 
-            @Override
-            public void onDestroyActionMode(ActionMode mode) {}
-        });
+                @Override
+                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                    return false;
+                }
+
+                @Override
+                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                    if (item.getItemId() == MENU_BOLD_ID) {
+                        makeSelectedTextBold(inlineTextEditor);
+                        mode.finish();
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public void onDestroyActionMode(ActionMode mode) {}
+            });
+        }
 
         frameToolPen = findViewById(R.id.frameToolPen);
         frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
@@ -502,12 +556,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             commitInlineText();
             return true;
         });
-
-        inlineTextEditor.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                commitInlineText();
-            }
-        });
     }
 
     private void updateInlineTableCellPosition() {
@@ -525,9 +573,9 @@ public class not_alma_sayfa extends AppCompatActivity {
         float cellY = activeEditingTableCell.table.startY + (activeEditingTableCell.row * activeEditingTableCell.table.cellHeight);
 
         float screenX = (cellX + globalDrawingCanvas.getOffsetX()) * scale;
-        float screenY = (cellY + globalDrawingCanvas.getOffsetY() + 10f) * scale;
+        float screenY = (cellY + globalDrawingCanvas.getOffsetY()) * scale;
 
-        inlineTextEditor.setX(screenX + 8f);
+        inlineTextEditor.setX(screenX);
         inlineTextEditor.setY(screenY);
     }
 
@@ -556,11 +604,16 @@ public class not_alma_sayfa extends AppCompatActivity {
             globalDrawingCanvas.setEditingTextItem(null);
         }
 
-        float screenX = (x + globalDrawingCanvas.getOffsetX()) * currentScale;
-        float screenY = ((y - baseTextSize) + globalDrawingCanvas.getOffsetY()) * currentScale;
+        // Tuvalin gerçek ekran koordinatları
+        float targetScreenX = (x + globalDrawingCanvas.getOffsetX()) * currentScale;
+        float targetScreenY = (y + globalDrawingCanvas.getOffsetY()) * currentScale;
 
-        inlineTextEditor.setX(screenX);
-        inlineTextEditor.setY(screenY);
+        // EditText'in iç boşluklarını çıkararak harfleri tam çizim pozisyonuna eşitliyoruz:
+        int padLeft = inlineTextEditor.getTotalPaddingLeft();
+        int padTop = inlineTextEditor.getTotalPaddingTop();
+
+        inlineTextEditor.setX(targetScreenX - padLeft);
+        inlineTextEditor.setY(targetScreenY - padTop);
 
         if (inlineTextEditor.getText() != null) {
             inlineTextEditor.setSelection(inlineTextEditor.getText().length());
@@ -617,22 +670,25 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void commitInlineText() {
         if (inlineTextEditor == null || inlineTextEditor.getVisibility() != View.VISIBLE) return;
 
-        String text = inlineTextEditor.getText().toString().trim();
+        Editable editable = inlineTextEditor.getText();
 
-        if (isCreatingNewText) {
-            if (!text.isEmpty() && globalDrawingCanvas != null) {
-                globalDrawingCanvas.addTextToCanvas(pendingNewTextX, pendingNewTextY, text, 0xFF0F172A);
-            }
-        } else if (activeEditingTextObj != null) {
-            if (globalDrawingCanvas != null) {
-                if (text.isEmpty()) {
-                    globalDrawingCanvas.removeTextObject(activeEditingTextObj);
-                } else {
-                    globalDrawingCanvas.updateTextObject(activeEditingTextObj, text);
+        if (editable != null && editable.length() > 0) {
+            // Canlı nesne yerine kalıcı Spannable kopyasını oluşturuyoruz
+            SpannableString textCopy = new SpannableString(editable);
+
+            if (isCreatingNewText) {
+                if (globalDrawingCanvas != null) {
+                    globalDrawingCanvas.addTextToCanvas(pendingNewTextX, pendingNewTextY, textCopy, currentColor);
                 }
+            } else if (activeEditingTextObj != null) {
+                if (globalDrawingCanvas != null) {
+                    globalDrawingCanvas.updateTextObject(activeEditingTextObj, textCopy);
+                }
+            } else if (activeEditingTableCell != null && globalDrawingCanvas != null) {
+                globalDrawingCanvas.updateTableCellText(activeEditingTableCell.table, activeEditingTableCell.row, activeEditingTableCell.col, editable.toString());
             }
-        } else if (activeEditingTableCell != null && globalDrawingCanvas != null) {
-            globalDrawingCanvas.updateTableCellText(activeEditingTableCell.table, activeEditingTableCell.row, activeEditingTableCell.col, text);
+        } else if (activeEditingTextObj != null && globalDrawingCanvas != null) {
+            globalDrawingCanvas.removeTextObject(activeEditingTextObj);
         }
 
         if (globalDrawingCanvas != null) {
@@ -734,7 +790,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageButton btnZoomIn = findViewById(R.id.btnZoomIn);
         ImageButton btnZoomOut = findViewById(R.id.btnZoomOut);
 
-
         View layoutRightSidePanel = findViewById(R.id.layoutRightSidePanel);
         ImageButton btnToggleRightPanel = findViewById(R.id.btnToggleRightPanel);
         ImageButton btnAddTable = findViewById(R.id.btnAddTable);
@@ -742,13 +797,14 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageView colorBlackBasic = findViewById(R.id.colorBlackBasic);
         ImageView colorBlueBasic = findViewById(R.id.colorBlueBasic);
         ImageView colorRedBasic = findViewById(R.id.colorRedBasic);
+
         // 1. Zoom Sıfırlama
         ImageButton btnResetZoom = findViewById(R.id.btnResetZoom);
         if (btnResetZoom != null && globalDrawingCanvas != null) {
             btnResetZoom.setOnClickListener(v -> globalDrawingCanvas.resetZoomAndPosition());
         }
 
-// 2. Kağıt Teması Seçimi
+        // 2. Kağıt Teması Seçimi
         ImageView themeWhiteToggle = findViewById(R.id.themeWhiteToggle);
         ImageView themeSepiaToggle = findViewById(R.id.themeSepiaToggle);
         ImageView themeDarkToggle = findViewById(R.id.themeDarkToggle);
@@ -761,6 +817,22 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
         if (themeDarkToggle != null && globalDrawingCanvas != null) {
             themeDarkToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.DARK));
+        }
+
+        // 3. Metin Formatlama Butonları (A ve Fosforlu Vurgu)
+        TextView btnTextColor = findViewById(R.id.btnTextColor);
+        ImageButton btnTextHighlight = findViewById(R.id.btnTextHighlight);
+
+        if (btnTextColor != null) {
+            btnTextColor.setOnClickListener(v -> applyTextColorToSelection(currentColor));
+        }
+
+        if (btnTextHighlight != null) {
+            btnTextHighlight.setOnClickListener(v -> applyHighlightColorToSelection(0x88FACC15));
+        }
+
+        if (btnCloseEditor != null) {
+            btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
         }
 
         if (btnMoreOptions != null) {
@@ -783,34 +855,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                         return true;
                     } else if (item.getItemId() == 3) {
                         exportCanvasOrSelectionToPng();
-                        return true;
-                    }
-                    return false;
-                });
-                popup.show();
-            });
-        }
-
-        if (btnCloseEditor != null) {
-            btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
-        }
-
-        if (btnMoreOptions != null) {
-            btnMoreOptions.setOnClickListener(v -> {
-                commitInlineText();
-                androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, v);
-                popup.getMenu().add(0, 1, 0, " Geçici Not Süresi");
-                popup.getMenu().add(0, 2, 1, " PDF Olarak Dışa Aktar");
-
-                popup.setOnMenuItemClickListener(item -> {
-                    if (item.getItemId() == 1) {
-                        showEphemeralSelectionDialog();
-                        return true;
-                    } else if (item.getItemId() == 2) {
-                        String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "Not";
-                        if (globalDrawingCanvas != null) {
-                            globalDrawingCanvas.exportToPdf(this, title);
-                        }
                         return true;
                     }
                     return false;
@@ -1060,8 +1104,7 @@ public class not_alma_sayfa extends AppCompatActivity {
     private void exportCanvasOrSelectionToPng() {
         if (globalDrawingCanvas == null) return;
 
-        // Tuvalin veya seçili alanın Bitmap'ini al
-        Bitmap bitmap = globalDrawingCanvas.exportThumbnail(1080, 1920); // veya exportSelectedArea(...)
+        Bitmap bitmap = globalDrawingCanvas.exportThumbnail(1080, 1920);
         if (bitmap == null) return;
 
         try {
@@ -1091,8 +1134,15 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void selectColor(int color, ImageView selectedView) {
+        this.currentColor = color;
+
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setColor(color);
+        }
+
+        View indicatorTextColor = findViewById(R.id.indicatorTextColor);
+        if (indicatorTextColor != null) {
+            indicatorTextColor.setBackgroundColor(color);
         }
 
         ImageView colorBlackBasic = findViewById(R.id.colorBlackBasic);
@@ -1755,7 +1805,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         dialog.show();
     }
 
-    // --- BİLDİRİM GÖNDEREN WORKER SINIFI (DAHİLİ STATİK SINIF) ---
+    // --- BİLDİRİM GÖNDEREN WORKER SINIFI ---
     public static class NoteWarningWorker extends Worker {
         private static final String CHANNEL_ID = "gecici_not_uyari_kanali";
 

@@ -269,7 +269,6 @@
                     android:orientation="horizontal"
                     android:padding="3dp">
 
-                    <!-- Beyaz Sayfa -->
                     <ImageView
                         android:id="@+id/themeWhiteToggle"
                         android:layout_width="22dp"
@@ -278,7 +277,6 @@
                         android:src="@drawable/shape_color_circle_black"
                         app:tint="#FFFFFF" />
 
-                    <!-- Sepya / Sarı Kağıt -->
                     <ImageView
                         android:id="@+id/themeSepiaToggle"
                         android:layout_width="22dp"
@@ -287,7 +285,6 @@
                         android:src="@drawable/shape_color_circle_black"
                         app:tint="#FDF6E2" />
 
-                    <!-- Koyu / Siyah Tahta -->
                     <ImageView
                         android:id="@+id/themeDarkToggle"
                         android:layout_width="22dp"
@@ -297,7 +294,7 @@
                         app:tint="#1E293B" />
                 </LinearLayout>
 
-                <!-- Zoom Kontrolleri (Orta Kısma Görünümü Sıfırla Butonu Eklendi) -->
+                <!-- Zoom Kontrolleri -->
                 <LinearLayout
                     android:id="@+id/containerZoomControls"
                     android:layout_width="wrap_content"
@@ -321,7 +318,6 @@
                         android:src="@drawable/ic_zoom_in"
                         app:tint="#64748B" />
 
-                    <!-- Görünümü %100 ve Merkeze Sıfırla -->
                     <ImageButton
                         android:id="@+id/btnResetZoom"
                         android:layout_width="30dp"
@@ -346,8 +342,6 @@
         </LinearLayout>
     </FrameLayout>
 
-
-
     <!-- ================================================================= -->
     <!-- ALT ARAÇ ÇUBUĞU                                                   -->
     <!-- ================================================================= -->
@@ -365,7 +359,7 @@
         android:paddingTop="6dp"
         android:paddingBottom="10dp">
 
-        <!-- 1. SATIR: TEMEL ÇİZİM ARAÇLARI -->
+        <!-- 1. SATIR: TEMEL ÇİZİM ARAÇLARI (SADE MOD) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="38dp"
@@ -490,7 +484,7 @@
                     app:tint="#64748B" />
             </LinearLayout>
 
-            <!-- 1. Satırdaki 3'lü Renk Paleti (Gelişmiş Açılınca Gizlenir) -->
+            <!-- 1. Satırdaki 3'lü Renk Paleti -->
             <LinearLayout
                 android:id="@+id/containerBasicColors"
                 android:layout_width="0dp"
@@ -553,7 +547,7 @@
                 app:tint="#EF4444" />
         </LinearLayout>
 
-        <!-- 2. SATIR: GELİŞMİŞ ARAÇLAR & AŞAĞI İNEN 5'Lİ TAM RENK PALETİ -->
+        <!-- 2. SATIR: GELİŞMİŞ ARAÇLAR (ADVANCED ROW) -->
         <LinearLayout
             android:id="@+id/layoutAdvancedToolsRow"
             android:layout_width="match_parent"
@@ -563,7 +557,7 @@
             android:orientation="horizontal"
             android:visibility="gone">
 
-            <!-- Seçim ve Geometri Grubu -->
+            <!-- 1. Grup: Seçim ve Geometri -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -603,11 +597,11 @@
                     app:tint="#64748B" />
             </LinearLayout>
 
-            <!-- Tablo & Görsel Ekleme -->
+            <!-- 2. Grup: Tablo & Görsel Ekleme -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="5dp"
                 android:background="@drawable/bg_chip_inactive"
                 android:backgroundTint="#F1F5F9"
                 android:gravity="center_vertical"
@@ -634,11 +628,80 @@
                     app:tint="#0284C7" />
             </LinearLayout>
 
-            <!-- 2. Satırdaki 5'li Tam Renk Paleti -->
+            <!-- 3. Grup: METİN BİÇİMLENDİRME (ONENOTE STİLİ A & FOSFORLU METİN VURGUSU) -->
+            <LinearLayout
+                android:id="@+id/groupTextFormatTools"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#F1F5F9"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="3dp">
+
+                <!-- A: Metin Yazı Rengi Butonu (Altında renk şeridi ile) -->
+                <FrameLayout
+                    android:id="@+id/frameTextColor"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:background="@android:color/transparent">
+
+                    <TextView
+                        android:id="@+id/btnTextColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="A"
+                        android:textColor="#0F172A"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:id="@+id/indicatorTextColor"
+                        android:layout_width="14dp"
+                        android:layout_height="2.5dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="2dp"
+                        android:background="#EF4444" />
+                </FrameLayout>
+
+                <!-- Fosforlu Vurgu Butonu (Altında sarı şerit ile) -->
+                <FrameLayout
+                    android:id="@+id/frameTextHighlight"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginStart="3dp"
+                    android:background="@android:color/transparent">
+
+                    <ImageButton
+                        android:id="@+id/btnTextHighlight"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Metin Vurgusu"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_highlighter"
+                        app:tint="#475569" />
+
+                    <View
+                        android:id="@+id/indicatorTextHighlight"
+                        android:layout_width="14dp"
+                        android:layout_height="2.5dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:layout_marginBottom="2dp"
+                        android:background="#FACC15" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- 4. Grup: 5'li Tam Renk Paleti -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="5dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_chip_inactive"
                 android:backgroundTint="#F1F5F9"

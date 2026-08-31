@@ -18,6 +18,11 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.Html;
+import android.text.Layout;
+import android.text.Spanned;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
@@ -221,10 +226,10 @@ public class DrawingView extends View {
 
     public static class TextItem {
         public float x, y, textSize;
-        public String text;
+        public CharSequence text; // Zengin metin (Bold, Renk, Fosfor)
         public int color;
 
-        public TextItem(float x, float y, String text, int color, float textSize) {
+        public TextItem(float x, float y, CharSequence text, int color, float textSize) {
             this.x = x;
             this.y = y;
             this.text = text;
@@ -233,23 +238,16 @@ public class DrawingView extends View {
         }
 
         public RectF getBounds(Paint paint) {
-            if (text == null || text.isEmpty()) {
+            if (text == null || text.length() == 0) {
                 return new RectF(x, y, x, y);
             }
-            float prevSize = paint.getTextSize();
-            paint.setTextSize(textSize > 0 ? textSize : 36f);
+            TextPaint tp = new TextPaint(paint);
+            tp.setTextSize(textSize > 0 ? textSize : 36f);
+            float textW = Layout.getDesiredWidth(text, tp) + 16f;
+            float textH = (textSize > 0 ? textSize : 36f) * 1.35f;
 
-            float textW = paint.measureText(text);
-            Paint.FontMetrics fm = paint.getFontMetrics();
-            float pad = 12f;
-
-            float left = x - pad;
-            float top = y + fm.ascent - pad;
-            float right = x + textW + pad;
-            float bottom = y + fm.descent + pad;
-
-            paint.setTextSize(prevSize);
-            return new RectF(left, top, right, bottom);
+            float pad = 8f;
+            return new RectF(x - pad, y - pad, x + textW + pad, y + textH + pad);
         }
 
         public void offset(float dx, float dy) {
@@ -377,7 +375,7 @@ public class DrawingView extends View {
     private ScaleGestureDetector scaleGestureDetector;
 
     private Paint textPaint;
-    private Paint freeTextPaint;
+    private TextPaint freeTextPaint;
     private Paint tablePaint;
     private Paint selectionBoxPaint;
     private Paint handlePaint;
@@ -405,7 +403,7 @@ public class DrawingView extends View {
         textPaint.setTextSize(32f);
         textPaint.setTextAlign(Paint.Align.CENTER);
 
-        freeTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        freeTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         freeTextPaint.setTextAlign(Paint.Align.LEFT);
 
         tablePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -478,7 +476,6 @@ public class DrawingView extends View {
         if (theme == null) return;
         this.currentCanvasTheme = theme;
 
-        // Karanlık temaya geçildiğinde siyah kalem rengini otomatik beyaz yap
         if (theme == CanvasTheme.DARK && this.currentColor == 0xFF09090B) {
             this.currentColor = 0xFFFFFFFF;
         } else if (theme != CanvasTheme.DARK && this.currentColor == 0xFFFFFFFF) {
@@ -557,14 +554,12 @@ public class DrawingView extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
-        // 1. Tuval arka planını seçili temaya göre boya
         canvas.drawColor(currentCanvasTheme.bgColor);
 
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(offsetX, offsetY);
 
-        // 2. Kılavuz çizgilerini temaya uyarlanmış renkle çiz
         renderPageBackgroundGuides(canvas);
 
         int layerId = canvas.saveLayer(null, null);
@@ -608,7 +603,6 @@ public class DrawingView extends View {
     private void renderPageBackgroundGuides(Canvas canvas) {
         if (currentPageGridMode == PageGridMode.BLANK) return;
 
-        // Çizgilerin rengini güncel temanın kılavuz rengine ayarla
         gridPaint.setColor(currentCanvasTheme.gridLineColor);
 
         float lineSpacing = 64f;
@@ -703,15 +697,38 @@ public class DrawingView extends View {
         }
     }
 
+    // --- STATICLAYOUT İLE ZENGİN METİN ÇİZİMİ ---
     private void renderTexts(Canvas canvas) {
         for (TextItem t : texts) {
             if (t == editingTextItem) continue;
-            if (t.text != null && !t.text.isEmpty()) {
-                freeTextPaint.setColor(t.color);
-                freeTextPaint.setTextSize(t.textSize > 0 ? t.textSize : 36f);
-                canvas.drawText(t.text, t.x, t.y, freeTextPaint);
+            if (t.text != null && t.text.length() > 0) {
+                drawRichSpannedText(canvas, t.text, t.x, t.y, t.textSize, t.color);
             }
         }
+    }
+
+    private void drawRichSpannedText(Canvas canvas, CharSequence text, float x, float y, float textSize, int defaultColor) {
+        TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        tp.setTextSize(textSize > 0 ? textSize : 36f);
+        tp.setColor(defaultColor);
+
+        int width = (int) Math.ceil(Layout.getDesiredWidth(text, tp)) + 40;
+        if (width <= 0) width = 100;
+
+        StaticLayout layout;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            layout = StaticLayout.Builder.obtain(text, 0, text.length(), tp, width)
+                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setIncludePad(false)
+                    .build();
+        } else {
+            layout = new StaticLayout(text, tp, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
+        }
+
+        canvas.save();
+        canvas.translate(x, y);
+        layout.draw(canvas);
+        canvas.restore();
     }
 
     private RectF getGroupResizeHandle() {
@@ -1819,8 +1836,8 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    public void addTextToCanvas(float x, float y, String text, int color) {
-        if (text == null || text.trim().isEmpty()) return;
+    public void addTextToCanvas(float x, float y, CharSequence text, int color) {
+        if (text == null || text.length() == 0) return;
         TextItem t = new TextItem(x, y, text, color, 36f);
         texts.add(t);
         historyStack.add(t);
@@ -1830,7 +1847,7 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    public void updateTextObject(TextItem item, String newText) {
+    public void updateTextObject(TextItem item, CharSequence newText) {
         if (item == null) return;
         item.text = newText;
         notifyChange();
@@ -2059,7 +2076,18 @@ public class DrawingView extends View {
             JSONObject tObj = new JSONObject();
             tObj.put("x", t.x);
             tObj.put("y", t.y);
-            tObj.put("text", t.text);
+
+            // Metni zengin HTML olarak serileştir
+            if (t.text instanceof Spanned) {
+                String html;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    html = Html.toHtml((Spanned) t.text, Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE);
+                } else {
+                    html = Html.toHtml((Spanned) t.text);
+                }
+                tObj.put("htmlText", html);
+            }
+            tObj.put("text", t.text.toString());
             tObj.put("color", t.color);
             tObj.put("textSize", t.textSize);
             textsArray.put(tObj);
@@ -2165,7 +2193,17 @@ public class DrawingView extends View {
                 JSONArray textsArray = mainObj.getJSONArray("texts");
                 for (int i = 0; i < textsArray.length(); i++) {
                     JSONObject obj = textsArray.getJSONObject(i);
-                    texts.add(new TextItem((float) obj.getDouble("x"), (float) obj.getDouble("y"), obj.getString("text"), obj.getInt("color"), (float) obj.getDouble("textSize")));
+                    CharSequence parsedText;
+                    if (obj.has("htmlText")) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            parsedText = Html.fromHtml(obj.getString("htmlText"), Html.FROM_HTML_MODE_COMPACT);
+                        } else {
+                            parsedText = Html.fromHtml(obj.getString("htmlText"));
+                        }
+                    } else {
+                        parsedText = obj.getString("text");
+                    }
+                    texts.add(new TextItem((float) obj.getDouble("x"), (float) obj.getDouble("y"), parsedText, obj.getInt("color"), (float) obj.getDouble("textSize")));
                 }
             }
 
@@ -2268,8 +2306,8 @@ public class DrawingView extends View {
         if (texts.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
         for (TextItem item : texts) {
-            if (item.text != null && !item.text.trim().isEmpty()) {
-                sb.append(item.text.trim()).append("\n");
+            if (item.text != null && item.text.length() > 0) {
+                sb.append(item.text.toString().trim()).append("\n");
             }
         }
         return sb.toString().trim();
