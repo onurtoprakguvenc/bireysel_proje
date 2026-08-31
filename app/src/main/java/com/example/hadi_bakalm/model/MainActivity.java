@@ -358,6 +358,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
         LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
 
+
         // Geri Dönüşüm Kutusunu Aç
         if (rowOpenTrashPage != null) {
             rowOpenTrashPage.setOnClickListener(v -> {

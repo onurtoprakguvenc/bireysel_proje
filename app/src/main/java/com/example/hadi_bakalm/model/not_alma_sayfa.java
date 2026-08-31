@@ -2,6 +2,8 @@ package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -18,10 +21,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.Editable;
+import android.text.Spannable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -38,8 +46,15 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
 
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.data.not_app_database;
@@ -54,6 +69,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class not_alma_sayfa extends AppCompatActivity {
@@ -199,6 +215,33 @@ public class not_alma_sayfa extends AppCompatActivity {
         });
     }
 
+    private void makeSelectedTextBold(EditText editText) {
+        int start = editText.getSelectionStart();
+        int end = editText.getSelectionEnd();
+
+        if (start >= 0 && end > start) {
+            Spannable spannable = editText.getText();
+            StyleSpan[] spans = spannable.getSpans(start, end, StyleSpan.class);
+            boolean isAlreadyBold = false;
+
+            for (StyleSpan span : spans) {
+                if (span.getStyle() == Typeface.BOLD) {
+                    spannable.removeSpan(span);
+                    isAlreadyBold = true;
+                }
+            }
+
+            if (!isAlreadyBold) {
+                spannable.setSpan(
+                        new StyleSpan(Typeface.BOLD),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+            }
+        }
+    }
+
     private void applyEditorMode(boolean isAdvanced, View advancedRow, View basicColors, ImageButton toggleBtn) {
         if (isAdvanced) {
             advancedRow.setVisibility(View.VISIBLE);
@@ -210,6 +253,28 @@ public class not_alma_sayfa extends AppCompatActivity {
             if (basicColors != null) basicColors.setVisibility(View.VISIBLE);
             toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF1F5F9));
             toggleBtn.setColorFilter(0xFF64748B);
+        }
+    }
+
+    private void scheduleNoteDeletionWarning(String notBaslik, long silinmeZamaniMillis) {
+        long simdikiZaman = System.currentTimeMillis();
+        long kalanSureMillis = silinmeZamaniMillis - simdikiZaman;
+
+        // 10 dakika öncesi
+        long bildirimGecikmesiMillis = kalanSureMillis - (10 * 60 * 1000);
+
+        if (bildirimGecikmesiMillis > 0) {
+            Data inputData = new Data.Builder()
+                    .putString("not_baslik", notBaslik)
+                    .build();
+
+            OneTimeWorkRequest warningRequest = new OneTimeWorkRequest.Builder(NoteWarningWorker.class)
+                    .setInitialDelay(bildirimGecikmesiMillis, TimeUnit.MILLISECONDS)
+                    .setInputData(inputData)
+                    .addTag("gecici_not_uyari")
+                    .build();
+
+            WorkManager.getInstance(this).enqueue(warningRequest);
         }
     }
 
@@ -255,6 +320,33 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         globalDrawingCanvas = findViewById(R.id.globalDrawingCanvas);
         inlineTextEditor = findViewById(R.id.inlineTextEditor);
+        inlineTextEditor.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
+            private static final int MENU_BOLD_ID = 1001;
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                menu.add(Menu.NONE, MENU_BOLD_ID, Menu.NONE, "Kalın");
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                if (item.getItemId() == MENU_BOLD_ID) {
+                    makeSelectedTextBold(inlineTextEditor);
+                    mode.finish();
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {}
+        });
 
         frameToolPen = findViewById(R.id.frameToolPen);
         frameToolHighlighter = findViewById(R.id.frameToolHighlighter);
@@ -437,7 +529,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             isCreatingNewText = false;
             activeEditingTextObj = textObj;
             inlineTextEditor.setText(textObj.text);
-            // Yazı boyutunu tuvalin anlık ölçeğiyle eşle
             inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, baseTextSize * currentScale);
             globalDrawingCanvas.setEditingTextItem(textObj);
         } else {
@@ -446,7 +537,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             pendingNewTextX = x;
             pendingNewTextY = y;
             inlineTextEditor.setText("");
-            // Yeni metin için ölçekli boyut
             inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, baseTextSize * currentScale);
             globalDrawingCanvas.setEditingTextItem(null);
         }
@@ -471,7 +561,6 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
-        // openInlineTableCellEditor içinde:
         float currentScale = globalDrawingCanvas.getScaleFactor();
         inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f * currentScale);
         if (result == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
@@ -1183,6 +1272,10 @@ public class not_alma_sayfa extends AppCompatActivity {
             this.currentCategory = "Geçici";
 
             updateLiveBadgeUI();
+
+            String noteTitle = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
+            scheduleNoteDeletionWarning(noteTitle, expireTimestamp);
+
             Toast.makeText(this, "Geçici süre ayarlandı: " + EXPIRY_FORMAT.format(new Date(expireTimestamp)), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
@@ -1582,5 +1675,55 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
 
         dialog.show();
+    }
+
+    // --- BİLDİRİM GÖNDEREN WORKER SINIFI (DAHİLİ STATİK SINIF) ---
+    public static class NoteWarningWorker extends Worker {
+        private static final String CHANNEL_ID = "gecici_not_uyari_kanali";
+
+        public NoteWarningWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+            super(context, workerParams);
+        }
+
+        @NonNull
+        @Override
+        public Result doWork() {
+            String notBaslik = getInputData().getString("not_baslik");
+            if (notBaslik == null || notBaslik.trim().isEmpty()) {
+                notBaslik = "Geçici Not";
+            }
+
+            sendNotification(notBaslik);
+            return Result.success();
+        }
+
+        private void sendNotification(String notBaslik) {
+            Context context = getApplicationContext();
+            NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        CHANNEL_ID,
+                        "Geçici Not Uyarıları",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Geçici notların silinmesine 10 dakika kala uyarı bildirimi gönderir.");
+                if (manager != null) {
+                    manager.createNotificationChannel(channel);
+                }
+            }
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_time)
+                    .setContentTitle("Notunuz Silinmek Üzere")
+                    .setContentText("\"" + notBaslik + "\" başlıklı notunuz yaklaşık 10 dakika içinde silinecektir.")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true);
+
+            if (manager != null) {
+                int notificationId = (int) System.currentTimeMillis();
+                manager.notify(notificationId, builder.build());
+            }
+        }
     }
 }

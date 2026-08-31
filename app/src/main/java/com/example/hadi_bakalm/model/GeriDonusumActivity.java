@@ -1,15 +1,18 @@
 package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,7 +42,7 @@ public class GeriDonusumActivity extends AppCompatActivity {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd MMM, HH:mm", new Locale("tr", "TR"));
 
     private RecyclerView rvTrashNotes;
-    private LinearLayout layoutEmptyTrash;
+    private TextView layoutEmptyTrash;
     private EditText etSearchTrash;
     private TextView btnEmptyTrash;
     private ImageButton btnBackFromTrash;
@@ -106,6 +109,23 @@ public class GeriDonusumActivity extends AppCompatActivity {
                 @Override
                 public void afterTextChanged(Editable s) {}
             });
+        }
+    }
+
+    private Bitmap decodeBase64ToBitmap(String base64Str) {
+        try {
+            if (base64Str == null || base64Str.isEmpty()) return null;
+
+            // Başındaki "DRAWING_BASE64:" etiketini temizle
+            if (base64Str.startsWith("DRAWING_BASE64:")) {
+                base64Str = base64Str.substring("DRAWING_BASE64:".length());
+            }
+
+            byte[] decodedBytes = Base64.decode(base64Str, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -213,8 +233,37 @@ public class GeriDonusumActivity extends AppCompatActivity {
             if (note == null) return;
 
             holder.tvTrashTitle.setText(note.title != null && !note.title.trim().isEmpty() ? note.title : "Başlıksız Not");
-            holder.tvTrashContent.setText(note.content != null && !note.content.trim().isEmpty() ? note.content : "İçerik önizlemesi yok");
 
+            // --- ÇİZİM VE METİN ÖNİZLEME MANTIĞI ---
+            String content = note.content;
+            if (content != null && content.startsWith("DRAWING_BASE64:")) {
+                Bitmap bitmap = decodeBase64ToBitmap(content);
+                if (bitmap != null && holder.ivTrashDrawingPreview != null) {
+                    holder.ivTrashDrawingPreview.setVisibility(View.VISIBLE);
+                    holder.ivTrashDrawingPreview.setImageBitmap(bitmap);
+                    holder.tvTrashContent.setVisibility(View.GONE);
+                } else {
+                    if (holder.ivTrashDrawingPreview != null) {
+                        holder.ivTrashDrawingPreview.setVisibility(View.GONE);
+                    }
+                    holder.tvTrashContent.setVisibility(View.VISIBLE);
+                    holder.tvTrashContent.setText(" Çizim Notu");
+                }
+            } else if ("Çizim Notu".equals(content)) {
+                if (holder.ivTrashDrawingPreview != null) {
+                    holder.ivTrashDrawingPreview.setVisibility(View.GONE);
+                }
+                holder.tvTrashContent.setVisibility(View.VISIBLE);
+                holder.tvTrashContent.setText(" Çizim Notu");
+            } else {
+                if (holder.ivTrashDrawingPreview != null) {
+                    holder.ivTrashDrawingPreview.setVisibility(View.GONE);
+                }
+                holder.tvTrashContent.setVisibility(View.VISIBLE);
+                holder.tvTrashContent.setText(content != null && !content.trim().isEmpty() ? content : "İçerik önizlemesi yok");
+            }
+
+            // Kalan gün hesabı
             long sevenDaysMillis = TimeUnit.DAYS.toMillis(7);
             long timePassed = System.currentTimeMillis() - note.trashedTimestamp;
             long timeLeft = sevenDaysMillis - timePassed;
@@ -242,6 +291,7 @@ public class GeriDonusumActivity extends AppCompatActivity {
 
         class TrashViewHolder extends RecyclerView.ViewHolder {
             TextView tvTrashTitle, tvRemainingDays, tvTrashContent, tvDeletedDate, btnRestoreNote;
+            ImageView ivTrashDrawingPreview;
             ImageButton btnDeletePermanently;
 
             public TrashViewHolder(@NonNull View itemView) {
@@ -252,6 +302,7 @@ public class GeriDonusumActivity extends AppCompatActivity {
                 tvDeletedDate = itemView.findViewById(R.id.tvDeletedDate);
                 btnRestoreNote = itemView.findViewById(R.id.btnRestoreNote);
                 btnDeletePermanently = itemView.findViewById(R.id.btnDeletePermanently);
+                ivTrashDrawingPreview = itemView.findViewById(R.id.ivTrashDrawingPreview);
             }
         }
     }

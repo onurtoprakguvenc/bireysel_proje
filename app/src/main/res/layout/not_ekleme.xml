@@ -5,11 +5,11 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_settings_card"
     android:backgroundTint="#FFFFFF"
+    android:elevation="16dp"
     android:orientation="vertical"
-    android:padding="24px"
-    android:elevation="16dp">
+    android:padding="20dp">
 
-    <!-- Üst Başlık ve Kapatma Butonu -->
+    <!-- ÜST BAŞLIK VE KAPATMA BUTONU -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -56,8 +56,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="16dp"
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
@@ -99,8 +99,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/imgArrow1"
             android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/imgArrow1"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -146,90 +146,132 @@
             app:tint="#94A3B8" />
     </RelativeLayout>
 
-    <!-- KATEGORİ 2: GEÇİCİ NOT (Süre Rozetli) -->
-    <RelativeLayout
-        android:id="@+id/cardCategoryEphemeral"
+    <!-- KATEGORİ 2: GEÇİCİ NOT (Hazır Süre Şablonları ile Birlikte) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:background="@drawable/bg_search_bar"
         android:backgroundTint="#F8FAFC"
-        android:clickable="true"
-        android:focusable="true"
+        android:orientation="vertical"
         android:padding="12dp">
 
-        <LinearLayout
+        <RelativeLayout
+            android:id="@+id/cardCategoryEphemeral"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/imgArrow2"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_icon_purple"
-                android:backgroundTint="#FEF3C7"
-                android:padding="8dp"
-                android:src="@drawable/ic_time"
-                app:tint="#D97706" />
+            android:clickable="true"
+            android:focusable="true">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_marginEnd="8dp"
+                android:layout_toStartOf="@id/imgArrow2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="@drawable/bg_icon_purple"
+                    android:backgroundTint="#FEF3C7"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_time"
+                    app:tint="#D97706" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
                         android:text="@string/gecici_not"
                         android:textColor="#0F172A"
                         android:textSize="13sp"
                         android:textStyle="bold" />
 
-                    <!-- Süre Seçin Rozeti -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:backgroundTint="#FEF3C7"
-                        android:paddingHorizontal="6dp"
-                        android:paddingVertical="1dp"
-                        android:text="@string/sure_secin"
-                        android:textColor="#D97706"
-                        android:textSize="9sp"
-                        android:textStyle="bold" />
+                        android:text="@string/otomatik_silinecek_gecici_fikirler"
+                        android:textColor="#64748B"
+                        android:textSize="11sp" />
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/otomatik_silinecek_gecici_fikirler"
-                    android:textColor="#64748B"
-                    android:textSize="11sp" />
             </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imgArrow2"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="#94A3B8" />
+        </RelativeLayout>
+
+        <!-- 3'LÜ HAZIR SÜRE ŞABLONLARI -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnDuration1h"
+                android:layout_width="0dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#FEF3C7"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="1 Saat"
+                android:textColor="#B45309"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnDuration3h"
+                android:layout_width="0dp"
+                android:layout_height="30dp"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#FEF3C7"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="3 Saat"
+                android:textColor="#B45309"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnDuration24h"
+                android:layout_width="0dp"
+                android:layout_height="30dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip_inactive"
+                android:backgroundTint="#FEF3C7"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="24 Saat"
+                android:textColor="#B45309"
+                android:textSize="11sp"
+                android:textStyle="bold" />
         </LinearLayout>
+    </LinearLayout>
 
-        <ImageView
-            android:id="@+id/imgArrow2"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:src="@drawable/ic_chevron_down"
-            app:tint="#94A3B8" />
-    </RelativeLayout>
-
-    <!-- KATEGORİ 3: İŞ / OKUL -->
+    <!-- KATEGORİ 3: FİKİR & TASLAK (İş / Okul Yerine) -->
     <RelativeLayout
         android:id="@+id/cardCategoryWork"
         android:layout_width="match_parent"
@@ -244,8 +286,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/imgArrow3"
             android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/imgArrow3"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -254,10 +296,10 @@
                 android:layout_height="36dp"
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/bg_icon_purple"
-                android:backgroundTint="#ECFDF5"
+                android:backgroundTint="#F5F3FF"
                 android:padding="8dp"
-                android:src="@drawable/ic_briefcase"
-                app:tint="#10B981" />
+                android:src="@drawable/ic_lightbulb"
+                app:tint="#7C3AED" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -267,7 +309,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/is_okul"
+                    android:text="Fikir &amp; Taslak"
                     android:textColor="#0F172A"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -275,7 +317,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/proje_calisma_ve_ders_notlar"
+                    android:text="Anlık ilhamlar, eskizler ve proje fikirleri"
                     android:textColor="#64748B"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -291,7 +333,7 @@
             app:tint="#94A3B8" />
     </RelativeLayout>
 
-    <!-- + YENİ KATEGORİ EKLE (Kesikli Çizgili Buton) -->
+    <!-- + YENİ KATEGORİ EKLE -->
     <TextView
         android:id="@+id/btnAddCustomCategory"
         android:layout_width="match_parent"
