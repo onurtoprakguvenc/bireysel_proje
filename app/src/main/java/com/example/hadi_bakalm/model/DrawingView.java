@@ -2,7 +2,6 @@ package com.example.hadi_bakalm.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -43,6 +42,20 @@ public class DrawingView extends View {
     public enum ToolMode {PEN, HIGHLIGHTER, ERASER, HAND, SELECT, LASSO, RECTANGLE, SQUARE, CIRCLE, LINE, TEXT}
 
     public enum PageGridMode {BLANK, GRID, HORIZONTAL_LINES, VERTICAL_LINES}
+
+    public enum CanvasTheme {
+        WHITE(0xFFFFFFFF, 0xFFE2E8F0),   // Beyaz kağıt - Açık gri çizgiler
+        SEPIA(0xFFFDF6E2, 0xFFE4D5B7),   // Sarımsı kağıt - Sıcak sepya çizgiler
+        DARK(0xFF1E293B, 0xFF334155);    // Koyu lacivert/siyah - Koyu gri çizgiler
+
+        public final int bgColor;
+        public final int gridLineColor;
+
+        CanvasTheme(int bgColor, int gridLineColor) {
+            this.bgColor = bgColor;
+            this.gridLineColor = gridLineColor;
+        }
+    }
 
     private enum SnappedType {NONE, LINE, CIRCLE, RECTANGLE}
 
@@ -334,6 +347,7 @@ public class DrawingView extends View {
     private final List<Object> redoStack = new ArrayList<>();
 
     private PageGridMode currentPageGridMode = PageGridMode.BLANK;
+    private CanvasTheme currentCanvasTheme = CanvasTheme.WHITE;
 
     private Object selectedItem = null;
     private final RectF menuDeleteBounds = new RectF();
@@ -460,26 +474,75 @@ public class DrawingView extends View {
         });
     }
 
+    public void setCanvasTheme(CanvasTheme theme) {
+        if (theme == null) return;
+        this.currentCanvasTheme = theme;
+
+        // Karanlık temaya geçildiğinde siyah kalem rengini otomatik beyaz yap
+        if (theme == CanvasTheme.DARK && this.currentColor == 0xFF09090B) {
+            this.currentColor = 0xFFFFFFFF;
+        } else if (theme != CanvasTheme.DARK && this.currentColor == 0xFFFFFFFF) {
+            this.currentColor = 0xFF09090B;
+        }
+
+        invalidate();
+    }
+
+    public CanvasTheme getCanvasTheme() {
+        return currentCanvasTheme;
+    }
+
+    public void resetZoomAndPosition() {
+        this.scaleFactor = 1.0f;
+        this.offsetX = 0f;
+        this.offsetY = 0f;
+        invalidate();
+    }
+
+    public Bitmap exportSelectedArea(RectF selectionBounds) {
+        if (selectionBounds == null || selectionBounds.width() <= 0 || selectionBounds.height() <= 0) {
+            return null;
+        }
+
+        try {
+            int width = (int) selectionBounds.width();
+            int height = (int) selectionBounds.height();
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+
+            canvas.drawColor(currentCanvasTheme.bgColor);
+            canvas.translate(-selectionBounds.left, -selectionBounds.top);
+
+            renderPageBackgroundGuides(canvas);
+            renderShapes(canvas);
+            for (StrokeItem stroke : strokes) {
+                canvas.drawPath(stroke.path, stroke.paint);
+            }
+            renderTables(canvas);
+            renderImages(canvas);
+            renderTexts(canvas);
+
+            return bitmap;
+        } catch (Exception e) {
+            Log.e(TAG, "exportSelectedArea hatası", e);
+            return null;
+        }
+    }
+
     private void clampOffsets() {
         float viewW = getWidth() > 0 ? getWidth() : 1080f;
         float viewH = getHeight() > 0 ? getHeight() : 1920f;
 
-        // Yatayda kontrollü sınır
         float maxOffsetX = viewW * 0.25f;
         float minOffsetX = -(viewW * scaleFactor) * 0.5f;
 
-        // 1. Çizimlerin en alt noktası
         float contentBottom = calculateContentBottomY();
-        // 2. Kullanıcının anlık indiği en alt derinlik
         float currentScrollDepth = (-offsetY + (viewH / scaleFactor));
 
-        // Tuval yüksekliği hem çizimlere hem kullanıcının kaydırma derinliğine göre serbestçe büyür
         float maxReachedBottom = Math.max(contentBottom, currentScrollDepth);
         dynamicCanvasHeight = Math.max(viewH * 2.0f, maxReachedBottom + (viewH * 2.0f));
 
-        // Üst tavan (0 noktasının çok yukarısına fırlamasın)
         float maxOffsetY = viewH * 0.15f;
-        // Alt taban: Kullanıcı aşağı indikçe sınır onun 2 ekran boyu önünden açılır
         float minOffsetY = -dynamicCanvasHeight;
 
         offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, offsetX));
@@ -487,17 +550,21 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 4. RENDER DÖNGÜSÜ
+    // 4. RENDER DÖNGÜSÜ (ONDRAW)
     // =========================================================================
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
+        // 1. Tuval arka planını seçili temaya göre boya
+        canvas.drawColor(currentCanvasTheme.bgColor);
+
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(offsetX, offsetY);
 
+        // 2. Kılavuz çizgilerini temaya uyarlanmış renkle çiz
         renderPageBackgroundGuides(canvas);
 
         int layerId = canvas.saveLayer(null, null);
@@ -540,6 +607,9 @@ public class DrawingView extends View {
 
     private void renderPageBackgroundGuides(Canvas canvas) {
         if (currentPageGridMode == PageGridMode.BLANK) return;
+
+        // Çizgilerin rengini güncel temanın kılavuz rengine ayarla
+        gridPaint.setColor(currentCanvasTheme.gridLineColor);
 
         float lineSpacing = 64f;
         float startX = -offsetX;
@@ -1894,6 +1964,7 @@ public class DrawingView extends View {
         try {
             JSONObject mainObj = new JSONObject();
             mainObj.put("pageMode", currentPageGridMode.name());
+            mainObj.put("canvasTheme", currentCanvasTheme.name());
             mainObj.put("paths", serializePaths());
             mainObj.put("shapes", serializeShapes());
             mainObj.put("tables", serializeTables());
@@ -2016,8 +2087,13 @@ public class DrawingView extends View {
             if (mainObj.has("pageMode")) {
                 try {
                     this.currentPageGridMode = PageGridMode.valueOf(mainObj.getString("pageMode"));
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
+            }
+
+            if (mainObj.has("canvasTheme")) {
+                try {
+                    this.currentCanvasTheme = CanvasTheme.valueOf(mainObj.getString("canvasTheme"));
+                } catch (Exception ignored) {}
             }
 
             if (mainObj.has("paths")) parseStrokes(mainObj.getJSONArray("paths"));
@@ -2211,7 +2287,7 @@ public class DrawingView extends View {
         android.graphics.pdf.PdfDocument.Page page = pdfDocument.startPage(pageInfo);
 
         Canvas pdfCanvas = page.getCanvas();
-        pdfCanvas.drawColor(Color.WHITE);
+        pdfCanvas.drawColor(currentCanvasTheme.bgColor);
         draw(pdfCanvas);
 
         pdfDocument.finishPage(page);

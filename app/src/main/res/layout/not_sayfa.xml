@@ -255,6 +255,49 @@
                         app:tint="#64748B" />
                 </LinearLayout>
 
+                <!-- Sağ Panel: Kağıt Temaları (Sağa Hizalı) -->
+                <LinearLayout
+                    android:id="@+id/containerCanvasThemes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_chip_inactive"
+                    android:backgroundTint="#FFFFFF"
+                    android:elevation="3dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="3dp">
+
+                    <!-- Beyaz Sayfa -->
+                    <ImageView
+                        android:id="@+id/themeWhiteToggle"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:background="@drawable/bg_circle_brand"
+                        android:src="@drawable/shape_color_circle_black"
+                        app:tint="#FFFFFF" />
+
+                    <!-- Sepya / Sarı Kağıt -->
+                    <ImageView
+                        android:id="@+id/themeSepiaToggle"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/shape_color_circle_black"
+                        app:tint="#FDF6E2" />
+
+                    <!-- Koyu / Siyah Tahta -->
+                    <ImageView
+                        android:id="@+id/themeDarkToggle"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/shape_color_circle_black"
+                        app:tint="#1E293B" />
+                </LinearLayout>
+
+                <!-- Zoom Kontrolleri (Orta Kısma Görünümü Sıfırla Butonu Eklendi) -->
                 <LinearLayout
                     android:id="@+id/containerZoomControls"
                     android:layout_width="wrap_content"
@@ -278,11 +321,16 @@
                         android:src="@drawable/ic_zoom_in"
                         app:tint="#64748B" />
 
-                    <View
-                        android:layout_width="18dp"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="2dp"
-                        android:background="#E2E8F0" />
+                    <!-- Görünümü %100 ve Merkeze Sıfırla -->
+                    <ImageButton
+                        android:id="@+id/btnResetZoom"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Görünümü Sıfırla"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_expand_arrow"
+                        app:tint="#0284C7" />
 
                     <ImageButton
                         android:id="@+id/btnZoomOut"
@@ -297,6 +345,8 @@
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>
+
+
 
     <!-- ================================================================= -->
     <!-- ALT ARAÇ ÇUBUĞU                                                   -->

@@ -41,7 +41,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -65,6 +64,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -258,14 +258,31 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private void scheduleNoteDeletionWarning(String notBaslik, long silinmeZamaniMillis) {
         long simdikiZaman = System.currentTimeMillis();
-        long kalanSureMillis = silinmeZamaniMillis - simdikiZaman;
+        long toplamSureMillis = silinmeZamaniMillis - simdikiZaman;
 
-        // 10 dakika öncesi
-        long bildirimGecikmesiMillis = kalanSureMillis - (10 * 60 * 1000);
+        if (toplamSureMillis <= 60 * 1000L) {
+            return;
+        }
+
+        long bildirimGecikmesiMillis;
+        String uyariMetni;
+
+        if (toplamSureMillis > 15 * 60 * 1000L) {
+            bildirimGecikmesiMillis = toplamSureMillis - (10 * 60 * 1000L);
+            uyariMetni = "\"" + notBaslik + "\" başlıklı notunuz yaklaşık 10 dakika içinde silinecektir.";
+        } else if (toplamSureMillis >= 5 * 60 * 1000L) {
+            long kalanDakika = Math.max(1, (toplamSureMillis / (2 * 60 * 1000L)));
+            bildirimGecikmesiMillis = toplamSureMillis - (kalanDakika * 60 * 1000L);
+            uyariMetni = "\"" + notBaslik + "\" başlıklı notunuz yaklaşık " + kalanDakika + " dakika içinde silinecektir.";
+        } else {
+            bildirimGecikmesiMillis = toplamSureMillis - (60 * 1000L);
+            uyariMetni = "\"" + notBaslik + "\" başlıklı notunuz 1 dakika içinde silinecektir.";
+        }
 
         if (bildirimGecikmesiMillis > 0) {
             Data inputData = new Data.Builder()
                     .putString("not_baslik", notBaslik)
+                    .putString("uyari_metni", uyariMetni)
                     .build();
 
             OneTimeWorkRequest warningRequest = new OneTimeWorkRequest.Builder(NoteWarningWorker.class)
@@ -289,11 +306,9 @@ public class not_alma_sayfa extends AppCompatActivity {
 
             if (globalDrawingCanvas != null && bitmap != null) {
                 globalDrawingCanvas.addImageToCanvas(bitmap, uri.toString());
-                Toast.makeText(this, "Görsel tuvale eklendi", Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {
             Log.e(TAG, "Görsel yüklenirken hata oluştu", e);
-            Toast.makeText(this, "Görsel yüklenemedi", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -719,6 +734,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageButton btnZoomIn = findViewById(R.id.btnZoomIn);
         ImageButton btnZoomOut = findViewById(R.id.btnZoomOut);
 
+
         View layoutRightSidePanel = findViewById(R.id.layoutRightSidePanel);
         ImageButton btnToggleRightPanel = findViewById(R.id.btnToggleRightPanel);
         ImageButton btnAddTable = findViewById(R.id.btnAddTable);
@@ -726,6 +742,54 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageView colorBlackBasic = findViewById(R.id.colorBlackBasic);
         ImageView colorBlueBasic = findViewById(R.id.colorBlueBasic);
         ImageView colorRedBasic = findViewById(R.id.colorRedBasic);
+        // 1. Zoom Sıfırlama
+        ImageButton btnResetZoom = findViewById(R.id.btnResetZoom);
+        if (btnResetZoom != null && globalDrawingCanvas != null) {
+            btnResetZoom.setOnClickListener(v -> globalDrawingCanvas.resetZoomAndPosition());
+        }
+
+// 2. Kağıt Teması Seçimi
+        ImageView themeWhiteToggle = findViewById(R.id.themeWhiteToggle);
+        ImageView themeSepiaToggle = findViewById(R.id.themeSepiaToggle);
+        ImageView themeDarkToggle = findViewById(R.id.themeDarkToggle);
+
+        if (themeWhiteToggle != null && globalDrawingCanvas != null) {
+            themeWhiteToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.WHITE));
+        }
+        if (themeSepiaToggle != null && globalDrawingCanvas != null) {
+            themeSepiaToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.SEPIA));
+        }
+        if (themeDarkToggle != null && globalDrawingCanvas != null) {
+            themeDarkToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.DARK));
+        }
+
+        if (btnMoreOptions != null) {
+            btnMoreOptions.setOnClickListener(v -> {
+                commitInlineText();
+                androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, v);
+                popup.getMenu().add(0, 1, 0, " Geçici Not Süresi");
+                popup.getMenu().add(0, 2, 1, " PDF Olarak Dışa Aktar");
+                popup.getMenu().add(0, 3, 2, " PNG (Görsel) Olarak Kaydet / Paylaş");
+
+                popup.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == 1) {
+                        showEphemeralSelectionDialog();
+                        return true;
+                    } else if (item.getItemId() == 2) {
+                        String title = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "Not";
+                        if (globalDrawingCanvas != null) {
+                            globalDrawingCanvas.exportToPdf(this, title);
+                        }
+                        return true;
+                    } else if (item.getItemId() == 3) {
+                        exportCanvasOrSelectionToPng();
+                        return true;
+                    }
+                    return false;
+                });
+                popup.show();
+            });
+        }
 
         if (btnCloseEditor != null) {
             btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
@@ -790,7 +854,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnLockCanvas.setOnClickListener(v -> {
                 isCanvasLocked = !isCanvasLocked;
                 btnLockCanvas.setColorFilter(isCanvasLocked ? 0xFF0284C7 : 0xFF64748B);
-                Toast.makeText(this, isCanvasLocked ? "Sayfa kilitlendi (Salt okunur)" : "Kilit açıldı", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -817,10 +880,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         if (btnClearCanvas != null) {
             btnClearCanvas.bringToFront();
             btnClearCanvas.setOnClickListener(v -> {
-                if (isCanvasLocked) {
-                    Toast.makeText(this, "Sayfa kilitli, önce kilidi açın", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+                if (isCanvasLocked) return;
                 commitInlineText();
                 showClearCanvasDialog();
             });
@@ -839,7 +899,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnPinNote.setOnClickListener(v -> {
                 isPinned = !isPinned;
                 btnPinNote.setColorFilter(isPinned ? 0xFFEAB308 : 0xFF94A3B8);
-                Toast.makeText(this, isPinned ? "Not sabitlendi" : "Sabitleme kaldırıldı", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -890,7 +949,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.HAND;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kaydırma Modu: Sayfayı serbestçe kaydırın", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -901,7 +959,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.SELECT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Seçim Modu: Nesneye dokunup taşıyın", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -912,7 +969,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.LASSO;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Kement Modu: Çizerek seçin", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -945,7 +1001,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 activeMode = DrawingView.ToolMode.TEXT;
                 if (globalDrawingCanvas != null) globalDrawingCanvas.setToolMode(activeMode);
                 updateActiveToolUI(activeMode);
-                Toast.makeText(this, "Metin Modu: Tuvale dokunup yazın", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -1002,6 +1057,39 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
+    private void exportCanvasOrSelectionToPng() {
+        if (globalDrawingCanvas == null) return;
+
+        // Tuvalin veya seçili alanın Bitmap'ini al
+        Bitmap bitmap = globalDrawingCanvas.exportThumbnail(1080, 1920); // veya exportSelectedArea(...)
+        if (bitmap == null) return;
+
+        try {
+            java.io.File cachePath = new java.io.File(getCacheDir(), "images");
+            cachePath.mkdirs();
+            java.io.File file = new java.io.File(cachePath, "not_cizim_" + System.currentTimeMillis() + ".png");
+            java.io.FileOutputStream stream = new java.io.FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+
+            Uri contentUri = androidx.core.content.FileProvider.getUriForFile(
+                    this,
+                    getPackageName() + ".fileprovider",
+                    file
+            );
+
+            if (contentUri != null) {
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("image/png");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(shareIntent, "Çizimi / Alanı Paylaş"));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "PNG dışa aktarılırken hata", e);
+        }
+    }
+
     private void selectColor(int color, ImageView selectedView) {
         if (globalDrawingCanvas != null) {
             globalDrawingCanvas.setColor(color);
@@ -1054,7 +1142,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 dialog.dismiss();
                 if (globalDrawingCanvas != null) {
                     globalDrawingCanvas.clearCanvas();
-                    Toast.makeText(this, "Tuval temizlendi", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -1139,7 +1226,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                 String colStr = etCols != null ? etCols.getText().toString().trim() : "";
 
                 if (TextUtils.isEmpty(rowStr) || TextUtils.isEmpty(colStr)) {
-                    Toast.makeText(this, "Lütfen satır ve sütun sayılarını girin", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -1148,7 +1234,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                     int cols = Integer.parseInt(colStr);
 
                     if (rows <= 0 || cols <= 0 || rows > 50 || cols > 20) {
-                        Toast.makeText(this, "Geçerli bir boyut girin (Maks: 50 satır, 20 sütun)", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -1156,11 +1241,8 @@ public class not_alma_sayfa extends AppCompatActivity {
                         globalDrawingCanvas.addTableToCanvas(rows, cols);
                     }
 
-                    Toast.makeText(this, "Tablo eklendi. Hücreye tıklayarak yazabilirsiniz.", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
-                } catch (NumberFormatException e) {
-                    Toast.makeText(this, "Lütfen sadece sayısal değerler girin", Toast.LENGTH_SHORT).show();
-                }
+                } catch (NumberFormatException ignored) {}
             });
         }
 
@@ -1239,8 +1321,6 @@ public class not_alma_sayfa extends AppCompatActivity {
                                         tempSelectedExpireTimestamp = chosen;
                                         setDurationTabActive(btnCustomDateTime, btnQuick1Hour, btnQuick24Hours, btnQuick3Days);
                                         txtSelectedExpiryInfo.setText("Bitiş Anı: " + EXPIRY_FORMAT.format(new Date(chosen)));
-                                    } else {
-                                        Toast.makeText(this, "Geçmiş bir zaman seçemezsiniz!", Toast.LENGTH_SHORT).show();
                                     }
                                 },
                                 secilenZaman.get(Calendar.HOUR_OF_DAY),
@@ -1263,7 +1343,6 @@ public class not_alma_sayfa extends AppCompatActivity {
 
         btnConfirmExpiry.setOnClickListener(v -> {
             if (tempSelectedExpireTimestamp <= System.currentTimeMillis()) {
-                Toast.makeText(this, "Geçerli bir ileri zaman seçilmedi.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -1276,7 +1355,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             String noteTitle = etNoteTitle != null ? etNoteTitle.getText().toString().trim() : "";
             scheduleNoteDeletionWarning(noteTitle, expireTimestamp);
 
-            Toast.makeText(this, "Geçici süre ayarlandı: " + EXPIRY_FORMAT.format(new Date(expireTimestamp)), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
@@ -1689,15 +1767,20 @@ public class not_alma_sayfa extends AppCompatActivity {
         @Override
         public Result doWork() {
             String notBaslik = getInputData().getString("not_baslik");
+            String uyariMetni = getInputData().getString("uyari_metni");
+
             if (notBaslik == null || notBaslik.trim().isEmpty()) {
                 notBaslik = "Geçici Not";
             }
+            if (uyariMetni == null || uyariMetni.trim().isEmpty()) {
+                uyariMetni = "\"" + notBaslik + "\" başlıklı notunuz silinmek üzere.";
+            }
 
-            sendNotification(notBaslik);
+            sendNotification(uyariMetni);
             return Result.success();
         }
 
-        private void sendNotification(String notBaslik) {
+        private void sendNotification(String uyariMetni) {
             Context context = getApplicationContext();
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -1707,7 +1790,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                         "Geçici Not Uyarıları",
                         NotificationManager.IMPORTANCE_HIGH
                 );
-                channel.setDescription("Geçici notların silinmesine 10 dakika kala uyarı bildirimi gönderir.");
+                channel.setDescription("Geçici notların silinmesine az süre kala uyarı bildirimi gönderir.");
                 if (manager != null) {
                     manager.createNotificationChannel(channel);
                 }
@@ -1716,7 +1799,7 @@ public class not_alma_sayfa extends AppCompatActivity {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_time)
                     .setContentTitle("Notunuz Silinmek Üzere")
-                    .setContentText("\"" + notBaslik + "\" başlıklı notunuz yaklaşık 10 dakika içinde silinecektir.")
+                    .setContentText(uyariMetni)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true);
 

@@ -137,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
 
         categoryChipContainer.removeAllViews();
 
-        // Dinamik Kategori Çipleri (Tümü ve Diğerleri)
         for (String categoryName : dynamicCategories) {
             TextView chip = new TextView(this);
             chip.setText(categoryName);
@@ -178,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         rvNotes = findViewById(R.id.rvNotes);
         etSearch = findViewById(R.id.etSearch);
-        //btnLibraryBridge = findViewById(R.id.btnLibraryBridge);
         btnToggleLayout = findViewById(R.id.btnToggleLayout);
         btnSettings = findViewById(R.id.btnSettings);
         fabAddNote = findViewById(R.id.fabAddNote);
@@ -310,12 +308,10 @@ public class MainActivity extends AppCompatActivity {
             btnSettings.setOnClickListener(v -> showNoteAppSettingsDialog());
         }
 
-        // 1. Klasik Not Ekleme (Diyalog ile Kategori / Başlık Seçimi)
         if (fabAddNote != null) {
             fabAddNote.setOnClickListener(v -> showCustomNoteCreationDialog());
         }
 
-        // 2. Hızlı Not Al (Sıfır Sürtünme - Doğrudan Çizim Sayfasına Geçiş)
         if (fabQuickNote != null) {
             fabQuickNote.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
@@ -358,8 +354,6 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
         LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
 
-
-        // Geri Dönüşüm Kutusunu Aç
         if (rowOpenTrashPage != null) {
             rowOpenTrashPage.setOnClickListener(v -> {
                 dialog.dismiss();
@@ -369,7 +363,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Bağış Butonu Durumu
         boolean isDonateVisible = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_DONATE, true);
         if (switchShowDonate != null) {
             switchShowDonate.setChecked(isDonateVisible);
@@ -379,7 +372,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Karanlık Tema Durumu
         boolean isDarkMode = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_DARK_MODE, false);
         if (switchDarkMode != null) {
             switchDarkMode.setChecked(isDarkMode);
@@ -389,7 +381,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Çöp Kutusunu Temizle Satırı
         if (rowEmptyTrashDirect != null) {
             rowEmptyTrashDirect.setOnClickListener(v -> {
                 dialog.dismiss();
@@ -397,7 +388,6 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Bağış Sayfasına Git Satırı
         if (rowOpenDonatePage != null) {
             rowOpenDonatePage.setOnClickListener(v -> {
                 dialog.dismiss();
@@ -476,7 +466,7 @@ public class MainActivity extends AppCompatActivity {
         if (cardCategoryWork != null) {
             cardCategoryWork.setOnClickListener(v -> {
                 String title = etNewNoteTitle != null ? etNewNoteTitle.getText().toString().trim() : "";
-                openNoteEditor(title, "İş / Okul");
+                openNoteEditor(title, "Fikir & Taslak");
                 dialog.dismiss();
             });
         }
