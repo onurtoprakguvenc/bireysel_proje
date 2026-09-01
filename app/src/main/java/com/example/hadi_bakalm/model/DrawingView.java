@@ -554,21 +554,41 @@ public class DrawingView extends View {
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
+        // 1. Arka plan rengini boya
         canvas.drawColor(currentCanvasTheme.bgColor);
 
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(offsetX, offsetY);
 
+        // 2. Kılavuz çizgileri
         renderPageBackgroundGuides(canvas);
 
+        // 3. Şekiller, Çizimler ve Silgiler GERÇEK OLUŞTURULMA SIRASINA GÖRE ÇİZİLİR
         int layerId = canvas.saveLayer(null, null);
-        renderShapes(canvas);
 
-        for (StrokeItem stroke : strokes) {
-            canvas.drawPath(stroke.path, stroke.paint);
+        for (Object item : historyStack) {
+            if (item instanceof StrokeItem) {
+                StrokeItem stroke = (StrokeItem) item;
+                canvas.drawPath(stroke.path, stroke.paint);
+            } else if (item instanceof ShapeItem) {
+                renderSingleShape(canvas, (ShapeItem) item);
+            } else if (item instanceof ImageItem) {
+                ImageItem img = (ImageItem) item;
+                if (img.bitmap != null && !img.bitmap.isRecycled()) {
+                    canvas.drawBitmap(img.bitmap, null, img.getBounds(), null);
+                }
+            } else if (item instanceof TextItem) {
+                TextItem t = (TextItem) item;
+                if (t != editingTextItem && t.text != null && t.text.length() > 0) {
+                    drawRichSpannedText(canvas, t.text, t.x, t.y, t.textSize, t.color);
+                }
+            } else if (item instanceof TableItem) {
+                renderSingleTable(canvas, (TableItem) item);
+            }
         }
 
+        // O an çizilmekte olan aktif çizgi / şekil
         if (activePath != null && activePaint != null && currentToolMode != ToolMode.HAND &&
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
@@ -576,10 +596,7 @@ public class DrawingView extends View {
 
         canvas.restoreToCount(layerId);
 
-        renderTables(canvas);
-        renderImages(canvas);
-        renderTexts(canvas);
-
+        // Seçim Kementi ve Menüler
         if (lassoPath != null) {
             canvas.drawPath(lassoPath, lassoPaint);
         }
@@ -599,6 +616,64 @@ public class DrawingView extends View {
 
         canvas.restore();
     }
+
+    private void renderSingleTable(Canvas canvas, TableItem table) {
+        float[] colWidths = table.getColumnWidths(textPaint);
+        float totalW = 0f;
+        for (float w : colWidths) totalW += w;
+        float totalH = table.rows * table.cellHeight;
+
+        for (int i = 0; i <= table.rows; i++) {
+            float y = table.startY + (i * table.cellHeight);
+            canvas.drawLine(table.startX, y, table.startX + totalW, y, tablePaint);
+        }
+
+        float currentX = table.startX;
+        canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
+        for (int j = 0; j < table.cols; j++) {
+            currentX += colWidths[j];
+            canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
+        }
+
+        for (TableCell cell : table.cells) {
+            if (editingTableCell != null && editingTableCell.table == table &&
+                    editingTableCell.row == cell.row && editingTableCell.col == cell.col) {
+                continue;
+            }
+
+            if (cell.text != null && !cell.text.isEmpty()) {
+                float cellStartX = table.startX;
+                for (int c = 0; c < cell.col; c++) {
+                    cellStartX += colWidths[c];
+                }
+                float cellW = colWidths[cell.col];
+                float cellY = table.startY + (cell.row * table.cellHeight);
+
+                canvas.save();
+                canvas.clipRect(cellStartX + 4f, cellY + 4f, cellStartX + cellW - 4f, cellY + table.cellHeight - 4f);
+                float cx = cellStartX + (cellW / 2f);
+                float cy = cellY + (table.cellHeight / 2f) + 10f;
+                canvas.drawText(cell.text, cx, cy, textPaint);
+                canvas.restore();
+            }
+        }
+    }
+
+
+    private void renderSingleShape(Canvas canvas, ShapeItem s) {
+        shapeRenderPaint.setColor(s.color);
+        shapeRenderPaint.setStrokeWidth(s.strokeWidth);
+        RectF geo = s.getExactGeometry();
+
+        if (s.shapeType == ToolMode.RECTANGLE || s.shapeType == ToolMode.SQUARE) {
+            canvas.drawRect(geo, shapeRenderPaint);
+        } else if (s.shapeType == ToolMode.CIRCLE) {
+            canvas.drawOval(geo, shapeRenderPaint);
+        } else if (s.shapeType == ToolMode.LINE) {
+            canvas.drawLine(s.startX, s.startY, s.endX, s.endY, shapeRenderPaint);
+        }
+    }
+
 
     private void renderPageBackgroundGuides(Canvas canvas) {
         if (currentPageGridMode == PageGridMode.BLANK) return;

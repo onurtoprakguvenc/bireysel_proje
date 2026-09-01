@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton btnLibraryBridge;
     private ImageButton btnToggleLayout;
     private ImageButton btnSettings;
+    private ImageButton btnCloseVault;
     private FloatingActionButton fabAddNote;
     private FloatingActionButton fabQuickNote;
     private ImageButton fabDonateCoffee;
@@ -102,10 +103,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
                 if (isVaultMode) {
-                    // Kasadaysak önce kasadan çık ve ana sayfaya dön
                     exitVaultMode();
                 } else {
-                    // Normal sayfadaysak uygulamayı olağan şekilde arka plana al
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
                 }
@@ -141,22 +140,29 @@ public class MainActivity extends AppCompatActivity {
             noteDao.moveExpiredNotesToTrash(now);
 
             List<notentity> dbEntities = noteDao.getAllNotes();
-            List<notentity> mainPageNotes = new ArrayList<>();
+            List<notentity> filteredEntities = new ArrayList<>();
 
             for (notentity entity : dbEntities) {
-                if (entity != null && !entity.inVault) {
-                    mainPageNotes.add(entity);
+                if (entity != null) {
+                    if (isVaultMode && entity.inVault) {
+                        filteredEntities.add(entity);
+                    } else if (!isVaultMode && !entity.inVault) {
+                        filteredEntities.add(entity);
+                    }
                 }
             }
 
-            List<NoteModel> updatedList = mapEntitiesToModels(mainPageNotes);
-            List<String> dynamicCategories = extractDynamicCategories(mainPageNotes);
+            List<NoteModel> updatedList = mapEntitiesToModels(filteredEntities);
+            List<String> dynamicCategories = extractDynamicCategories(filteredEntities);
 
             runOnUiThread(() -> {
-                isVaultMode = false;
                 if (titleView instanceof TextView) {
-                    ((TextView) titleView).setText("Notlarım");
+                    ((TextView) titleView).setText(isVaultMode ? "Gizli Kasa" : "Notlarım");
                 }
+                if (btnCloseVault != null) {
+                    btnCloseVault.setVisibility(isVaultMode ? View.VISIBLE : View.GONE);
+                }
+
                 applyListUpdate(updatedList);
                 renderCategoryChips(dynamicCategories);
             });
@@ -205,8 +211,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     private void initViews() {
         rvNotes = findViewById(R.id.rvNotes);
         etSearch = findViewById(R.id.etSearch);
@@ -217,6 +221,11 @@ public class MainActivity extends AppCompatActivity {
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
         titleView = findViewById(R.id.tvTitle);
+        btnCloseVault = findViewById(R.id.btnCloseVault);
+
+        if (btnCloseVault != null) {
+            btnCloseVault.setVisibility(View.GONE);
+        }
 
         updateDonateButtonVisibility();
     }
@@ -270,15 +279,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Kilit butonuna basıldığında not ANA SAYFADA KALIR, sadece kilidi açılır/kapanır
     private void toggleNoteLockInDatabase(NoteModel note) {
         if (note == null || noteDao == null) return;
 
         if (!note.isLocked()) {
-            // Not kilitleniyor
-            performLockNote(note.getId(), true);
+            if (!SecurityHelper.isPasswordSet(this)) {
+                showSetupPasswordDialog(() -> performLockNote(note.getId(), true));
+            } else {
+                performLockNote(note.getId(), true);
+            }
         } else {
-            // Notun kilidi kaldırılıyor -> Önce şifre sor
             promptForPassword(() -> performLockNote(note.getId(), false));
         }
     }
@@ -287,23 +297,10 @@ public class MainActivity extends AppCompatActivity {
         DB_EXECUTOR.execute(() -> {
             notentity entity = noteDao.getNoteById(noteId);
             if (entity != null) {
-                entity.isLocked = lock; // inVault DEĞİL, sadece isLocked değişir
+                entity.isLocked = lock;
                 noteDao.updateNote(entity);
             }
             runOnUiThread(this::refreshAllNotesFromDb);
-        });
-    }
-
-
-
-    private void loadNotesFromDatabase() {
-        if (noteDao == null) return;
-
-        DB_EXECUTOR.execute(() -> {
-            List<notentity> dbEntities = noteDao.getAllNotes();
-            List<NoteModel> updatedList = mapEntitiesToModels(dbEntities);
-
-            runOnUiThread(() -> applyListUpdate(updatedList));
         });
     }
 
@@ -367,6 +364,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        if (btnCloseVault != null) {
+            btnCloseVault.setOnClickListener(v -> exitVaultMode());
+        }
+
         if (btnSettings != null) {
             btnSettings.setOnClickListener(v -> showNoteAppSettingsDialog());
         }
@@ -375,27 +376,16 @@ public class MainActivity extends AppCompatActivity {
             fabAddNote.setOnClickListener(v -> showCustomNoteCreationDialog());
         }
 
-        // Başlığa ("Notlarım") uzun basıldığında Gizli Kasa açılır
-        if (titleView != null) {
-            titleView.setOnLongClickListener(v -> {
-                openVaultWithAuth();
-                return true;
-            });
-        }
-
         if (titleView != null) {
             titleView.setOnLongClickListener(v -> {
                 if (isVaultMode) {
-                    // 1. Durum: Zaten kasadaysak -> Kasayı kapat ve kilitle
                     exitVaultMode();
                 } else {
-                    // 2. Durum: Normal ana sayfadaysak -> Şifreyle kasayı aç
                     openVaultWithAuth();
                 }
                 return true;
             });
         }
-
 
         if (fabQuickNote != null) {
             fabQuickNote.setOnClickListener(v -> {
@@ -404,8 +394,9 @@ public class MainActivity extends AppCompatActivity {
                 String defaultTitle = "Hızlı Not (" + timeStamp + ")";
 
                 intent.putExtra("EXTRA_NOTE_TITLE", defaultTitle);
-                intent.putExtra("EXTRA_NOTE_CATEGORY", "Hızlı Not");
+                intent.putExtra("EXTRA_NOTE_CATEGORY", isVaultMode ? "Gizli Kasa" : "Hızlı Not");
                 intent.putExtra("EXTRA_NOTE_ID", -1);
+                intent.putExtra("EXTRA_IN_VAULT", isVaultMode);
                 startActivity(intent);
             });
         }
@@ -425,31 +416,11 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Gizli Kasa kilitlendi", Toast.LENGTH_SHORT).show();
     }
 
-
-    // "Notlarım" başlığına uzun basıldığında SADECE inVault=true olan gizli notlar gelir
     private void openVaultWithAuth() {
         promptForPassword(() -> {
-            if (noteDao == null) return;
-            DB_EXECUTOR.execute(() -> {
-                List<notentity> all = noteDao.getAllNotes();
-                List<notentity> vaultNotes = new ArrayList<>();
-
-                for (notentity entity : all) {
-                    if (entity != null && entity.inVault) {
-                        vaultNotes.add(entity);
-                    }
-                }
-
-                List<NoteModel> models = mapEntitiesToModels(vaultNotes);
-                runOnUiThread(() -> {
-                    isVaultMode = true;
-                    if (titleView instanceof TextView) {
-                        ((TextView) titleView).setText("Gizli Kasa");
-                    }
-                    applyListUpdate(models);
-                    Toast.makeText(this, "Gizli Kasa Açıldı", Toast.LENGTH_SHORT).show();
-                });
-            });
+            isVaultMode = true;
+            refreshAllNotesFromDb();
+            Toast.makeText(this, "Gizli Kasa Açıldı", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -548,7 +519,6 @@ public class MainActivity extends AppCompatActivity {
                 .setNeutralButton("Şifremi Unuttum", (dialog, which) -> showForgotPasswordDialog(onSuccess))
                 .setNegativeButton("İptal", null);
 
-        // Cihazda parmak izi/desen varsa alternatif buton ekle
         if (BiometricHelper.canAuthenticate(this)) {
             builder.setNegativeButton("Parmak İzi / Desen", (dialog, which) -> {
                 BiometricHelper.showBiometricPrompt(
@@ -572,36 +542,6 @@ public class MainActivity extends AppCompatActivity {
 
         builder.show();
     }
-
-    // Yedek Manuel Şifre Diyaloğu
-    private void showManualPasswordFallback(Runnable onSuccess) {
-        if (!SecurityHelper.isPasswordSet(this)) {
-            showSetupPasswordDialog(onSuccess);
-            return;
-        }
-
-        final EditText inputPassword = new EditText(this);
-        inputPassword.setHint("Kasa Parolanızı Girin");
-        inputPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        inputPassword.setPadding(48, 32, 48, 32);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Kasa Parolası")
-                .setView(inputPassword)
-                .setPositiveButton("Aç", (dialog, which) -> {
-                    String pass = inputPassword.getText().toString();
-                    if (SecurityHelper.checkPassword(this, pass)) {
-                        if (onSuccess != null) onSuccess.run();
-                    } else {
-                        Toast.makeText(this, "Hatalı parola!", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNeutralButton("Şifremi Unuttum", (dialog, which) -> showForgotPasswordDialog(onSuccess))
-                .setNegativeButton("İptal", null)
-                .show();
-    }
-
-
 
     private void showSetupPasswordDialog(Runnable onSuccess) {
         LinearLayout layout = new LinearLayout(this);
@@ -797,7 +737,7 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("EXTRA_NOTE_TITLE", title);
         }
         intent.putExtra("EXTRA_NOTE_CATEGORY", category);
-        intent.putExtra("EXTRA_IN_VAULT", isVaultMode); // Kasa modundaysa otomatik kasaya yazar
+        intent.putExtra("EXTRA_IN_VAULT", isVaultMode);
         startActivity(intent);
     }
 
@@ -906,8 +846,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-
-
     private void setupSearchListener() {
         if (etSearch == null) return;
 
@@ -937,7 +875,18 @@ public class MainActivity extends AppCompatActivity {
                 dbEntities = noteDao.searchNotes(query);
             }
 
-            List<NoteModel> filteredList = mapEntitiesToModels(dbEntities);
+            List<notentity> filtered = new ArrayList<>();
+            for (notentity entity : dbEntities) {
+                if (entity != null) {
+                    if (isVaultMode && entity.inVault) {
+                        filtered.add(entity);
+                    } else if (!isVaultMode && !entity.inVault) {
+                        filtered.add(entity);
+                    }
+                }
+            }
+
+            List<NoteModel> filteredList = mapEntitiesToModels(filtered);
             runOnUiThread(() -> applyListUpdate(filteredList));
         });
     }
@@ -966,7 +915,17 @@ public class MainActivity extends AppCompatActivity {
 
         DB_EXECUTOR.execute(() -> {
             List<notentity> dbEntities = noteDao.getNotesByCategory(category);
-            List<NoteModel> filteredList = mapEntitiesToModels(dbEntities);
+            List<notentity> filtered = new ArrayList<>();
+            for (notentity entity : dbEntities) {
+                if (entity != null) {
+                    if (isVaultMode && entity.inVault) {
+                        filtered.add(entity);
+                    } else if (!isVaultMode && !entity.inVault) {
+                        filtered.add(entity);
+                    }
+                }
+            }
+            List<NoteModel> filteredList = mapEntitiesToModels(filtered);
 
             runOnUiThread(() -> applyListUpdate(filteredList));
         });
@@ -988,6 +947,7 @@ public class MainActivity extends AppCompatActivity {
                             entity.expireTimestamp
                     );
                     model.setLocked(entity.isLocked);
+                    model.setInVault(entity.inVault); // <-- ARTIK EKSİKSİZ AKTARILIYOR
                     models.add(model);
                 }
             }
