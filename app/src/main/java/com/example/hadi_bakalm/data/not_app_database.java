@@ -6,28 +6,30 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-@Database(entities = {notentity.class}, version =5, exportSchema = false)
+// 1. Versiyonu 1 artırın (Örn: version = 2)
+@Database(entities = {notentity.class}, version = 2, exportSchema = false)
 @TypeConverters({note_Converters.class})
 public abstract class not_app_database extends RoomDatabase {
 
-    private static volatile not_app_database instance;
+    private static volatile not_app_database INSTANCE;
 
     public abstract notdao noteDao();
 
     public static not_app_database getInstance(Context context) {
-        if (instance == null) {
+        if (INSTANCE == null) {
             synchronized (not_app_database.class) {
-                if (instance == null) {
-                    instance = Room.databaseBuilder(
+                if (INSTANCE == null) {
+                    INSTANCE = Room.databaseBuilder(
                                     context.getApplicationContext(),
                                     not_app_database.class,
-                                    "sade_not_database"
+                                    "not_veritabani"
                             )
+                            // 2. Şema değişimlerinde çökmesini engeller:
                             .fallbackToDestructiveMigration()
                             .build();
                 }
             }
         }
-        return instance;
+        return INSTANCE;
     }
 }

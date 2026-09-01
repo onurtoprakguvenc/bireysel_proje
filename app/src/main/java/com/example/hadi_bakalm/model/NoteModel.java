@@ -13,11 +13,23 @@ public class NoteModel {
     private final String category;
     private boolean isPinned;
     private boolean isEphemeral;
+    private boolean isLocked;
+    private boolean inVault;
+
+
+    public boolean isLocked() { return isLocked; }
+    public void setLocked(boolean locked) { this.isLocked = locked; }
+
+    public boolean isInVault() { return inVault; }
+    public void setInVault(boolean inVault) { this.inVault = inVault; }
+
     private long expireTimestamp;
 
     public NoteModel(String title, String content, String date, String category, boolean isPinned) {
         this(0, title, content, date, category, isPinned, false, 0L);
     }
+
+
 
     public NoteModel(int id, String title, String content, String date, String category, boolean isPinned) {
         this(id, title, content, date, category, isPinned, false, 0L);

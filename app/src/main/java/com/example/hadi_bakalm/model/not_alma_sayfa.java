@@ -121,6 +121,8 @@ public class not_alma_sayfa extends AppCompatActivity {
     private boolean isSaving = false;
     private boolean isPinned = false;
     private boolean isCanvasLocked = false;
+
+    private boolean inVault = false;
     private int currentNoteId = -1;
 
     private boolean isEphemeral = false;
@@ -433,6 +435,7 @@ public class not_alma_sayfa extends AppCompatActivity {
 
     private void loadInitialIntentData() {
         Intent intent = getIntent();
+        this.inVault = intent.getBooleanExtra("EXTRA_IN_VAULT", false);
         if (intent == null) return;
 
         boolean incomingIsEphemeral = intent.getBooleanExtra("EXTRA_IS_EPHEMERAL", false);
@@ -1583,6 +1586,7 @@ public class not_alma_sayfa extends AppCompatActivity {
         note.blocks = blocks;
         note.isEphemeral = this.isEphemeral;
         note.expireTimestamp = this.expireTimestamp;
+        note.inVault = this.inVault;
 
         if (noteDao != null) {
             final int idToUpdate = currentNoteId;

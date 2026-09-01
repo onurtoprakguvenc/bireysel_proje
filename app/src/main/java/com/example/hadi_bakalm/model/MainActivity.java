@@ -17,6 +17,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -67,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fabQuickNote;
     private ImageButton fabDonateCoffee;
     private TextView tvNoteCount;
+    private View titleView;
 
     private LinearLayout categoryChipContainer;
 
@@ -74,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private NoteAdapter noteAdapter;
     private final List<NoteModel> noteList = new ArrayList<>();
     private boolean isGridMode = false;
+
+    private boolean isVaultMode = false;
 
     // Room Veritabanı
     private notdao noteDao;
@@ -92,6 +96,21 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
         setupSearchListener();
         setupPeriodicCleanupWorker();
+
+        // Telefonun geri tuşuna / geri kaydırma hareketine basıldığında:
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (isVaultMode) {
+                    // Kasadaysak önce kasadan çık ve ana sayfaya dön
+                    exitVaultMode();
+                } else {
+                    // Normal sayfadaysak uygulamayı olağan şekilde arka plana al
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     private void setupPeriodicCleanupWorker() {
@@ -122,10 +141,22 @@ public class MainActivity extends AppCompatActivity {
             noteDao.moveExpiredNotesToTrash(now);
 
             List<notentity> dbEntities = noteDao.getAllNotes();
-            List<NoteModel> updatedList = mapEntitiesToModels(dbEntities);
-            List<String> dynamicCategories = extractDynamicCategories(dbEntities);
+            List<notentity> mainPageNotes = new ArrayList<>();
+
+            for (notentity entity : dbEntities) {
+                if (entity != null && !entity.inVault) {
+                    mainPageNotes.add(entity);
+                }
+            }
+
+            List<NoteModel> updatedList = mapEntitiesToModels(mainPageNotes);
+            List<String> dynamicCategories = extractDynamicCategories(mainPageNotes);
 
             runOnUiThread(() -> {
+                isVaultMode = false;
+                if (titleView instanceof TextView) {
+                    ((TextView) titleView).setText("Notlarım");
+                }
                 applyListUpdate(updatedList);
                 renderCategoryChips(dynamicCategories);
             });
@@ -174,6 +205,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     private void initViews() {
         rvNotes = findViewById(R.id.rvNotes);
         etSearch = findViewById(R.id.etSearch);
@@ -183,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
         fabQuickNote = findViewById(R.id.fabQuickNote);
         fabDonateCoffee = findViewById(R.id.fabDonateCoffee);
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
+        titleView = findViewById(R.id.tvTitle);
 
         updateDonateButtonVisibility();
     }
@@ -201,11 +235,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(NoteModel note, int position) {
                 if (note == null) return;
-                Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
-                intent.putExtra("EXTRA_NOTE_ID", note.getId());
-                intent.putExtra("EXTRA_NOTE_TITLE", note.getTitle());
-                intent.putExtra("EXTRA_NOTE_CONTENT", note.getContent());
-                startActivity(intent);
+
+                if (note.isLocked()) {
+                    promptForPassword(() -> openNoteEditor(note));
+                } else {
+                    openNoteEditor(note);
+                }
             }
 
             @Override
@@ -221,6 +256,12 @@ public class MainActivity extends AppCompatActivity {
                 if (note == null) return;
                 deleteNoteFromDatabase(note.getId());
             }
+
+            @Override
+            public void onLockClick(NoteModel note, int position) {
+                if (note == null) return;
+                toggleNoteLockInDatabase(note);
+            }
         });
 
         if (rvNotes != null) {
@@ -228,6 +269,32 @@ public class MainActivity extends AppCompatActivity {
             rvNotes.setAdapter(noteAdapter);
         }
     }
+
+    // Kilit butonuna basıldığında not ANA SAYFADA KALIR, sadece kilidi açılır/kapanır
+    private void toggleNoteLockInDatabase(NoteModel note) {
+        if (note == null || noteDao == null) return;
+
+        if (!note.isLocked()) {
+            // Not kilitleniyor
+            performLockNote(note.getId(), true);
+        } else {
+            // Notun kilidi kaldırılıyor -> Önce şifre sor
+            promptForPassword(() -> performLockNote(note.getId(), false));
+        }
+    }
+
+    private void performLockNote(int noteId, boolean lock) {
+        DB_EXECUTOR.execute(() -> {
+            notentity entity = noteDao.getNoteById(noteId);
+            if (entity != null) {
+                entity.isLocked = lock; // inVault DEĞİL, sadece isLocked değişir
+                noteDao.updateNote(entity);
+            }
+            runOnUiThread(this::refreshAllNotesFromDb);
+        });
+    }
+
+
 
     private void loadNotesFromDatabase() {
         if (noteDao == null) return;
@@ -247,8 +314,7 @@ public class MainActivity extends AppCompatActivity {
             noteDao.moveToTrash(noteId, System.currentTimeMillis());
 
             runOnUiThread(() -> {
-                loadNotesFromDatabase();
-                loadDynamicCategoryChips();
+                refreshAllNotesFromDb();
 
                 if (rvNotes != null) {
                     Snackbar.make(rvNotes, "Not çöp kutusuna taşındı", Snackbar.LENGTH_LONG)
@@ -265,10 +331,7 @@ public class MainActivity extends AppCompatActivity {
 
         DB_EXECUTOR.execute(() -> {
             noteDao.restoreNoteFromTrash(noteId);
-            runOnUiThread(() -> {
-                loadNotesFromDatabase();
-                loadDynamicCategoryChips();
-            });
+            runOnUiThread(this::refreshAllNotesFromDb);
         });
     }
 
@@ -280,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
                 noteDao.updatePinStatus(noteId, isPinned);
             } catch (Exception ignored) {}
 
-            runOnUiThread(this::loadNotesFromDatabase);
+            runOnUiThread(this::refreshAllNotesFromDb);
         });
     }
 
@@ -312,6 +375,28 @@ public class MainActivity extends AppCompatActivity {
             fabAddNote.setOnClickListener(v -> showCustomNoteCreationDialog());
         }
 
+        // Başlığa ("Notlarım") uzun basıldığında Gizli Kasa açılır
+        if (titleView != null) {
+            titleView.setOnLongClickListener(v -> {
+                openVaultWithAuth();
+                return true;
+            });
+        }
+
+        if (titleView != null) {
+            titleView.setOnLongClickListener(v -> {
+                if (isVaultMode) {
+                    // 1. Durum: Zaten kasadaysak -> Kasayı kapat ve kilitle
+                    exitVaultMode();
+                } else {
+                    // 2. Durum: Normal ana sayfadaysak -> Şifreyle kasayı aç
+                    openVaultWithAuth();
+                }
+                return true;
+            });
+        }
+
+
         if (fabQuickNote != null) {
             fabQuickNote.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
@@ -332,6 +417,40 @@ public class MainActivity extends AppCompatActivity {
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
         }
+    }
+
+    private void exitVaultMode() {
+        isVaultMode = false;
+        refreshAllNotesFromDb();
+        Toast.makeText(this, "Gizli Kasa kilitlendi", Toast.LENGTH_SHORT).show();
+    }
+
+
+    // "Notlarım" başlığına uzun basıldığında SADECE inVault=true olan gizli notlar gelir
+    private void openVaultWithAuth() {
+        promptForPassword(() -> {
+            if (noteDao == null) return;
+            DB_EXECUTOR.execute(() -> {
+                List<notentity> all = noteDao.getAllNotes();
+                List<notentity> vaultNotes = new ArrayList<>();
+
+                for (notentity entity : all) {
+                    if (entity != null && entity.inVault) {
+                        vaultNotes.add(entity);
+                    }
+                }
+
+                List<NoteModel> models = mapEntitiesToModels(vaultNotes);
+                runOnUiThread(() -> {
+                    isVaultMode = true;
+                    if (titleView instanceof TextView) {
+                        ((TextView) titleView).setText("Gizli Kasa");
+                    }
+                    applyListUpdate(models);
+                    Toast.makeText(this, "Gizli Kasa Açıldı", Toast.LENGTH_SHORT).show();
+                });
+            });
+        });
     }
 
     @SuppressLint("InflateParams")
@@ -404,6 +523,166 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private void promptForPassword(Runnable onSuccess) {
+        if (!SecurityHelper.isPasswordSet(this)) {
+            showSetupPasswordDialog(onSuccess);
+            return;
+        }
+
+        final EditText inputPassword = new EditText(this);
+        inputPassword.setHint("Kasa Parolanızı Girin");
+        inputPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        inputPassword.setPadding(48, 32, 48, 32);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("Kasa Parolası")
+                .setView(inputPassword)
+                .setPositiveButton("Aç", (dialog, which) -> {
+                    String pass = inputPassword.getText().toString();
+                    if (SecurityHelper.checkPassword(this, pass)) {
+                        if (onSuccess != null) onSuccess.run();
+                    } else {
+                        Toast.makeText(this, "Hatalı parola!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNeutralButton("Şifremi Unuttum", (dialog, which) -> showForgotPasswordDialog(onSuccess))
+                .setNegativeButton("İptal", null);
+
+        // Cihazda parmak izi/desen varsa alternatif buton ekle
+        if (BiometricHelper.canAuthenticate(this)) {
+            builder.setNegativeButton("Parmak İzi / Desen", (dialog, which) -> {
+                BiometricHelper.showBiometricPrompt(
+                        this,
+                        "Kasa Doğrulaması",
+                        "Parmak izinizi veya ekran kilidinizi kullanın",
+                        new BiometricHelper.BiometricCallback() {
+                            @Override
+                            public void onSuccess() {
+                                if (onSuccess != null) onSuccess.run();
+                            }
+
+                            @Override
+                            public void onFailure(String errorMessage) {
+                                Toast.makeText(MainActivity.this, "Doğrulama başarısız", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+            });
+        }
+
+        builder.show();
+    }
+
+    // Yedek Manuel Şifre Diyaloğu
+    private void showManualPasswordFallback(Runnable onSuccess) {
+        if (!SecurityHelper.isPasswordSet(this)) {
+            showSetupPasswordDialog(onSuccess);
+            return;
+        }
+
+        final EditText inputPassword = new EditText(this);
+        inputPassword.setHint("Kasa Parolanızı Girin");
+        inputPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        inputPassword.setPadding(48, 32, 48, 32);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Kasa Parolası")
+                .setView(inputPassword)
+                .setPositiveButton("Aç", (dialog, which) -> {
+                    String pass = inputPassword.getText().toString();
+                    if (SecurityHelper.checkPassword(this, pass)) {
+                        if (onSuccess != null) onSuccess.run();
+                    } else {
+                        Toast.makeText(this, "Hatalı parola!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNeutralButton("Şifremi Unuttum", (dialog, which) -> showForgotPasswordDialog(onSuccess))
+                .setNegativeButton("İptal", null)
+                .show();
+    }
+
+
+
+    private void showSetupPasswordDialog(Runnable onSuccess) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        final EditText etPass = new EditText(this);
+        etPass.setHint("Yeni Kasa Parolası");
+        layout.addView(etPass);
+
+        final EditText etQuestion = new EditText(this);
+        etQuestion.setHint("Güvenlik Sorusu (Örn: İlk evcil hayvanınız?)");
+        layout.addView(etQuestion);
+
+        final EditText etAnswer = new EditText(this);
+        etAnswer.setHint("Güvenlik Sorusu Cevabı");
+        layout.addView(etAnswer);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Kasa Parolası Oluştur")
+                .setMessage("Notlarınızı kilitlemek için bir parola ve kurtarma sorusu belirleyin.")
+                .setView(layout)
+                .setPositiveButton("Kaydet", (dialog, which) -> {
+                    String p = etPass.getText().toString().trim();
+                    String q = etQuestion.getText().toString().trim();
+                    String a = etAnswer.getText().toString().trim();
+
+                    if (!p.isEmpty() && !q.isEmpty() && !a.isEmpty()) {
+                        SecurityHelper.setPasswordAndQuestion(this, p, q, a);
+                        Toast.makeText(this, "Kasa parolası oluşturuldu", Toast.LENGTH_SHORT).show();
+                        if (onSuccess != null) onSuccess.run();
+                    } else {
+                        Toast.makeText(this, "Tüm alanları doldurmalısınız!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("İptal", null)
+                .show();
+    }
+
+    private void showForgotPasswordDialog(Runnable onSuccess) {
+        String question = SecurityHelper.getSecurityQuestion(this);
+
+        final EditText etAnswer = new EditText(this);
+        etAnswer.setHint("Cevabınız");
+        etAnswer.setPadding(48, 32, 48, 32);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Parola Sıfırlama")
+                .setMessage("Güvenlik Sorusu: " + question)
+                .setView(etAnswer)
+                .setPositiveButton("Doğrula", (dialog, which) -> {
+                    String ans = etAnswer.getText().toString().trim();
+                    if (SecurityHelper.checkSecurityAnswer(this, ans)) {
+                        showNewPasswordOnlyDialog(onSuccess);
+                    } else {
+                        Toast.makeText(this, "Güvenlik sorusu cevabı yanlış!", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("İptal", null)
+                .show();
+    }
+
+    private void showNewPasswordOnlyDialog(Runnable onSuccess) {
+        final EditText etNewPass = new EditText(this);
+        etNewPass.setHint("Yeni Parolanızı Girin");
+        etNewPass.setPadding(48, 32, 48, 32);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Yeni Parola Belirleyin")
+                .setView(etNewPass)
+                .setPositiveButton("Güncelle", (dialog, which) -> {
+                    String newP = etNewPass.getText().toString().trim();
+                    if (!newP.isEmpty()) {
+                        SecurityHelper.resetPassword(this, newP);
+                        Toast.makeText(this, "Parolanız güncellendi!", Toast.LENGTH_SHORT).show();
+                        if (onSuccess != null) onSuccess.run();
+                    }
+                })
+                .show();
+    }
+
     private void confirmEmptyTrashDirectly() {
         if (noteDao == null) return;
 
@@ -411,7 +690,7 @@ public class MainActivity extends AppCompatActivity {
             noteDao.emptyTrash();
             runOnUiThread(() -> {
                 Toast.makeText(this, "Çöp kutusu tamamen boşaltıldı", Toast.LENGTH_SHORT).show();
-                loadNotesFromDatabase();
+                refreshAllNotesFromDb();
             });
         });
     }
@@ -501,12 +780,24 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    private void openNoteEditor(NoteModel note) {
+        if (note == null) return;
+        Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
+        intent.putExtra("EXTRA_NOTE_ID", note.getId());
+        intent.putExtra("EXTRA_NOTE_TITLE", note.getTitle());
+        intent.putExtra("EXTRA_NOTE_CONTENT", note.getContent());
+        intent.putExtra("EXTRA_NOTE_CATEGORY", note.getCategory());
+        intent.putExtra("EXTRA_IN_VAULT", note.isInVault());
+        startActivity(intent);
+    }
+
     private void openNoteEditor(String title, String category) {
         Intent intent = new Intent(MainActivity.this, not_alma_sayfa.class);
         if (!title.isEmpty()) {
             intent.putExtra("EXTRA_NOTE_TITLE", title);
         }
         intent.putExtra("EXTRA_NOTE_CATEGORY", category);
+        intent.putExtra("EXTRA_IN_VAULT", isVaultMode); // Kasa modundaysa otomatik kasaya yazar
         startActivity(intent);
     }
 
@@ -615,6 +906,8 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+
+
     private void setupSearchListener() {
         if (etSearch == null) return;
 
@@ -646,17 +939,6 @@ public class MainActivity extends AppCompatActivity {
 
             List<NoteModel> filteredList = mapEntitiesToModels(dbEntities);
             runOnUiThread(() -> applyListUpdate(filteredList));
-        });
-    }
-
-    private void loadDynamicCategoryChips() {
-        if (categoryChipContainer == null || noteDao == null) return;
-
-        DB_EXECUTOR.execute(() -> {
-            List<notentity> allNotes = noteDao.getAllNotes();
-            List<String> dynamicCategories = extractDynamicCategories(allNotes);
-
-            runOnUiThread(() -> renderCategoryChips(dynamicCategories));
         });
     }
 
@@ -695,7 +977,7 @@ public class MainActivity extends AppCompatActivity {
         if (dbEntities != null) {
             for (notentity entity : dbEntities) {
                 if (entity != null) {
-                    models.add(new NoteModel(
+                    NoteModel model = new NoteModel(
                             entity.id,
                             entity.title,
                             entity.content,
@@ -704,7 +986,9 @@ public class MainActivity extends AppCompatActivity {
                             entity.isPinned,
                             entity.isEphemeral,
                             entity.expireTimestamp
-                    ));
+                    );
+                    model.setLocked(entity.isLocked);
+                    models.add(model);
                 }
             }
         }

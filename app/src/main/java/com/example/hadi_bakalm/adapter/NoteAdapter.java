@@ -26,6 +26,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         void onItemClick(NoteModel note, int position);
         void onPinClick(NoteModel note, int position);
         void onDeleteClick(NoteModel note, int position);
+        void onLockClick(NoteModel note, int position);
     }
 
     private final List<NoteModel> noteList = new ArrayList<>();
@@ -43,6 +44,17 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         this.listener = listener;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    public void updateList(List<NoteModel> newList) {
+        noteList.clear();
+        filteredList.clear();
+        if (newList != null) {
+            noteList.addAll(newList);
+            filteredList.addAll(newList);
+        }
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public NoteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -52,7 +64,10 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
-        holder.bind(filteredList.get(position), listener);
+        NoteModel note = filteredList.get(position);
+        if (note != null) {
+            holder.bind(note, listener);
+        }
     }
 
     @Override
@@ -61,18 +76,6 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    public void updateList(List<NoteModel> newList) {
-        this.noteList.clear();
-        this.filteredList.clear();
-        if (newList != null) {
-            this.noteList.addAll(newList);
-            this.filteredList.addAll(newList);
-        }
-        notifyDataSetChanged();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @SuppressWarnings("unused")
     public void filter(String query) {
         filteredList.clear();
         if (query == null || query.trim().isEmpty()) {
@@ -100,6 +103,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         private final TextView tvCardEphemeralBadge;
         private final ImageButton btnQuickPin;
         private final ImageButton btnQuickDelete;
+        private final ImageButton btnLockNote;
         private final FrameLayout layoutDrawingPreview;
         private final ImageView imgDrawingPreview;
 
@@ -110,10 +114,9 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             tvNoteDate = itemView.findViewById(R.id.tvNoteDate);
             tvCategoryBadge = itemView.findViewById(R.id.tvCategoryBadge);
             tvCardEphemeralBadge = itemView.findViewById(R.id.tvCardEphemeralBadge);
-
+            btnLockNote = itemView.findViewById(R.id.btnLockNote);
             btnQuickPin = itemView.findViewById(R.id.btnPin);
             btnQuickDelete = itemView.findViewById(R.id.btnDeleteNote);
-
             layoutDrawingPreview = itemView.findViewById(R.id.layoutDrawingPreview);
             imgDrawingPreview = itemView.findViewById(R.id.imgDrawingPreview);
         }
@@ -124,51 +127,69 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             tvNoteTitle.setText(note.getTitle() != null && !note.getTitle().trim().isEmpty() ? note.getTitle() : "Başlıksız Not");
             tvNoteDate.setText(note.getDate() != null ? note.getDate() : "");
 
-            // 1. Kategori Rozeti (Badge)
+            // 1. Kategori Rozeti
             String category = (note.getCategory() != null && !note.getCategory().trim().isEmpty()) ? note.getCategory() : "Genel";
             if (tvCategoryBadge != null) {
                 String icon = getCategoryIcon(category);
                 tvCategoryBadge.setText(icon.isEmpty() ? category : icon + " " + category);
             }
 
-            // 2. Çizim ve İçerik Kontrolü
-            String content = note.getContent() != null ? note.getContent().trim() : "";
-            boolean hasBase64Image = content.startsWith("DRAWING_BASE64:") && content.length() > 20;
-
-            if (hasBase64Image) {
-                if (tvNoteContent != null) tvNoteContent.setVisibility(View.GONE);
-
-                if (imgDrawingPreview != null) {
-                    // Kırpılmayı önlemek için FIT_CENTER kullanıldı
-                    imgDrawingPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                    try {
-                        String cleanBase64 = content.replace("DRAWING_BASE64:", "").trim();
-                        byte[] decodedString = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT);
-                        android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-                        if (decodedByte != null) {
-                            imgDrawingPreview.setImageBitmap(decodedByte);
-                            if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.VISIBLE);
-                        } else {
-                            if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
-                        }
-                    } catch (Exception e) {
-                        if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
-                    }
-                }
-            } else {
+            // 2. KİLİTLİ NOT KONTROLÜ
+            if (note.isLocked()) {
                 if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
                 if (tvNoteContent != null) {
-                    String displayText = ("Çizim Notu".equals(content) || content.isEmpty()) ? "" : content;
-                    if (displayText.isEmpty()) {
-                        tvNoteContent.setVisibility(View.GONE);
-                    } else {
-                        tvNoteContent.setVisibility(View.VISIBLE);
-                        tvNoteContent.setText(displayText);
+                    tvNoteContent.setVisibility(View.VISIBLE);
+                    tvNoteContent.setText("Bu not kilitlidir. Görmek için dokunun.");
+                    tvNoteContent.setTextColor(Color.parseColor("#94A3B8"));
+                }
+                if (btnLockNote != null) {
+                    btnLockNote.setColorFilter(Color.parseColor("#0284C7")); // Mavi kilit simgesi
+                }
+            } else {
+                if (btnLockNote != null) {
+                    btnLockNote.setColorFilter(Color.parseColor("#94A3B8")); // Normal gri kilit simgesi
+                }
+
+                // Normal Çizim ve İçerik Kontrolü
+                String content = note.getContent() != null ? note.getContent().trim() : "";
+                boolean hasBase64Image = content.startsWith("DRAWING_BASE64:") && content.length() > 20;
+
+                if (hasBase64Image) {
+                    if (tvNoteContent != null) tvNoteContent.setVisibility(View.GONE);
+
+                    if (imgDrawingPreview != null) {
+                        imgDrawingPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                        try {
+                            String cleanBase64 = content.replace("DRAWING_BASE64:", "").trim();
+                            byte[] decodedString = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT);
+                            android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                            if (decodedByte != null) {
+                                imgDrawingPreview.setImageBitmap(decodedByte);
+                                if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.VISIBLE);
+                            } else {
+                                if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
+                            }
+                        } catch (Exception e) {
+                            if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
+                        }
+                    }
+                } else {
+                    if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
+                    if (tvNoteContent != null) {
+                        String displayText = ("Çizim Notu".equals(content) || content.isEmpty()) ? "" : content;
+                        if (displayText.isEmpty()) {
+                            tvNoteContent.setVisibility(View.GONE);
+                        } else {
+                            tvNoteContent.setVisibility(View.VISIBLE);
+                            tvNoteContent.setText(displayText);
+                            tvNoteContent.setTextColor(Color.parseColor("#64748B"));
+                        }
                     }
                 }
             }
 
+            // 3. Geçici Not Rozeti
             if (tvCardEphemeralBadge != null) {
                 if (note.isEphemeral() && note.getExpireTimestamp() > 0) {
                     long diff = note.getExpireTimestamp() - System.currentTimeMillis();
@@ -199,14 +220,9 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 }
             }
 
-            // 3. Sabitleme İğne Durumu
+            // 4. Sabitleme İğne Durumu
             if (btnQuickPin != null) {
-                if (note.isPinned()) {
-                    btnQuickPin.setColorFilter(Color.parseColor("#EAB308"));
-                } else {
-                    btnQuickPin.setColorFilter(Color.parseColor("#94A3B8"));
-                }
-
+                btnQuickPin.setColorFilter(note.isPinned() ? Color.parseColor("#EAB308") : Color.parseColor("#94A3B8"));
                 btnQuickPin.setOnClickListener(v -> {
                     if (listener != null) {
                         int pos = getBindingAdapterPosition();
@@ -217,7 +233,19 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 });
             }
 
-            // 4. Silme Butonu
+            // 5. Kilit Butonu Tıklaması
+            if (btnLockNote != null) {
+                btnLockNote.setOnClickListener(v -> {
+                    if (listener != null) {
+                        int pos = getBindingAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            listener.onLockClick(note, pos);
+                        }
+                    }
+                });
+            }
+
+            // 6. Silme Butonu
             if (btnQuickDelete != null) {
                 btnQuickDelete.setOnClickListener(v -> {
                     if (listener != null) {
@@ -229,7 +257,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 });
             }
 
-            // 5. Karta Tıklama
+            // 7. Karta Tıklama
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     int pos = getBindingAdapterPosition();
@@ -242,17 +270,11 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
         private String getCategoryIcon(String category) {
             switch (category.toLowerCase(Locale.getDefault())) {
-                case "kişisel":
-                    return "️";
-                case "çizim":
-                    return "";
-                case "geçici":
-                    return "";
-                case "iş":
-                case "iş / okul":
-                    return "";
-                default:
-                    return "";
+                case "kişisel": return "";
+                case "çizim": return "";
+                case "geçici": return "";
+                case "fikir & taslak": return "";
+                default: return "";
             }
         }
     }

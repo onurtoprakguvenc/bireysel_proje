@@ -78,10 +78,9 @@
                     android:src="@drawable/ic_pin"
                     app:tint="#94A3B8" />
             </LinearLayout>
-
         </RelativeLayout>
 
-        <!-- Kategori Rozeti (Bağımsız Satır - Dar Ekranda Asla Dikey Kırılmaz) -->
+        <!-- Kategori Rozeti -->
         <TextView
             android:id="@+id/tvCategoryBadge"
             android:layout_width="wrap_content"
@@ -98,7 +97,7 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Çizim Ön İzleme Alanı -->
+        <!-- Çizim Ön İzleme Alanı (Kilitliyken GONE yapılır) -->
         <FrameLayout
             android:id="@+id/layoutDrawingPreview"
             android:layout_width="match_parent"
@@ -118,7 +117,7 @@
                 android:contentDescription="Çizim Ön İzlemesi" />
         </FrameLayout>
 
-        <!-- Metin İçeriği Özeti -->
+        <!-- Metin İçeriği Özeti (Kilitliyken 'Bu not kilitlidir' yazar) -->
         <TextView
             android:id="@+id/tvNoteContent"
             android:layout_width="match_parent"
@@ -130,7 +129,7 @@
             android:ellipsize="end"
             tools:text="Not içeriği..." />
 
-        <!-- Kart Alt Barı (Tarih ve Silme) -->
+        <!-- Kart Alt Barı: Tarih, Kilit ve Çöp Kutusu -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -146,17 +145,38 @@
                 android:textColor="#94A3B8"
                 android:textSize="10sp" />
 
-            <ImageButton
-                android:id="@+id/btnDeleteNote"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+            <!-- Sağ Alt Buton Grubu (Kilit + Çöp Kutusu) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Notu Sil"
-                android:padding="3dp"
-                android:src="@drawable/ic_trash"
-                app:tint="#CBD5E1" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- 1. Kilit Butonu (Çöp kutusunun hemen solunda) -->
+                <ImageButton
+                    android:id="@+id/btnLockNote"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Notu Kilitle"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_lock"
+                    app:tint="#94A3B8" />
+
+                <!-- 2. Silme Butonu -->
+                <ImageButton
+                    android:id="@+id/btnDeleteNote"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Notu Sil"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_trash"
+                    app:tint="#CBD5E1" />
+            </LinearLayout>
         </RelativeLayout>
 
     </LinearLayout>

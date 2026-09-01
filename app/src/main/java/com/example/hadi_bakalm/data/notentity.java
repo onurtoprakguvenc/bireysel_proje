@@ -32,6 +32,9 @@ public class notentity {
     // --- GEÇİCİ NOT VE GERİ DÖNÜŞÜM KUTUSU ALANLARI ---
     public boolean isEphemeral = false;
     public long expireTimestamp = 0L;
+    // İki ayrı bayrak (flag):
+    public boolean isLocked = false;  // Not kilitli mi? (Ana sayfada durur, önizleme gizlenir)
+    public boolean inVault = false;   // Not kasada mı? (Ana sayfada görünmez, sadece kasada listelenir)
     public boolean isInTrash = false;
     public long trashedTimestamp = 0L;
 
