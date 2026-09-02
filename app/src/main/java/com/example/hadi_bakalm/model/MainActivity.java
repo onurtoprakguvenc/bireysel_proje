@@ -500,14 +500,18 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(48, 24, 48, 16);
+
         final EditText inputPassword = new EditText(this);
         inputPassword.setHint("Kasa Parolanızı Girin");
         inputPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        inputPassword.setPadding(48, 32, 48, 32);
+        layout.addView(inputPassword);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle("Kasa Parolası")
-                .setView(inputPassword)
+                .setView(layout)
                 .setPositiveButton("Aç", (dialog, which) -> {
                     String pass = inputPassword.getText().toString();
                     if (SecurityHelper.checkPassword(this, pass)) {
@@ -517,10 +521,19 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .setNeutralButton("Şifremi Unuttum", (dialog, which) -> showForgotPasswordDialog(onSuccess))
-                .setNegativeButton("İptal", null);
+                .setNegativeButton("İptal", (dialog, which) -> dialog.dismiss());
 
+        AlertDialog dialog = builder.create();
+
+        // Biyometrik varsa diyalog içine tıklanabilir bağlantı eklenir (İptal butonu ezilmez)
         if (BiometricHelper.canAuthenticate(this)) {
-            builder.setNegativeButton("Parmak İzi / Desen", (dialog, which) -> {
+            TextView btnBiometric = new TextView(this);
+            btnBiometric.setText("Parmak İzi / Desen ile Aç");
+            btnBiometric.setTextColor(Color.parseColor("#0284C7"));
+            btnBiometric.setTextSize(14f);
+            btnBiometric.setPadding(0, 24, 0, 8);
+            btnBiometric.setOnClickListener(v -> {
+                dialog.dismiss();
                 BiometricHelper.showBiometricPrompt(
                         this,
                         "Kasa Doğrulaması",
@@ -538,9 +551,10 @@ public class MainActivity extends AppCompatActivity {
                         }
                 );
             });
+            layout.addView(btnBiometric);
         }
 
-        builder.show();
+        dialog.show();
     }
 
     private void showSetupPasswordDialog(Runnable onSuccess) {
@@ -843,6 +857,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_NOTE_CATEGORY", "Geçici");
         intent.putExtra("EXTRA_IS_EPHEMERAL", true);
         intent.putExtra("EXTRA_EXPIRE_TIMESTAMP", expireTimestamp);
+        intent.putExtra("EXTRA_IN_VAULT", isVaultMode); // Kasadaysak kasada oluşturulur
         startActivity(intent);
     }
 
@@ -947,7 +962,7 @@ public class MainActivity extends AppCompatActivity {
                             entity.expireTimestamp
                     );
                     model.setLocked(entity.isLocked);
-                    model.setInVault(entity.inVault); // <-- ARTIK EKSİKSİZ AKTARILIYOR
+                    model.setInVault(entity.inVault);
                     models.add(model);
                 }
             }

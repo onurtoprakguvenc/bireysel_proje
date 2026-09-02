@@ -128,8 +128,14 @@ public class not_alma_sayfa extends AppCompatActivity {
     private boolean inVault = false;
     private int currentNoteId = -1;
 
-    private int currentPenColor = 0xFF09090B;   // Çizim kalemi rengi (Mavi, Kırmızı vb.)
-    private int currentTextColor = 0xFF0F172A;  // Metin yazı rengi (Varsayılan koyu/siyah)
+    // Renk Tanımları
+    private int currentPenColor = 0xFF09090B;   // Çizim kalemi rengi
+    private int currentTextColor = 0xFF0F172A;  // Metin yazı rengi
+
+    // Çift Tık Takip Değişkenleri
+    private long lastTextClickTime = 0L;
+    private DrawingView.TextItem lastClickedTextObj = null;
+    private static final long DOUBLE_TAP_TIMEOUT = 350L;
 
     private boolean isEphemeral = false;
     private long expireTimestamp = 0L;
@@ -330,6 +336,17 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
+    private void applyCanvasThemeToEditor(DrawingView.CanvasTheme theme) {
+        if (theme == DrawingView.CanvasTheme.DARK) {
+            currentTextColor = 0xFFF8FAFC;
+        } else {
+            currentTextColor = 0xFF0F172A;
+        }
+        if (inlineTextEditor != null) {
+            inlineTextEditor.setTextColor(currentTextColor);
+        }
+    }
+
     private void scheduleNoteDeletionWarning(String notBaslik, long silinmeZamaniMillis) {
         long simdikiZaman = System.currentTimeMillis();
         long toplamSureMillis = silinmeZamaniMillis - simdikiZaman;
@@ -510,6 +527,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                                 if (block != null && block.getType() == NoteBlockModel.BlockType.DRAWING) {
                                     globalDrawingCanvas.loadDrawingFromJson(block.getContent());
                                     updatePageGridButtonsUI(globalDrawingCanvas.getPageGridMode());
+                                    applyCanvasThemeToEditor(globalDrawingCanvas.getCanvasTheme());
                                 }
                             }
                         }
@@ -656,8 +674,6 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void openInlineTableCellEditor(DrawingView.TableCellClickResult result) {
-        float currentScale = globalDrawingCanvas.getScaleFactor();
-        inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f * currentScale);
         if (result == null || globalDrawingCanvas == null || inlineTextEditor == null) return;
 
         commitInlineText();
@@ -677,8 +693,10 @@ public class not_alma_sayfa extends AppCompatActivity {
             }
         }
 
+        float currentScale = globalDrawingCanvas.getScaleFactor();
         inlineTextEditor.setText(currentText);
-        inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f);
+        inlineTextEditor.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, 32f * currentScale);
+
         if (inlineTextEditor.getText() != null) {
             inlineTextEditor.setSelection(inlineTextEditor.getText().length());
         }
@@ -731,11 +749,6 @@ public class not_alma_sayfa extends AppCompatActivity {
         }
     }
 
-    // Sınıf seviyesine şu iki takip değişkenini ekleyin:
-    private long lastTextClickTime = 0L;
-    private DrawingView.TextItem lastClickedTextObj = null;
-    private static final long DOUBLE_TAP_TIMEOUT = 350L; // Milisaniye cinsinden çift tık aralığı
-
     @SuppressLint("ClickableViewAccessibility")
     private void setupCanvasTouchListener() {
         if (globalDrawingCanvas == null) return;
@@ -770,12 +783,11 @@ public class not_alma_sayfa extends AppCompatActivity {
 
                     // ÇİFT TIK KONTROLÜ:
                     if (clickedText == lastClickedTextObj && (now - lastTextClickTime) < DOUBLE_TAP_TIMEOUT) {
-                        // Kullanıcı çift tıkladı -> Şimdi klavyeyi aç ve düzenlemeye izin ver
                         openInlineTextEditor(clickedText.x, clickedText.y, clickedText);
                         lastClickedTextObj = null;
                         lastTextClickTime = 0L;
                     } else {
-                        // TEK TIKLANDI -> Klavyeyi AÇMA! Sadece metni seç ve açık klavye varsa kapat
+                        // TEK TIKLANDI: Klavyeyi açma, sadece seç
                         if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
                             commitInlineText();
                         }
@@ -784,11 +796,10 @@ public class not_alma_sayfa extends AppCompatActivity {
                     }
                     return true;
                 } else {
-                    // Boş alana tıklandığında:
+                    // Boş alana dokunulduğunda:
                     if (inlineTextEditor != null && inlineTextEditor.getVisibility() == View.VISIBLE) {
-                        commitInlineText(); // Açık klavyeyi kapat
+                        commitInlineText();
                     } else {
-                        // Boş yere tıklandı -> Yeni metin kutusu aç
                         openInlineTextEditor(touchX, touchY, null);
                     }
                     lastClickedTextObj = null;
@@ -854,7 +865,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnResetZoom.setOnClickListener(v -> globalDrawingCanvas.resetZoomAndPosition());
         }
 
-        // Doğru ve tekil A (Renk) ve Vurgu ataması:
         if (btnTextColor != null) {
             btnTextColor.setOnClickListener(v -> applyTextColorToSelection(currentPenColor));
         }
@@ -868,13 +878,22 @@ public class not_alma_sayfa extends AppCompatActivity {
         ImageView themeDarkToggle = findViewById(R.id.themeDarkToggle);
 
         if (themeWhiteToggle != null && globalDrawingCanvas != null) {
-            themeWhiteToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.WHITE));
+            themeWhiteToggle.setOnClickListener(v -> {
+                globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.WHITE);
+                applyCanvasThemeToEditor(DrawingView.CanvasTheme.WHITE);
+            });
         }
         if (themeSepiaToggle != null && globalDrawingCanvas != null) {
-            themeSepiaToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.SEPIA));
+            themeSepiaToggle.setOnClickListener(v -> {
+                globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.SEPIA);
+                applyCanvasThemeToEditor(DrawingView.CanvasTheme.SEPIA);
+            });
         }
         if (themeDarkToggle != null && globalDrawingCanvas != null) {
-            themeDarkToggle.setOnClickListener(v -> globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.DARK));
+            themeDarkToggle.setOnClickListener(v -> {
+                globalDrawingCanvas.setCanvasTheme(DrawingView.CanvasTheme.DARK);
+                applyCanvasThemeToEditor(DrawingView.CanvasTheme.DARK);
+            });
         }
 
         if (btnCloseEditor != null) {
@@ -885,10 +904,10 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnMoreOptions.setOnClickListener(v -> {
                 commitInlineText();
                 androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, v);
-                popup.getMenu().add(0, 1, 0, " Geçici Not Süresi");
-                popup.getMenu().add(0, 2, 1, " PDF Olarak Dışa Aktar");
-                popup.getMenu().add(0, 3, 2, " PNG (Görsel) Olarak Kaydet / Paylaş");
-                popup.getMenu().add(0, 4, 3, inVault ? " Kasadan Çıkar" : " Gizli Kasaya Taşı");
+                popup.getMenu().add(0, 1, 0, "Geçici Not Süresi");
+                popup.getMenu().add(0, 2, 1, "PDF Olarak Dışa Aktar");
+                popup.getMenu().add(0, 3, 2, "PNG Olarak Paylaş");
+                popup.getMenu().add(0, 4, 3, inVault ? "Kasadan Çıkar" : "Gizli Kasaya Taşı");
 
                 popup.setOnMenuItemClickListener(item -> {
                     if (item.getItemId() == 1) {
@@ -1178,7 +1197,7 @@ public class not_alma_sayfa extends AppCompatActivity {
                 shareIntent.setType("image/png");
                 shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
                 shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(Intent.createChooser(shareIntent, "Çizimi / Alanı Paylaş"));
+                startActivity(Intent.createChooser(shareIntent, "Çizimi Paylaş"));
             }
         } catch (Exception e) {
             Log.e(TAG, "PNG dışa aktarılırken hata", e);
@@ -1626,9 +1645,15 @@ public class not_alma_sayfa extends AppCompatActivity {
             } catch (Exception ignored) {}
         }
 
-        String contentToSave = !base64Thumbnail.isEmpty()
-                ? "DRAWING_BASE64:" + base64Thumbnail
-                : "Çizim Notu";
+        String allText = (globalDrawingCanvas != null) ? globalDrawingCanvas.getAllTextContent() : "";
+        String contentToSave;
+        if (!base64Thumbnail.isEmpty()) {
+            contentToSave = "DRAWING_BASE64:" + base64Thumbnail;
+        } else if (!allText.isEmpty()) {
+            contentToSave = allText;
+        } else {
+            contentToSave = "Çizim Notu";
+        }
 
         notentity note = new notentity(title, contentToSave, currentCategory, "#0284C7", currentTime);
         note.isPinned = isPinned;

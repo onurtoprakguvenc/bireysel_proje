@@ -37,6 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings({"unused", "SpellCheckingInspection"})
@@ -101,15 +102,19 @@ public class DrawingView extends View {
     // 1. SAHNE VE GEÇMİŞ İŞLEM NESNELERİ
     // =========================================================================
 
-    public static class DeleteAction {
-        public List<Object> deletedItems = new ArrayList<>();
+    public static class HistoryAction {
+        public enum Type { ADD, DELETE }
+        public Type type;
+        public List<Object> items = new ArrayList<>();
 
-        public DeleteAction(List<Object> items) {
-            this.deletedItems.addAll(items);
+        public HistoryAction(Type type, Object item) {
+            this.type = type;
+            this.items.add(item);
         }
 
-        public DeleteAction(Object item) {
-            this.deletedItems.add(item);
+        public HistoryAction(Type type, List<Object> items) {
+            this.type = type;
+            this.items.addAll(items);
         }
     }
 
@@ -332,17 +337,22 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 2. TUVAL VERİ HAVUZU & İŞLEM GEÇMİŞİ
+    // 2. TUVAL VERİ HAVUZU & İŞLEM GEÇMİŞİ (KESİN AYRILMIŞ DURUMLAR)
     // =========================================================================
 
+    // Canlı Çizim Listesi: Tuvalde o an var olan tüm nesneler kronolojik sırayla burada durur
+    private final List<Object> canvasObjects = new ArrayList<>();
+
+    // Tip bazlı yardımcı listeler (Hit test ve JSON için)
     private final List<StrokeItem> strokes = new ArrayList<>();
     private final List<ShapeItem> shapes = new ArrayList<>();
     private final List<ImageItem> images = new ArrayList<>();
     private final List<TextItem> texts = new ArrayList<>();
     private final List<TableItem> tables = new ArrayList<>();
 
-    private final List<Object> historyStack = new ArrayList<>();
-    private final List<Object> redoStack = new ArrayList<>();
+    // Geri Al / Yinele Geçmiş Yığınları (Sadece komut tutar, çizim yapmaz)
+    private final List<HistoryAction> undoStack = new ArrayList<>();
+    private final List<HistoryAction> redoStack = new ArrayList<>();
 
     private PageGridMode currentPageGridMode = PageGridMode.BLANK;
     private CanvasTheme currentCanvasTheme = CanvasTheme.WHITE;
@@ -496,36 +506,6 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    public Bitmap exportSelectedArea(RectF selectionBounds) {
-        if (selectionBounds == null || selectionBounds.width() <= 0 || selectionBounds.height() <= 0) {
-            return null;
-        }
-
-        try {
-            int width = (int) selectionBounds.width();
-            int height = (int) selectionBounds.height();
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-
-            canvas.drawColor(currentCanvasTheme.bgColor);
-            canvas.translate(-selectionBounds.left, -selectionBounds.top);
-
-            renderPageBackgroundGuides(canvas);
-            renderShapes(canvas);
-            for (StrokeItem stroke : strokes) {
-                canvas.drawPath(stroke.path, stroke.paint);
-            }
-            renderTables(canvas);
-            renderImages(canvas);
-            renderTexts(canvas);
-
-            return bitmap;
-        } catch (Exception e) {
-            Log.e(TAG, "exportSelectedArea hatası", e);
-            return null;
-        }
-    }
-
     private void clampOffsets() {
         float viewW = getWidth() > 0 ? getWidth() : 1080f;
         float viewH = getHeight() > 0 ? getHeight() : 1920f;
@@ -547,27 +527,49 @@ public class DrawingView extends View {
     }
 
     // =========================================================================
-    // 4. RENDER DÖNGÜSÜ (ONDRAW)
+    // 4. RENDER DÖNGÜSÜ (CANVASOBJECTS ÜZERİNDEN TEKİL VE HATASIZ ÇİZİM)
     // =========================================================================
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
-        // 1. Arka plan rengini boya
         canvas.drawColor(currentCanvasTheme.bgColor);
 
         canvas.save();
         canvas.scale(scaleFactor, scaleFactor);
         canvas.translate(offsetX, offsetY);
 
-        // 2. Kılavuz çizgileri
         renderPageBackgroundGuides(canvas);
 
-        // 3. Şekiller, Çizimler ve Silgiler GERÇEK OLUŞTURULMA SIRASINA GÖRE ÇİZİLİR
+        // Canlı çizim listesindeki tüm nesneleri kronolojik sırayla çiz:
+        renderCanvasObjects(canvas);
+
+        if (lassoPath != null) {
+            canvas.drawPath(lassoPath, lassoPaint);
+        }
+
+        if (!selectedGroup.isEmpty()) {
+            renderGroupSelectionAndMenu(canvas);
+        }
+
+        if (currentToolMode == ToolMode.SELECT && selectedItem != null && selectedGroup.isEmpty()) {
+            renderSelectionAndFloatingMenu(canvas);
+        }
+
+        if (currentToolMode == ToolMode.ERASER && isErasing && eraserX >= 0 && eraserY >= 0) {
+            float radius = (currentStrokeWidth * 3f) / 2f;
+            canvas.drawCircle(eraserX, eraserY, radius, eraserCursorPaint);
+        }
+
+        canvas.restore();
+    }
+
+    // Hem onDraw hem exportSelectedArea tarafından kullanılan merkezi çizim motoru
+    private void renderCanvasObjects(Canvas canvas) {
         int layerId = canvas.saveLayer(null, null);
 
-        for (Object item : historyStack) {
+        for (Object item : canvasObjects) {
             if (item instanceof StrokeItem) {
                 StrokeItem stroke = (StrokeItem) item;
                 canvas.drawPath(stroke.path, stroke.paint);
@@ -588,33 +590,36 @@ public class DrawingView extends View {
             }
         }
 
-        // O an çizilmekte olan aktif çizgi / şekil
         if (activePath != null && activePaint != null && currentToolMode != ToolMode.HAND &&
                 currentToolMode != ToolMode.SELECT && currentToolMode != ToolMode.LASSO && currentToolMode != ToolMode.TEXT) {
             canvas.drawPath(activePath, activePaint);
         }
 
         canvas.restoreToCount(layerId);
+    }
 
-        // Seçim Kementi ve Menüler
-        if (lassoPath != null) {
-            canvas.drawPath(lassoPath, lassoPaint);
+    public Bitmap exportSelectedArea(RectF selectionBounds) {
+        if (selectionBounds == null || selectionBounds.width() <= 0 || selectionBounds.height() <= 0) {
+            return null;
         }
 
-        if (!selectedGroup.isEmpty()) {
-            renderGroupSelectionAndMenu(canvas);
-        }
+        try {
+            int width = (int) selectionBounds.width();
+            int height = (int) selectionBounds.height();
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
 
-        if (currentToolMode == ToolMode.SELECT && selectedItem != null && selectedGroup.isEmpty()) {
-            renderSelectionAndFloatingMenu(canvas);
-        }
+            canvas.drawColor(currentCanvasTheme.bgColor);
+            canvas.translate(-selectionBounds.left, -selectionBounds.top);
 
-        if (currentToolMode == ToolMode.ERASER && isErasing && eraserX >= 0 && eraserY >= 0) {
-            float radius = (currentStrokeWidth * 3f) / 2f;
-            canvas.drawCircle(eraserX, eraserY, radius, eraserCursorPaint);
-        }
+            renderPageBackgroundGuides(canvas);
+            renderCanvasObjects(canvas); // Merkezi hatasız döngüye bağlandı
 
-        canvas.restore();
+            return bitmap;
+        } catch (Exception e) {
+            Log.e(TAG, "exportSelectedArea hatası", e);
+            return null;
+        }
     }
 
     private void renderSingleTable(Canvas canvas, TableItem table) {
@@ -659,7 +664,6 @@ public class DrawingView extends View {
         }
     }
 
-
     private void renderSingleShape(Canvas canvas, ShapeItem s) {
         shapeRenderPaint.setColor(s.color);
         shapeRenderPaint.setStrokeWidth(s.strokeWidth);
@@ -673,7 +677,6 @@ public class DrawingView extends View {
             canvas.drawLine(s.startX, s.startY, s.endX, s.endY, shapeRenderPaint);
         }
     }
-
 
     private void renderPageBackgroundGuides(Canvas canvas) {
         if (currentPageGridMode == PageGridMode.BLANK) return;
@@ -702,86 +705,7 @@ public class DrawingView extends View {
         }
     }
 
-    private void renderShapes(Canvas canvas) {
-        for (ShapeItem s : shapes) {
-            shapeRenderPaint.setColor(s.color);
-            shapeRenderPaint.setStrokeWidth(s.strokeWidth);
-            RectF geo = s.getExactGeometry();
-
-            if (s.shapeType == ToolMode.RECTANGLE || s.shapeType == ToolMode.SQUARE) {
-                canvas.drawRect(geo, shapeRenderPaint);
-            } else if (s.shapeType == ToolMode.CIRCLE) {
-                canvas.drawOval(geo, shapeRenderPaint);
-            } else if (s.shapeType == ToolMode.LINE) {
-                canvas.drawLine(s.startX, s.startY, s.endX, s.endY, shapeRenderPaint);
-            }
-        }
-    }
-
-    private void renderTables(Canvas canvas) {
-        for (TableItem table : tables) {
-            float[] colWidths = table.getColumnWidths(textPaint);
-            float totalW = 0f;
-            for (float w : colWidths) totalW += w;
-            float totalH = table.rows * table.cellHeight;
-
-            for (int i = 0; i <= table.rows; i++) {
-                float y = table.startY + (i * table.cellHeight);
-                canvas.drawLine(table.startX, y, table.startX + totalW, y, tablePaint);
-            }
-
-            float currentX = table.startX;
-            canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
-            for (int j = 0; j < table.cols; j++) {
-                currentX += colWidths[j];
-                canvas.drawLine(currentX, table.startY, currentX, table.startY + totalH, tablePaint);
-            }
-
-            for (TableCell cell : table.cells) {
-                if (editingTableCell != null && editingTableCell.table == table &&
-                        editingTableCell.row == cell.row && editingTableCell.col == cell.col) {
-                    continue;
-                }
-
-                if (cell.text != null && !cell.text.isEmpty()) {
-                    float cellStartX = table.startX;
-                    for (int c = 0; c < cell.col; c++) {
-                        cellStartX += colWidths[c];
-                    }
-                    float cellW = colWidths[cell.col];
-                    float cellY = table.startY + (cell.row * table.cellHeight);
-
-                    canvas.save();
-                    canvas.clipRect(cellStartX + 4f, cellY + 4f, cellStartX + cellW - 4f, cellY + table.cellHeight - 4f);
-
-                    float cx = cellStartX + (cellW / 2f);
-                    float cy = cellY + (table.cellHeight / 2f) + 10f;
-                    canvas.drawText(cell.text, cx, cy, textPaint);
-
-                    canvas.restore();
-                }
-            }
-        }
-    }
-
-    private void renderImages(Canvas canvas) {
-        for (ImageItem img : images) {
-            if (img.bitmap != null && !img.bitmap.isRecycled()) {
-                canvas.drawBitmap(img.bitmap, null, img.getBounds(), null);
-            }
-        }
-    }
-
     // --- STATICLAYOUT İLE ZENGİN METİN ÇİZİMİ ---
-    private void renderTexts(Canvas canvas) {
-        for (TextItem t : texts) {
-            if (t == editingTextItem) continue;
-            if (t.text != null && t.text.length() > 0) {
-                drawRichSpannedText(canvas, t.text, t.x, t.y, t.textSize, t.color);
-            }
-        }
-    }
-
     private void drawRichSpannedText(Canvas canvas, CharSequence text, float x, float y, float textSize, int defaultColor) {
         TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         tp.setTextSize(textSize > 0 ? textSize : 36f);
@@ -1225,13 +1149,14 @@ public class DrawingView extends View {
 
     private void deleteSingleSelectedItem(Object item) {
         if (item == null) return;
-        if (item instanceof ImageItem) images.remove((ImageItem) item);
-        else if (item instanceof TextItem) texts.remove((TextItem) item);
-        else if (item instanceof ShapeItem) shapes.remove((ShapeItem) item);
-        else if (item instanceof TableItem) tables.remove((TableItem) item);
 
+        // 1. Canlı çizim listesinden çıkar (Ekrandan anında kaybolur)
+        canvasObjects.remove(item);
+        removeFromTypedList(item);
+
+        // 2. Geri alma geçmişine kaydet
         redoStack.clear();
-        historyStack.add(new DeleteAction(item));
+        undoStack.add(new HistoryAction(HistoryAction.Type.DELETE, item));
     }
 
     private void handleSelectMove(float x, float y) {
@@ -1309,28 +1234,24 @@ public class DrawingView extends View {
 
                 StrokeItem clone = new StrokeItem(newPath, new Paint(orig.paint), newPoints, orig.color, orig.strokeWidth, orig.isEraser);
                 strokes.add(clone);
-                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof ShapeItem) {
                 ShapeItem orig = (ShapeItem) obj;
                 ShapeItem clone = new ShapeItem(orig.shapeType, orig.startX + offset, orig.startY + offset, orig.endX + offset, orig.endY + offset, orig.color, orig.strokeWidth);
                 shapes.add(clone);
-                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof TextItem) {
                 TextItem orig = (TextItem) obj;
                 TextItem clone = new TextItem(orig.x + offset, orig.y + offset, orig.text, orig.color, orig.textSize);
                 texts.add(clone);
-                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof ImageItem) {
                 ImageItem orig = (ImageItem) obj;
                 ImageItem clone = new ImageItem(orig.x + offset, orig.y + offset, orig.width, orig.height, orig.bitmap, orig.uriStr);
                 images.add(clone);
-                historyStack.add(clone);
                 newClones.add(clone);
 
             } else if (obj instanceof TableItem) {
@@ -1342,10 +1263,13 @@ public class DrawingView extends View {
                     clone.cells.add(new TableCell(c.row, c.col, c.text));
                 }
                 tables.add(clone);
-                historyStack.add(clone);
                 newClones.add(clone);
             }
         }
+
+        canvasObjects.addAll(newClones);
+        redoStack.clear();
+        undoStack.add(new HistoryAction(HistoryAction.Type.ADD, newClones));
 
         selectedGroup.clear();
         selectedGroup.addAll(newClones);
@@ -1365,15 +1289,15 @@ public class DrawingView extends View {
 
             if (menuDeleteBounds.contains(x, y)) {
                 List<Object> itemsToDelete = new ArrayList<>(selectedGroup);
+
+                // Canlı çizim listesinden ve tiplerden sil:
+                canvasObjects.removeAll(itemsToDelete);
                 for (Object obj : itemsToDelete) {
-                    if (obj instanceof StrokeItem) strokes.remove((StrokeItem) obj);
-                    else if (obj instanceof ShapeItem) shapes.remove((ShapeItem) obj);
-                    else if (obj instanceof ImageItem) images.remove((ImageItem) obj);
-                    else if (obj instanceof TextItem) texts.remove((TextItem) obj);
-                    else if (obj instanceof TableItem) tables.remove((TableItem) obj);
+                    removeFromTypedList(obj);
                 }
+
                 redoStack.clear();
-                historyStack.add(new DeleteAction(itemsToDelete));
+                undoStack.add(new HistoryAction(HistoryAction.Type.DELETE, itemsToDelete));
 
                 selectedGroup.clear();
                 groupBounds.setEmpty();
@@ -1742,7 +1666,8 @@ public class DrawingView extends View {
         if (isShape) {
             ShapeItem newShape = new ShapeItem(currentToolMode, touchStartX, touchStartY, lastMoveX, lastMoveY, currentColor, currentStrokeWidth);
             shapes.add(newShape);
-            historyStack.add(newShape);
+            canvasObjects.add(newShape);
+            undoStack.add(new HistoryAction(HistoryAction.Type.ADD, newShape));
         } else {
             boolean isEraser = (currentToolMode == ToolMode.ERASER);
             StrokeItem newStroke = new StrokeItem(
@@ -1754,7 +1679,8 @@ public class DrawingView extends View {
                     isEraser
             );
             strokes.add(newStroke);
-            historyStack.add(newStroke);
+            canvasObjects.add(newStroke);
+            undoStack.add(new HistoryAction(HistoryAction.Type.ADD, newStroke));
         }
 
         activePath = null;
@@ -1807,31 +1733,38 @@ public class DrawingView extends View {
         this.currentStrokeWidth = width;
     }
 
+    private void addToTypedList(Object item) {
+        if (item instanceof StrokeItem && !strokes.contains(item)) strokes.add((StrokeItem) item);
+        else if (item instanceof ShapeItem && !shapes.contains(item)) shapes.add((ShapeItem) item);
+        else if (item instanceof ImageItem && !images.contains(item)) images.add((ImageItem) item);
+        else if (item instanceof TextItem && !texts.contains(item)) texts.add((TextItem) item);
+        else if (item instanceof TableItem && !tables.contains(item)) tables.add((TableItem) item);
+    }
+
+    private void removeFromTypedList(Object item) {
+        if (item instanceof StrokeItem) strokes.remove(item);
+        else if (item instanceof ShapeItem) shapes.remove(item);
+        else if (item instanceof ImageItem) images.remove(item);
+        else if (item instanceof TextItem) texts.remove(item);
+        else if (item instanceof TableItem) tables.remove(item);
+    }
+
     public void undo() {
-        if (historyStack.isEmpty()) return;
+        if (undoStack.isEmpty()) return;
 
-        Object lastAction = historyStack.remove(historyStack.size() - 1);
-        redoStack.add(lastAction);
+        HistoryAction action = undoStack.remove(undoStack.size() - 1);
+        redoStack.add(action);
 
-        if (lastAction instanceof DeleteAction) {
-            DeleteAction da = (DeleteAction) lastAction;
-            for (Object item : da.deletedItems) {
-                if (item instanceof StrokeItem && !strokes.contains(item)) strokes.add((StrokeItem) item);
-                else if (item instanceof ShapeItem && !shapes.contains(item)) shapes.add((ShapeItem) item);
-                else if (item instanceof TableItem && !tables.contains(item)) tables.add((TableItem) item);
-                else if (item instanceof ImageItem && !images.contains(item)) images.add((ImageItem) item);
-                else if (item instanceof TextItem && !texts.contains(item)) texts.add((TextItem) item);
+        if (action.type == HistoryAction.Type.ADD) {
+            for (Object item : action.items) {
+                canvasObjects.remove(item);
+                removeFromTypedList(item);
             }
-        } else if (lastAction instanceof ShapeItem) {
-            shapes.remove(lastAction);
-        } else if (lastAction instanceof StrokeItem) {
-            strokes.remove(lastAction);
-        } else if (lastAction instanceof TableItem) {
-            tables.remove(lastAction);
-        } else if (lastAction instanceof ImageItem) {
-            images.remove(lastAction);
-        } else if (lastAction instanceof TextItem) {
-            texts.remove(lastAction);
+        } else if (action.type == HistoryAction.Type.DELETE) {
+            for (Object item : action.items) {
+                if (!canvasObjects.contains(item)) canvasObjects.add(item);
+                addToTypedList(item);
+            }
         }
 
         selectedItem = null;
@@ -1845,28 +1778,19 @@ public class DrawingView extends View {
     public void redo() {
         if (redoStack.isEmpty()) return;
 
-        Object actionToRedo = redoStack.remove(redoStack.size() - 1);
-        historyStack.add(actionToRedo);
+        HistoryAction action = redoStack.remove(redoStack.size() - 1);
+        undoStack.add(action);
 
-        if (actionToRedo instanceof DeleteAction) {
-            DeleteAction da = (DeleteAction) actionToRedo;
-            for (Object item : da.deletedItems) {
-                if (item instanceof StrokeItem) strokes.remove((StrokeItem) item);
-                else if (item instanceof ShapeItem) shapes.remove((ShapeItem) item);
-                else if (item instanceof TableItem) tables.remove((TableItem) item);
-                else if (item instanceof ImageItem) images.remove((ImageItem) item);
-                else if (item instanceof TextItem) texts.remove((TextItem) item);
+        if (action.type == HistoryAction.Type.ADD) {
+            for (Object item : action.items) {
+                if (!canvasObjects.contains(item)) canvasObjects.add(item);
+                addToTypedList(item);
             }
-        } else if (actionToRedo instanceof ShapeItem) {
-            shapes.add((ShapeItem) actionToRedo);
-        } else if (actionToRedo instanceof StrokeItem) {
-            strokes.add((StrokeItem) actionToRedo);
-        } else if (actionToRedo instanceof TableItem) {
-            tables.add((TableItem) actionToRedo);
-        } else if (actionToRedo instanceof ImageItem) {
-            images.add((ImageItem) actionToRedo);
-        } else if (actionToRedo instanceof TextItem) {
-            texts.add((TextItem) actionToRedo);
+        } else if (action.type == HistoryAction.Type.DELETE) {
+            for (Object item : action.items) {
+                canvasObjects.remove(item);
+                removeFromTypedList(item);
+            }
         }
 
         notifyChange();
@@ -1874,12 +1798,13 @@ public class DrawingView extends View {
     }
 
     public void clearCanvas() {
+        canvasObjects.clear();
         strokes.clear();
         shapes.clear();
         images.clear();
         texts.clear();
         tables.clear();
-        historyStack.clear();
+        undoStack.clear();
         redoStack.clear();
         selectedItem = null;
         selectedGroup.clear();
@@ -1903,7 +1828,8 @@ public class DrawingView extends View {
         float ratio = (float) bitmap.getHeight() / (float) bitmap.getWidth();
         ImageItem item = new ImageItem(startX, startY, targetWidth, targetWidth * ratio, bitmap, uriStr);
         images.add(item);
-        historyStack.add(item);
+        canvasObjects.add(item);
+        undoStack.add(new HistoryAction(HistoryAction.Type.ADD, item));
         redoStack.clear();
         selectedItem = item;
         currentToolMode = ToolMode.SELECT;
@@ -1915,7 +1841,8 @@ public class DrawingView extends View {
         if (text == null || text.length() == 0) return;
         TextItem t = new TextItem(x, y, text, color, 36f);
         texts.add(t);
-        historyStack.add(t);
+        canvasObjects.add(t);
+        undoStack.add(new HistoryAction(HistoryAction.Type.ADD, t));
         redoStack.clear();
         selectedItem = t;
         notifyChange();
@@ -1932,6 +1859,7 @@ public class DrawingView extends View {
     public void removeTextObject(TextItem item) {
         if (item == null) return;
         texts.remove(item);
+        canvasObjects.remove(item);
         deleteSingleSelectedItem(item);
         if (selectedItem == item) selectedItem = null;
         if (editingTextItem == item) editingTextItem = null;
@@ -1973,7 +1901,8 @@ public class DrawingView extends View {
     public void addTableToCanvas(float x, float y, int rows, int cols) {
         TableItem table = new TableItem(x, y, rows, cols);
         tables.add(table);
-        historyStack.add(table);
+        canvasObjects.add(table);
+        undoStack.add(new HistoryAction(HistoryAction.Type.ADD, table));
         redoStack.clear();
         selectedItem = table;
         currentToolMode = ToolMode.SELECT;
@@ -2152,7 +2081,6 @@ public class DrawingView extends View {
             tObj.put("x", t.x);
             tObj.put("y", t.y);
 
-            // Metni zengin HTML olarak serileştir
             if (t.text instanceof Spanned) {
                 String html;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -2173,12 +2101,13 @@ public class DrawingView extends View {
     public void loadDrawingFromJson(String jsonStr) {
         if (jsonStr == null || jsonStr.isEmpty()) return;
         try {
+            canvasObjects.clear();
             strokes.clear();
             shapes.clear();
             tables.clear();
             images.clear();
             texts.clear();
-            historyStack.clear();
+            undoStack.clear();
             redoStack.clear();
 
             if (!jsonStr.startsWith("{")) {
@@ -2214,7 +2143,7 @@ public class DrawingView extends View {
                     float width = (float) sObj.getDouble("strokeWidth");
                     ShapeItem s = new ShapeItem(type, sx, sy, ex, ey, color, width);
                     shapes.add(s);
-                    historyStack.add(s);
+                    canvasObjects.add(s);
                 }
             }
 
@@ -2237,6 +2166,7 @@ public class DrawingView extends View {
                         }
                     }
                     tables.add(table);
+                    canvasObjects.add(table);
                 }
             }
 
@@ -2257,7 +2187,9 @@ public class DrawingView extends View {
                         } else {
                             bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), uri);
                         }
-                        images.add(new ImageItem(x, y, w, h, bitmap, uriStr));
+                        ImageItem item = new ImageItem(x, y, w, h, bitmap, uriStr);
+                        images.add(item);
+                        canvasObjects.add(item);
                     } catch (Exception e) {
                         Log.e(TAG, "Görsel yüklenemedi: " + uriStr, e);
                     }
@@ -2278,7 +2210,9 @@ public class DrawingView extends View {
                     } else {
                         parsedText = obj.getString("text");
                     }
-                    texts.add(new TextItem((float) obj.getDouble("x"), (float) obj.getDouble("y"), parsedText, obj.getInt("color"), (float) obj.getDouble("textSize")));
+                    TextItem item = new TextItem((float) obj.getDouble("x"), (float) obj.getDouble("y"), parsedText, obj.getInt("color"), (float) obj.getDouble("textSize"));
+                    texts.add(item);
+                    canvasObjects.add(item);
                 }
             }
 
@@ -2323,7 +2257,7 @@ public class DrawingView extends View {
             }
             StrokeItem stroke = new StrokeItem(path, paint, points, color, width, isEraser);
             strokes.add(stroke);
-            historyStack.add(stroke);
+            canvasObjects.add(stroke);
         }
     }
 
