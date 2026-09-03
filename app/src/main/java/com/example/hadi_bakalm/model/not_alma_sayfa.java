@@ -93,7 +93,6 @@ public class not_alma_sayfa extends AppCompatActivity {
     private EditText etNoteTitle;
 
     private ImageButton btnShareNote;
-    private ImageButton btnSaveNote;
     private ImageButton btnMoreOptions;
 
     // Sayfa Çizgi Modu Butonları
@@ -323,16 +322,47 @@ public class not_alma_sayfa extends AppCompatActivity {
     }
 
     private void applyEditorMode(boolean isAdvanced, View advancedRow, View basicColors, ImageButton toggleBtn) {
-        if (isAdvanced) {
-            advancedRow.setVisibility(View.VISIBLE);
-            if (basicColors != null) basicColors.setVisibility(View.INVISIBLE);
-            toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE0F2FE));
-            toggleBtn.setColorFilter(0xFF0284C7);
-        } else {
-            advancedRow.setVisibility(View.GONE);
-            if (basicColors != null) basicColors.setVisibility(View.VISIBLE);
-            toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF1F5F9));
-            toggleBtn.setColorFilter(0xFF64748B);
+        // 1. Gelişmiş panel (2. satır) açılır veya kapanır
+        if (advancedRow != null) {
+            advancedRow.setVisibility(isAdvanced ? View.VISIBLE : View.GONE);
+        }
+
+        // 2. TEMEL RENKLER ASLA GİZLENMEZ (BÖYLECE O BEYAZ DELİK/BOŞLUK HİÇBİR ZAMAN OLUŞMAZ):
+        if (basicColors != null) {
+            basicColors.setVisibility(View.VISIBLE);
+        }
+
+        if (toggleBtn != null) {
+            toggleBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(isAdvanced ? 0xFFE0F2FE : 0xFFF1F5F9));
+            toggleBtn.setColorFilter(isAdvanced ? 0xFF0284C7 : 0xFF64748B);
+        }
+
+        // 3. Sayfa Kılavuz Çizgileri basit modda da görünür
+        if (btnBlankPageToggle != null && btnBlankPageToggle.getParent() instanceof View) {
+            ((View) btnBlankPageToggle.getParent()).setVisibility(View.VISIBLE);
+        }
+        ImageButton btnToggleRightPanel = findViewById(R.id.btnToggleRightPanel);
+        if (btnToggleRightPanel != null && btnToggleRightPanel.getParent() instanceof View) {
+            ((View) btnToggleRightPanel.getParent()).setVisibility(View.VISIBLE);
+        }
+
+        // 4. Üst barda başlığı ferahlatan gizlemeler (Tuval kilidi ve İğne)
+        if (btnLockCanvas != null) {
+            btnLockCanvas.setVisibility(isAdvanced ? View.VISIBLE : View.GONE);
+        }
+        if (btnPinNote != null) {
+            btnPinNote.setVisibility(isAdvanced ? View.VISIBLE : View.GONE);
+        }
+
+        // 5. Yüzen temalar ve zoom kapsülleri sadece gelişmiş modda açılır
+        int floatingVisibility = isAdvanced ? View.VISIBLE : View.GONE;
+        ImageView themeWhiteToggle = findViewById(R.id.themeWhiteToggle);
+        if (themeWhiteToggle != null && themeWhiteToggle.getParent() instanceof View) {
+            ((View) themeWhiteToggle.getParent()).setVisibility(floatingVisibility);
+        }
+        ImageButton btnZoomIn = findViewById(R.id.btnZoomIn);
+        if (btnZoomIn != null && btnZoomIn.getParent() instanceof View) {
+            ((View) btnZoomIn.getParent()).setVisibility(floatingVisibility);
         }
     }
 
@@ -411,12 +441,11 @@ public class not_alma_sayfa extends AppCompatActivity {
         tvEphemeralBadge = findViewById(R.id.tvEphemeralBadge);
         etNoteTitle = findViewById(R.id.etNoteTitle);
         btnShareNote = findViewById(R.id.btnShareNote);
-        btnSaveNote = findViewById(R.id.btnSaveNote);
         btnMoreOptions = findViewById(R.id.btnMoreOptions);
 
-        colorBlack = findViewById(R.id.colorBlack);
-        colorBlue = findViewById(R.id.colorBlue);
-        colorRed = findViewById(R.id.colorRed);
+        colorBlack = findViewById(R.id.colorBlackBasic);
+        colorBlue = findViewById(R.id.colorBlueBasic);
+        colorRed = findViewById(R.id.colorRedBasic);
         colorGreen = findViewById(R.id.colorGreen);
 
         btnBlankPageToggle = findViewById(R.id.btnBlankPageToggle);
@@ -896,9 +925,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        if (btnCloseEditor != null) {
-            btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
-        }
 
         if (btnMoreOptions != null) {
             btnMoreOptions.setOnClickListener(v -> {
@@ -972,9 +998,6 @@ public class not_alma_sayfa extends AppCompatActivity {
             });
         }
 
-        if (btnSaveNote != null) {
-            btnSaveNote.setOnClickListener(v -> saveNoteAndExit());
-        }
 
         if (colorBlack != null) {
             colorBlack.setOnClickListener(v -> selectColor(0xFF09090B, colorBlack));

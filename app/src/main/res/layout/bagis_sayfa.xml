@@ -37,7 +37,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="İsteğe Bağlı Katkı"
+                android:text="İsteğe Bağlı Katk(ı)"
                 android:textColor="#0F172A"
                 android:textSize="17sp"
                 android:textStyle="bold" />

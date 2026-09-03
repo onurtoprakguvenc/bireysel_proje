@@ -333,6 +333,73 @@
             android:src="@drawable/ic_coffe_support"
             app:tint="#D97706" />
 
+
+        <!-- 1. Notları Yedekle (Dışa Aktar) -->
+        <LinearLayout
+            android:id="@+id/rowExportBackup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_export"
+                app:tint="#64748B"
+                android:contentDescription="Yedekle" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="Notları Yedekle (JSON Dışa Aktar)"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="#94A3B8" />
+        </LinearLayout>
+
+        <!-- 2. Yedeği Geri Yükle (İçe Aktar) -->
+        <LinearLayout
+            android:id="@+id/rowImportBackup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_download"
+                app:tint="#64748B"
+                android:contentDescription="Geri Yükle" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:text="Yedeği Geri Yükle (JSON İçe Aktar)"
+                android:textColor="#0F172A"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="#94A3B8" />
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

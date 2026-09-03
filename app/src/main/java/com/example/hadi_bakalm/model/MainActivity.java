@@ -18,6 +18,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -71,6 +73,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvNoteCount;
     private View titleView;
 
+    private View layoutEmptyState;
+    private TextView tvEmptyStateTitle;
+    private TextView tvEmptyStateSubtitle;
+
+    private ActivityResultLauncher<String> backupExportLauncher;
+    private ActivityResultLauncher<String> backupImportLauncher;
+
     private LinearLayout categoryChipContainer;
 
     // Adaptör ve Veri Yönetimi
@@ -96,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         setupRecyclerView();
         setupClickListeners();
         setupSearchListener();
+        setupBackupLaunchers();
         setupPeriodicCleanupWorker();
 
         // Telefonun geri tuşuna / geri kaydırma hareketine basıldığında:
@@ -124,6 +134,25 @@ public class MainActivity extends AppCompatActivity {
                 cleanupRequest
         );
     }
+    private void setupBackupLaunchers() {
+        backupExportLauncher = registerForActivityResult(
+                new ActivityResultContracts.CreateDocument("application/json"),
+                uri -> {
+                    if (uri != null) {
+                        exportAllNotesToJson(uri);
+                    }
+                }
+        );
+
+        backupImportLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        confirmAndImportNotesFromJson(uri);
+                    }
+                }
+        );
+    }
 
     @Override
     protected void onResume() {
@@ -131,6 +160,135 @@ public class MainActivity extends AppCompatActivity {
         refreshAllNotesFromDb();
         updateDonateButtonVisibility();
     }
+
+    private void exportAllNotesToJson(android.net.Uri uri) {
+        if (noteDao == null) return;
+        DB_EXECUTOR.execute(() -> {
+            try {
+                List<notentity> allNotes = noteDao.getAllNotes();
+                org.json.JSONArray array = new org.json.JSONArray();
+
+                for (notentity note : allNotes) {
+                    org.json.JSONObject obj = new org.json.JSONObject();
+                    obj.put("title", note.title);
+                    obj.put("content", note.content);
+                    obj.put("category", note.category);
+                    obj.put("timestamp", note.timestamp);
+                    obj.put("isPinned", note.isPinned);
+                    obj.put("isEphemeral", note.isEphemeral);
+                    obj.put("expireTimestamp", note.expireTimestamp);
+                    obj.put("isLocked", note.isLocked);
+                    obj.put("inVault", note.inVault);
+
+                    // GSON YERİNE ANDROID'İN KENDİ YERLİ JSON YAPISI:
+                    if (note.blocks != null) {
+                        org.json.JSONArray blocksArray = new org.json.JSONArray();
+                        for (NoteBlockModel b : note.blocks) {
+                            if (b != null) {
+                                org.json.JSONObject bObj = new org.json.JSONObject();
+                                bObj.put("type", b.getType() != null ? b.getType().name() : "DRAWING");
+                                bObj.put("content", b.getContent() != null ? b.getContent() : "");
+                                blocksArray.put(bObj);
+                            }
+                        }
+                        obj.put("blocks", blocksArray);
+                    }
+                    array.put(obj);
+                }
+
+                java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                if (os != null) {
+                    os.write(array.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    os.flush();
+                    os.close();
+                    runOnUiThread(() -> Toast.makeText(this, allNotes.size() + " adet not başarıyla yedeklendi", Toast.LENGTH_SHORT).show());
+                }
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Yedekleme başarısız oldu", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
+    private void confirmAndImportNotesFromJson(android.net.Uri uri) {
+        new AlertDialog.Builder(this)
+                .setTitle("Yedeği Geri Yükle")
+                .setMessage("Yedek dosyasındaki tüm notlar mevcut notlarınıza eklenecektir. Onaylıyor musunuz?")
+                .setPositiveButton("Geri Yükle", (dialog, which) -> importNotesFromJson(uri))
+                .setNegativeButton("İptal", null)
+                .show();
+    }
+
+    private void importNotesFromJson(android.net.Uri uri) {
+        if (noteDao == null) return;
+        DB_EXECUTOR.execute(() -> {
+            try {
+                java.io.InputStream is = getContentResolver().openInputStream(uri);
+                if (is == null) return;
+
+                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[1024];
+                while ((nRead = is.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                buffer.flush();
+                is.close();
+
+                String jsonStr = new String(buffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+                org.json.JSONArray array = new org.json.JSONArray(jsonStr);
+                int importedCount = 0;
+
+                for (int i = 0; i < array.length(); i++) {
+                    org.json.JSONObject obj = array.getJSONObject(i);
+                    String title = obj.optString("title", "Başlıksız Not");
+                    String content = obj.optString("content", "");
+                    String category = obj.optString("category", "Genel");
+                    String color = obj.optString("color", "#0284C7");
+                    String timestamp = obj.optString("timestamp", "");
+
+                    notentity newNote = new notentity(title, content, category, color, timestamp);
+                    newNote.isPinned = obj.optBoolean("isPinned", false);
+                    newNote.isEphemeral = obj.optBoolean("isEphemeral", false);
+                    newNote.expireTimestamp = obj.optLong("expireTimestamp", 0L);
+                    newNote.isLocked = obj.optBoolean("isLocked", false);
+                    newNote.inVault = obj.optBoolean("inVault", false);
+
+                    // GSON OLMADAN YERLİ OKUMA:
+                    if (obj.has("blocks")) {
+                        List<NoteBlockModel> blockList = new ArrayList<>();
+                        org.json.JSONArray blocksArray = obj.getJSONArray("blocks");
+                        for (int j = 0; j < blocksArray.length(); j++) {
+                            org.json.JSONObject bObj = blocksArray.getJSONObject(j);
+                            String typeStr = bObj.optString("type", "DRAWING");
+                            String contentStr = bObj.optString("content", "");
+
+                            NoteBlockModel.BlockType bType = NoteBlockModel.BlockType.DRAWING;
+                            try {
+                                bType = NoteBlockModel.BlockType.valueOf(typeStr);
+                            } catch (Exception ignored) {}
+
+                            NoteBlockModel block = new NoteBlockModel(bType);
+                            block.setContent(contentStr);
+                            blockList.add(block);
+                        }
+                        newNote.blocks = blockList;
+                    }
+
+                    noteDao.insertNote(newNote);
+                    importedCount++;
+                }
+
+                final int finalCount = importedCount;
+                runOnUiThread(() -> {
+                    refreshAllNotesFromDb();
+                    Toast.makeText(this, finalCount + " adet not başarıyla geri yüklendi", Toast.LENGTH_SHORT).show();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Yedek dosyası okunamadı", Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
 
     private void refreshAllNotesFromDb() {
         if (noteDao == null) return;
@@ -222,6 +380,9 @@ public class MainActivity extends AppCompatActivity {
         categoryChipContainer = findViewById(R.id.categoryChipContainer);
         titleView = findViewById(R.id.tvTitle);
         btnCloseVault = findViewById(R.id.btnCloseVault);
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
+        tvEmptyStateTitle = findViewById(R.id.tvEmptyStateTitle);
+        tvEmptyStateSubtitle = findViewById(R.id.tvEmptyStateSubtitle);
 
         if (btnCloseVault != null) {
             btnCloseVault.setVisibility(View.GONE);
@@ -236,6 +397,32 @@ public class MainActivity extends AppCompatActivity {
             fabDonateCoffee.setVisibility(showDonate ? View.VISIBLE : View.GONE);
         }
     }
+
+    private void updateEmptyStateUI(boolean isEmpty) {
+        if (layoutEmptyState == null || rvNotes == null) return;
+
+        if (isEmpty) {
+            rvNotes.setVisibility(View.GONE);
+            layoutEmptyState.setVisibility(View.VISIBLE);
+
+            String searchQ = (etSearch != null && etSearch.getText() != null) ? etSearch.getText().toString().trim() : "";
+
+            if (isVaultMode) {
+                if (tvEmptyStateTitle != null) tvEmptyStateTitle.setText("Gizli Kasa Boş");
+                if (tvEmptyStateSubtitle != null) tvEmptyStateSubtitle.setText("Bu alana henüz gizlenmiş bir not eklemediniz.");
+            } else if (!searchQ.isEmpty()) {
+                if (tvEmptyStateTitle != null) tvEmptyStateTitle.setText("Sonuç Bulunamadı");
+                if (tvEmptyStateSubtitle != null) tvEmptyStateSubtitle.setText("\"" + searchQ + "\" aramasıyla eşleşen bir not yok.");
+            } else {
+                if (tvEmptyStateTitle != null) tvEmptyStateTitle.setText("Henüz Not Yok");
+                if (tvEmptyStateSubtitle != null) tvEmptyStateSubtitle.setText("Yeni bir not veya çizim eklemek için aşağıdaki + butonuna dokunun.");
+            }
+        } else {
+            rvNotes.setVisibility(View.VISIBLE);
+            layoutEmptyState.setVisibility(View.GONE);
+        }
+    }
+
 
     private void setupRecyclerView() {
         noteAdapter = new NoteAdapter(noteList);
@@ -443,6 +630,8 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout rowOpenTrashPage = dialogView.findViewById(R.id.rowOpenTrashPage);
         LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
         LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
+        LinearLayout rowExportBackup = dialogView.findViewById(R.id.rowExportBackup);
+        LinearLayout rowImportBackup = dialogView.findViewById(R.id.rowImportBackup);
 
         if (rowOpenTrashPage != null) {
             rowOpenTrashPage.setOnClickListener(v -> {
@@ -450,6 +639,20 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, GeriDonusumActivity.class);
                 startActivity(intent);
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
+        if (rowExportBackup != null) {
+            rowExportBackup.setOnClickListener(v -> {
+                dialog.dismiss();
+                backupExportLauncher.launch("hadi_bakalim_yedek_" + System.currentTimeMillis() + ".json");
+            });
+        }
+
+        if (rowImportBackup != null) {
+            rowImportBackup.setOnClickListener(v -> {
+                dialog.dismiss();
+                backupImportLauncher.launch("application/json");
             });
         }
 
@@ -977,6 +1180,7 @@ public class MainActivity extends AppCompatActivity {
             noteAdapter.updateList(noteList);
         }
         updateNoteCount(noteList.size());
+        updateEmptyStateUI(noteList.isEmpty()); // <-- EKLENDİ
     }
 
     private int dpToPx(int dp) {
