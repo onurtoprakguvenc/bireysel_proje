@@ -90,7 +90,8 @@
                     android:src="@drawable/ic_coffe_support"
                     app:tint="#64748B" />
 
-                <!-- Zihinsel Kütüphane -->
+
+                <!-- Zihinsel Kütüphane
                 <ImageButton
                     android:id="@+id/btnLibraryBridge"
                     android:layout_width="48dp"
@@ -103,7 +104,7 @@
                     android:src="@drawable/ic_brain"
                     app:tint="#64748B" />
 
-                <!-- Grid / List Görünümü -->
+                <!- Grid / List Görünümü -->
                 <ImageButton
                     android:id="@+id/btnToggleLayout"
                     android:layout_width="48dp"

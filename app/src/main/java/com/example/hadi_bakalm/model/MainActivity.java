@@ -59,11 +59,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "NoteAppSettingsPrefs";
     private static final String KEY_SHOW_DONATE = "key_show_donate_btn";
     private static final String KEY_DARK_MODE = "key_dark_mode_enabled";
+    private static final String KEY_SHOW_PREVIEWS = "key_show_note_previews";
 
     // Arayüz Elemanları
     private RecyclerView rvNotes;
     private EditText etSearch;
-    private ImageButton btnLibraryBridge;
+    //private ImageButton btnLibraryBridge;
     private ImageButton btnToggleLayout;
     private ImageButton btnSettings;
     private ImageButton btnCloseVault;
@@ -134,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
                 cleanupRequest
         );
     }
+
     private void setupBackupLaunchers() {
         backupExportLauncher = registerForActivityResult(
                 new ActivityResultContracts.CreateDocument("application/json"),
@@ -253,25 +255,10 @@ public class MainActivity extends AppCompatActivity {
                     newNote.isLocked = obj.optBoolean("isLocked", false);
                     newNote.inVault = obj.optBoolean("inVault", false);
 
-                    // GSON OLMADAN YERLİ OKUMA:
                     if (obj.has("blocks")) {
-                        List<NoteBlockModel> blockList = new ArrayList<>();
-                        org.json.JSONArray blocksArray = obj.getJSONArray("blocks");
-                        for (int j = 0; j < blocksArray.length(); j++) {
-                            org.json.JSONObject bObj = blocksArray.getJSONObject(j);
-                            String typeStr = bObj.optString("type", "DRAWING");
-                            String contentStr = bObj.optString("content", "");
-
-                            NoteBlockModel.BlockType bType = NoteBlockModel.BlockType.DRAWING;
-                            try {
-                                bType = NoteBlockModel.BlockType.valueOf(typeStr);
-                            } catch (Exception ignored) {}
-
-                            NoteBlockModel block = new NoteBlockModel(bType);
-                            block.setContent(contentStr);
-                            blockList.add(block);
-                        }
-                        newNote.blocks = blockList;
+                        String blocksJson = obj.getString("blocks");
+                        java.lang.reflect.Type blockListType = new com.google.gson.reflect.TypeToken<List<NoteBlockModel>>(){}.getType();
+                        newNote.blocks = new com.google.gson.Gson().fromJson(blocksJson, blockListType);
                     }
 
                     noteDao.insertNote(newNote);
@@ -288,7 +275,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private void refreshAllNotesFromDb() {
         if (noteDao == null) return;
@@ -423,7 +409,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private void setupRecyclerView() {
         noteAdapter = new NoteAdapter(noteList);
 
@@ -463,6 +448,12 @@ public class MainActivity extends AppCompatActivity {
         if (rvNotes != null) {
             rvNotes.setLayoutManager(new LinearLayoutManager(this));
             rvNotes.setAdapter(noteAdapter);
+        }
+
+        // Önizleme ayarını SharedPreferences'tan oku ve adaptöre aktar:
+        boolean showPreviews = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_PREVIEWS, true);
+        if (noteAdapter != null) {
+            noteAdapter.setShowPreviews(showPreviews);
         }
     }
 
@@ -532,9 +523,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        if (btnLibraryBridge != null) {
-            btnLibraryBridge.setOnClickListener(v -> openLibraryActivity());
-        }
+        //  if (btnLibraryBridge != null) {
+        //      btnLibraryBridge.setOnClickListener(v -> openLibraryActivity());
+        //  }
 
         if (btnToggleLayout != null) {
             btnToggleLayout.setOnClickListener(v -> {
@@ -627,6 +618,7 @@ public class MainActivity extends AppCompatActivity {
         ImageButton btnCloseSettings = dialogView.findViewById(R.id.btnCloseSettings);
         MaterialSwitch switchDarkMode = dialogView.findViewById(R.id.switchDarkMode);
         MaterialSwitch switchShowDonate = dialogView.findViewById(R.id.switchShowDonate);
+        MaterialSwitch switchShowPreviews = dialogView.findViewById(R.id.switchShowPreviews); // <-- EKLENDİ
         LinearLayout rowOpenTrashPage = dialogView.findViewById(R.id.rowOpenTrashPage);
         LinearLayout rowEmptyTrashDirect = dialogView.findViewById(R.id.rowEmptyTrashDirect);
         LinearLayout rowOpenDonatePage = dialogView.findViewById(R.id.rowOpenDonatePage);
@@ -671,6 +663,18 @@ public class MainActivity extends AppCompatActivity {
             switchDarkMode.setOnCheckedChangeListener((btn, isChecked) -> {
                 getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_DARK_MODE, isChecked).apply();
                 AppCompatDelegate.setDefaultNightMode(isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+            });
+        }
+
+        // Önizleme Switch Kontrolü:
+        boolean isPreviewsActive = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SHOW_PREVIEWS, true);
+        if (switchShowPreviews != null) {
+            switchShowPreviews.setChecked(isPreviewsActive);
+            switchShowPreviews.setOnCheckedChangeListener((btn, isChecked) -> {
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_SHOW_PREVIEWS, isChecked).apply();
+                if (noteAdapter != null) {
+                    noteAdapter.setShowPreviews(isChecked);
+                }
             });
         }
 
@@ -1060,7 +1064,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_NOTE_CATEGORY", "Geçici");
         intent.putExtra("EXTRA_IS_EPHEMERAL", true);
         intent.putExtra("EXTRA_EXPIRE_TIMESTAMP", expireTimestamp);
-        intent.putExtra("EXTRA_IN_VAULT", isVaultMode); // Kasadaysak kasada oluşturulur
+        intent.putExtra("EXTRA_IN_VAULT", isVaultMode);
         startActivity(intent);
     }
 
@@ -1180,7 +1184,7 @@ public class MainActivity extends AppCompatActivity {
             noteAdapter.updateList(noteList);
         }
         updateNoteCount(noteList.size());
-        updateEmptyStateUI(noteList.isEmpty()); // <-- EKLENDİ
+        updateEmptyStateUI(noteList.isEmpty());
     }
 
     private int dpToPx(int dp) {

@@ -898,6 +898,10 @@ public class not_alma_sayfa extends AppCompatActivity {
             btnTextColor.setOnClickListener(v -> applyTextColorToSelection(currentPenColor));
         }
 
+        if (btnCloseEditor != null) {
+            btnCloseEditor.setOnClickListener(v -> saveNoteAndExit());
+        }
+
         if (btnTextHighlight != null) {
             btnTextHighlight.setOnClickListener(v -> applyHighlightColorToSelection(0x88FACC15));
         }

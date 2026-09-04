@@ -31,6 +31,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     private final List<NoteModel> noteList = new ArrayList<>();
     private final List<NoteModel> filteredList = new ArrayList<>();
+    private boolean showPreviews = true;
     private OnItemClickListener listener;
 
     public NoteAdapter(List<NoteModel> initialList) {
@@ -42,6 +43,12 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void setShowPreviews(boolean showPreviews) {
+        this.showPreviews = showPreviews;
+        notifyDataSetChanged();
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -66,7 +73,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         NoteModel note = filteredList.get(position);
         if (note != null) {
-            holder.bind(note, listener);
+            holder.bind(note, listener, showPreviews);
         }
     }
 
@@ -121,7 +128,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             imgDrawingPreview = itemView.findViewById(R.id.imgDrawingPreview);
         }
 
-        public void bind(NoteModel note, OnItemClickListener listener) {
+        public void bind(NoteModel note, OnItemClickListener listener, boolean showPreviews) {
             if (note == null) return;
 
             tvNoteTitle.setText(note.getTitle() != null && !note.getTitle().trim().isEmpty() ? note.getTitle() : "Başlıksız Not");
@@ -134,23 +141,32 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 tvCategoryBadge.setText(icon.isEmpty() ? category : icon + " " + category);
             }
 
-            // 2. KİLİTLİ NOT KONTROLÜ
+            // 2. KİLİTLİ NOT VEYA KOMPAKT MOD (ÖNİZLEMELERİ GİZLE) KONTROLÜ
             if (note.isLocked()) {
                 if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
+                if (imgDrawingPreview != null) imgDrawingPreview.setVisibility(View.GONE);
                 if (tvNoteContent != null) {
                     tvNoteContent.setVisibility(View.VISIBLE);
                     tvNoteContent.setText("Bu not kilitlidir. Görmek için dokunun.");
                     tvNoteContent.setTextColor(Color.parseColor("#94A3B8"));
                 }
                 if (btnLockNote != null) {
-                    btnLockNote.setColorFilter(Color.parseColor("#0284C7")); // Mavi kilit simgesi
+                    btnLockNote.setColorFilter(Color.parseColor("#0284C7"));
+                }
+            } else if (!showPreviews) {
+                // KOMPAKT MOD: Önizlemeler kapalıysa çizim ve metin gizlenir
+                if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
+                if (imgDrawingPreview != null) imgDrawingPreview.setVisibility(View.GONE);
+                if (tvNoteContent != null) tvNoteContent.setVisibility(View.GONE);
+                if (btnLockNote != null) {
+                    btnLockNote.setColorFilter(Color.parseColor("#94A3B8"));
                 }
             } else {
+                // NORMAL MOD: Çizim veya metin önizlemesi
                 if (btnLockNote != null) {
-                    btnLockNote.setColorFilter(Color.parseColor("#94A3B8")); // Normal gri kilit simgesi
+                    btnLockNote.setColorFilter(Color.parseColor("#94A3B8"));
                 }
 
-                // Normal Çizim ve İçerik Kontrolü
                 String content = note.getContent() != null ? note.getContent().trim() : "";
                 boolean hasBase64Image = content.startsWith("DRAWING_BASE64:") && content.length() > 20;
 
@@ -166,6 +182,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
                             if (decodedByte != null) {
                                 imgDrawingPreview.setImageBitmap(decodedByte);
+                                imgDrawingPreview.setVisibility(View.VISIBLE);
                                 if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.VISIBLE);
                             } else {
                                 if (layoutDrawingPreview != null) layoutDrawingPreview.setVisibility(View.GONE);
@@ -220,7 +237,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 }
             }
 
-            // 4. Sabitleme İğne Durumu
+            // 4. Sabitleme İğnesi
             if (btnQuickPin != null) {
                 btnQuickPin.setColorFilter(note.isPinned() ? Color.parseColor("#EAB308") : Color.parseColor("#94A3B8"));
                 btnQuickPin.setOnClickListener(v -> {
@@ -233,7 +250,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 });
             }
 
-            // 5. Kilit Butonu Tıklaması
+            // 5. Kilit Butonu
             if (btnLockNote != null) {
                 btnLockNote.setOnClickListener(v -> {
                     if (listener != null) {
