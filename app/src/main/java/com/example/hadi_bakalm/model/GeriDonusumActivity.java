@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hadi_bakalm.R;
+import com.example.hadi_bakalm.data.NoteSearchHelper;
 import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
@@ -50,6 +51,7 @@ public class GeriDonusumActivity extends AppCompatActivity {
     private notdao noteDao;
     private TrashAdapter adapter;
     private final List<notentity> trashList = new ArrayList<>();
+    private String currentQuery = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,34 +131,25 @@ public class GeriDonusumActivity extends AppCompatActivity {
         }
     }
 
+    // Çöpteki notları, varsa arama metnine göre süzerek yükler (geri yükleme/silme sonrası arama korunur)
     private void loadTrashNotes() {
         if (noteDao == null) return;
 
+        final String query = NoteSearchHelper.normalizeQuery(currentQuery);
         DB_EXECUTOR.execute(() -> {
-            List<notentity> trashed = noteDao.getTrashNotes();
-            runOnUiThread(() -> updateList(trashed));
+            List<notentity> filtered = new ArrayList<>();
+            for (notentity item : noteDao.getTrashNotes()) {
+                if (NoteSearchHelper.matches(item, query)) {
+                    filtered.add(item);
+                }
+            }
+            runOnUiThread(() -> updateList(filtered));
         });
     }
 
     private void filterTrash(String query) {
-        if (noteDao == null) return;
-
-        DB_EXECUTOR.execute(() -> {
-            List<notentity> allTrashed = noteDao.getTrashNotes();
-            List<notentity> filtered = new ArrayList<>();
-
-            for (notentity item : allTrashed) {
-                if (item != null) {
-                    boolean matchesTitle = item.title != null && item.title.toLowerCase().contains(query.toLowerCase());
-                    boolean matchesContent = item.content != null && item.content.toLowerCase().contains(query.toLowerCase());
-                    if (matchesTitle || matchesContent) {
-                        filtered.add(item);
-                    }
-                }
-            }
-
-            runOnUiThread(() -> updateList(filtered));
-        });
+        currentQuery = query != null ? query : "";
+        loadTrashNotes();
     }
 
     private void restoreNote(notentity note) {
@@ -236,7 +229,14 @@ public class GeriDonusumActivity extends AppCompatActivity {
 
             // --- ÇİZİM VE METİN ÖNİZLEME MANTIĞI ---
             String content = note.content;
-            if (content != null && content.startsWith("DRAWING_BASE64:")) {
+            if (note.isLocked || note.inVault) {
+                // Kilitli / kasadaki notların içeriği çöp kutusunda da gösterilmez
+                if (holder.ivTrashDrawingPreview != null) {
+                    holder.ivTrashDrawingPreview.setVisibility(View.GONE);
+                }
+                holder.tvTrashContent.setVisibility(View.VISIBLE);
+                holder.tvTrashContent.setText("Bu not kilitlidir.");
+            } else if (content != null && content.startsWith("DRAWING_BASE64:")) {
                 Bitmap bitmap = decodeBase64ToBitmap(content);
                 if (bitmap != null && holder.ivTrashDrawingPreview != null) {
                     holder.ivTrashDrawingPreview.setVisibility(View.VISIBLE);

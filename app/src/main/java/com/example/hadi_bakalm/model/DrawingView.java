@@ -33,6 +33,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.example.hadi_bakalm.data.NoteImageStore;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -2098,6 +2100,15 @@ public class DrawingView extends View {
         return textsArray;
     }
 
+    // Yükleme sırasında eski galeri görselleri kalıcı klasöre taşındıysa true (notun yeniden kaydedilmesi gerekir)
+    private boolean imagesMigrated = false;
+
+    public boolean consumeImagesMigrated() {
+        boolean migrated = imagesMigrated;
+        imagesMigrated = false;
+        return migrated;
+    }
+
     public void loadDrawingFromJson(String jsonStr) {
         if (jsonStr == null || jsonStr.isEmpty()) return;
         try {
@@ -2181,12 +2192,18 @@ public class DrawingView extends View {
                     String uriStr = obj.getString("uri");
                     try {
                         Uri uri = Uri.parse(uriStr);
-                        Bitmap bitmap;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContext().getContentResolver(), uri));
-                        } else {
-                            bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), uri);
+                        if (!NoteImageStore.isStoredImage(uriStr)) {
+                            // Eski notlar: galeri adresine hâlâ erişilebiliyorsa görseli kalıcı klasöre taşı
+                            try {
+                                uri = NoteImageStore.importImage(getContext(), uri);
+                                uriStr = uri.toString();
+                                imagesMigrated = true;
+                            } catch (Exception copyError) {
+                                Log.w(TAG, "Görsel kalıcı klasöre kopyalanamadı: " + uriStr, copyError);
+                            }
                         }
+                        Bitmap bitmap = NoteImageStore.loadBitmap(getContext(), uri);
+                        if (bitmap == null) throw new java.io.IOException("Görsel çözülemedi");
                         ImageItem item = new ImageItem(x, y, w, h, bitmap, uriStr);
                         images.add(item);
                         canvasObjects.add(item);
@@ -2261,6 +2278,10 @@ public class DrawingView extends View {
         }
     }
 
+    /**
+     * Not listesi için küçük önizleme. Sadece içerik (arka plan, sayfa çizgileri ve seçim menüsü hariç)
+     * ekranda görünen alan üzerinden kırpılır; en-boy oranı korunur. İçerik yoksa null döner.
+     */
     public Bitmap exportThumbnail(int targetWidth, int targetHeight) {
         if (targetWidth <= 0 || targetHeight <= 0) {
             targetWidth = 600;
@@ -2270,45 +2291,61 @@ public class DrawingView extends View {
         int viewWidth = getWidth() > 0 ? getWidth() : 1080;
         int viewHeight = getHeight() > 0 ? getHeight() : 1920;
 
-        Bitmap fullBitmap = Bitmap.createBitmap(viewWidth, viewHeight, Bitmap.Config.ARGB_8888);
-        Canvas fullCanvas = new Canvas(fullBitmap);
-        fullCanvas.drawColor(Color.TRANSPARENT);
-        draw(fullCanvas);
+        // 1) İçeriğin sınırlarını küçültülmüş bir kopyada bul (tam çözünürlükte tarama yavaştı)
+        float sample = Math.min(1f, 540f / viewWidth);
+        int sampleW = Math.max(1, Math.round(viewWidth * sample));
+        int sampleH = Math.max(1, Math.round(viewHeight * sample));
 
-        int minX = viewWidth, minY = viewHeight, maxX = 0, maxY = 0;
-        boolean hasDrawing = false;
+        Bitmap sampleBitmap = Bitmap.createBitmap(sampleW, sampleH, Bitmap.Config.ARGB_8888);
+        Canvas sampleCanvas = new Canvas(sampleBitmap);
+        sampleCanvas.scale(sample, sample);
+        sampleCanvas.scale(scaleFactor, scaleFactor);
+        sampleCanvas.translate(offsetX, offsetY);
+        renderCanvasObjects(sampleCanvas);
 
-        int[] pixels = new int[viewWidth * viewHeight];
-        fullBitmap.getPixels(pixels, 0, viewWidth, 0, 0, viewWidth, viewHeight);
+        int[] pixels = new int[sampleW * sampleH];
+        sampleBitmap.getPixels(pixels, 0, sampleW, 0, 0, sampleW, sampleH);
+        sampleBitmap.recycle();
 
-        for (int y = 0; y < viewHeight; y += 4) {
-            for (int x = 0; x < viewWidth; x += 4) {
-                int alpha = Color.alpha(pixels[y * viewWidth + x]);
-                if (alpha > 20) {
+        int minX = sampleW, minY = sampleH, maxX = -1, maxY = -1;
+        for (int y = 0; y < sampleH; y += 2) {
+            for (int x = 0; x < sampleW; x += 2) {
+                if (Color.alpha(pixels[y * sampleW + x]) > 20) {
                     if (x < minX) minX = x;
                     if (x > maxX) maxX = x;
                     if (y < minY) minY = y;
                     if (y > maxY) maxY = y;
-                    hasDrawing = true;
                 }
             }
         }
-
-        if (!hasDrawing || minX >= maxX || minY >= maxY) {
+        if (maxX < minX || maxY < minY) {
             return null;
         }
 
-        int padding = 30;
-        minX = Math.max(0, minX - padding);
-        minY = Math.max(0, minY - padding);
-        maxX = Math.min(viewWidth, maxX + padding);
-        maxY = Math.min(viewHeight, maxY + padding);
+        // 2) Bulunan alanı tam çözünürlük koordinatlarına çevir (+ kenar boşluğu)
+        float padding = 30f;
+        float cropLeft = Math.max(0f, minX / sample - padding);
+        float cropTop = Math.max(0f, minY / sample - padding);
+        float cropRight = Math.min(viewWidth, (maxX + 2) / sample + padding);
+        float cropBottom = Math.min(viewHeight, (maxY + 2) / sample + padding);
+        float cropWidth = Math.max(1f, cropRight - cropLeft);
+        float cropHeight = Math.max(1f, cropBottom - cropTop);
 
-        int cropWidth = maxX - minX;
-        int cropHeight = maxY - minY;
+        // 3) Oran korunarak hedef kutuya sığdır; küçük içerik aşırı büyütülmez
+        float fit = Math.min(2f, Math.min(targetWidth / cropWidth, targetHeight / cropHeight));
+        int outW = Math.max(1, Math.round(cropWidth * fit));
+        int outH = Math.max(1, Math.round(cropHeight * fit));
 
-        Bitmap croppedBitmap = Bitmap.createBitmap(fullBitmap, minX, minY, cropWidth, cropHeight);
-        return Bitmap.createScaledBitmap(croppedBitmap, targetWidth, targetHeight, true);
+        // 4) Kırpılan alanı doğrudan hedef boyutta yeniden çiz (net sonuç için)
+        Bitmap output = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888);
+        Canvas outCanvas = new Canvas(output);
+        outCanvas.drawColor(currentCanvasTheme.bgColor);
+        outCanvas.scale(fit, fit);
+        outCanvas.translate(-cropLeft, -cropTop);
+        outCanvas.scale(scaleFactor, scaleFactor);
+        outCanvas.translate(offsetX, offsetY);
+        renderCanvasObjects(outCanvas);
+        return output;
     }
 
     public String getAllTextContent() {

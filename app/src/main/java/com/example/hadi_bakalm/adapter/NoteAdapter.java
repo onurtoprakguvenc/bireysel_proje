@@ -1,7 +1,11 @@
 package com.example.hadi_bakalm.adapter;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.util.Base64;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,14 +33,20 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         void onLockClick(NoteModel note, int position);
     }
 
-    private final List<NoteModel> noteList = new ArrayList<>();
+    // Önizlemeler her kaydırmada yeniden çözülmesin diye (anahtar: içerik özeti)
+    private static final LruCache<String, Bitmap> PREVIEW_CACHE = new LruCache<String, Bitmap>(8 * 1024 * 1024) {
+        @Override
+        protected int sizeOf(String key, Bitmap value) {
+            return value.getByteCount();
+        }
+    };
+
     private final List<NoteModel> filteredList = new ArrayList<>();
     private boolean showPreviews = true;
     private OnItemClickListener listener;
 
     public NoteAdapter(List<NoteModel> initialList) {
         if (initialList != null) {
-            this.noteList.addAll(initialList);
             this.filteredList.addAll(initialList);
         }
     }
@@ -53,10 +63,8 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
 
     @SuppressLint("NotifyDataSetChanged")
     public void updateList(List<NoteModel> newList) {
-        noteList.clear();
         filteredList.clear();
         if (newList != null) {
-            noteList.addAll(newList);
             filteredList.addAll(newList);
         }
         notifyDataSetChanged();
@@ -80,26 +88,6 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
     @Override
     public int getItemCount() {
         return filteredList.size();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    public void filter(String query) {
-        filteredList.clear();
-        if (query == null || query.trim().isEmpty()) {
-            filteredList.addAll(noteList);
-        } else {
-            String filterPattern = query.toLowerCase(Locale.getDefault()).trim();
-            for (NoteModel item : noteList) {
-                if (item != null) {
-                    boolean matchesTitle = item.getTitle() != null && item.getTitle().toLowerCase(Locale.getDefault()).contains(filterPattern);
-                    boolean matchesContent = item.getContent() != null && item.getContent().toLowerCase(Locale.getDefault()).contains(filterPattern);
-                    if (matchesTitle || matchesContent) {
-                        filteredList.add(item);
-                    }
-                }
-            }
-        }
-        notifyDataSetChanged();
     }
 
     public static class NoteViewHolder extends RecyclerView.ViewHolder {
@@ -176,9 +164,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                     if (imgDrawingPreview != null) {
                         imgDrawingPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
                         try {
-                            String cleanBase64 = content.replace("DRAWING_BASE64:", "").trim();
-                            byte[] decodedString = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT);
-                            android.graphics.Bitmap decodedByte = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                            Bitmap decodedByte = decodePreview(content);
 
                             if (decodedByte != null) {
                                 imgDrawingPreview.setImageBitmap(decodedByte);
@@ -283,6 +269,18 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                     }
                 }
             });
+        }
+
+        private static Bitmap decodePreview(String content) {
+            String cacheKey = content.length() + ":" + content.hashCode();
+            Bitmap cached = PREVIEW_CACHE.get(cacheKey);
+            if (cached != null) return cached;
+
+            String cleanBase64 = content.substring("DRAWING_BASE64:".length()).trim();
+            byte[] decodedString = Base64.decode(cleanBase64, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            if (bitmap != null) PREVIEW_CACHE.put(cacheKey, bitmap);
+            return bitmap;
         }
 
         private String getCategoryIcon(String category) {

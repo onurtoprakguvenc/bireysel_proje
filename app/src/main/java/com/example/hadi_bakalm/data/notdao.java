@@ -1,7 +1,6 @@
 package com.example.hadi_bakalm.data;
 
 import androidx.room.Dao;
-import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
@@ -16,28 +15,18 @@ public interface notdao {
     @Query("SELECT * FROM user_notes WHERE isInTrash = 0 ORDER BY isPinned DESC, id DESC")
     List<notentity> getAllNotes();
 
+    // Görsel temizliği için: çöp kutusundakiler dahil tüm notlar
+    @Query("SELECT * FROM user_notes")
+    List<notentity> getAllNotesIncludingTrash();
+
     @Query("SELECT * FROM user_notes WHERE id = :id LIMIT 1")
     notentity getNoteById(int id);
-
-    // Kategoriye göre getirme (Sadece aktif notlar)
-    @Query("SELECT * FROM user_notes WHERE category = :category AND isInTrash = 0 ORDER BY isPinned DESC, id DESC")
-    List<notentity> getNotesByCategory(String category);
-
-    // Arama sonuçları (Sadece aktif notlar içinde arar)
-    @Query("SELECT * FROM user_notes WHERE (title LIKE '%' || :searchQuery || '%' OR content LIKE '%' || :searchQuery || '%') AND isInTrash = 0 ORDER BY isPinned DESC, id DESC")
-    List<notentity> searchNotes(String searchQuery);
-
-    @Query("SELECT COUNT(*) FROM user_notes WHERE isInTrash = 0")
-    int getNoteCount();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insertNote(notentity note);
 
     @Update
     void updateNote(notentity note);
-
-    @Delete
-    void deleteNote(notentity note);
 
     // Sabitleme durumunu tek bir sorguyla güncelleme (EKLENEN METOT)
     @Query("UPDATE user_notes SET isPinned = :isPinned WHERE id = :id")
@@ -46,9 +35,6 @@ public interface notdao {
     // Nesne oluşturmadan doğrudan ID ile silme
     @Query("DELETE FROM user_notes WHERE id = :id")
     void deleteNoteById(int id);
-
-    @Query("DELETE FROM user_notes")
-    void deleteAllNotes();
 
     // =========================================================================
     // GEÇİCİ NOT VE GERİ DÖNÜŞÜM KUTUSU SORGULARI

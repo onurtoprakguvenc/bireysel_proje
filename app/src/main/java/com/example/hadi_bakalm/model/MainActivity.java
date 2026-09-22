@@ -35,6 +35,8 @@ import com.example.hadi_bakalm.EskiMainActivity;
 import com.example.hadi_bakalm.R;
 import com.example.hadi_bakalm.adapter.NoteAdapter;
 import com.example.hadi_bakalm.data.NoteCleanupWorker;
+import com.example.hadi_bakalm.data.NoteImageStore;
+import com.example.hadi_bakalm.data.NoteSearchHelper;
 import com.example.hadi_bakalm.data.not_app_database;
 import com.example.hadi_bakalm.data.notdao;
 import com.example.hadi_bakalm.data.notentity;
@@ -58,7 +60,10 @@ public class MainActivity extends AppCompatActivity {
     private static final Locale TR_LOCALE = new Locale("tr", "TR");
     private static final String PREFS_NAME = "NoteAppSettingsPrefs";
     private static final String KEY_SHOW_DONATE = "key_show_donate_btn";
-    private static final String KEY_DARK_MODE = "key_dark_mode_enabled";
+    // Tema ayarı, uygulama açılışında App sınıfının okuduğu yerde tutulur (0: Aydınlık, 1: Karanlık, 2: Sistem)
+    private static final String THEME_PREFS_NAME = "AyarlarPrefs";
+    private static final String KEY_THEME_POSITION = "secilen_tema_pozisyon";
+    private static final String CATEGORY_ALL = "Tümü";
     private static final String KEY_SHOW_PREVIEWS = "key_show_note_previews";
 
     // Arayüz Elemanları
@@ -79,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvEmptyStateSubtitle;
 
     private ActivityResultLauncher<String> backupExportLauncher;
-    private ActivityResultLauncher<String> backupImportLauncher;
+    private ActivityResultLauncher<String[]> backupImportLauncher;
 
     private LinearLayout categoryChipContainer;
 
@@ -89,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isGridMode = false;
 
     private boolean isVaultMode = false;
+    private String selectedCategory = CATEGORY_ALL;
 
     // Room Veritabanı
     private notdao noteDao;
@@ -147,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         backupImportLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
+                new ActivityResultContracts.OpenDocument(),
                 uri -> {
                     if (uri != null) {
                         confirmAndImportNotesFromJson(uri);
@@ -159,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        refreshAllNotesFromDb();
+        loadNotes();
         updateDonateButtonVisibility();
     }
 
@@ -175,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                     obj.put("title", note.title);
                     obj.put("content", note.content);
                     obj.put("category", note.category);
+                    obj.put("color", note.colorHex);
                     obj.put("timestamp", note.timestamp);
                     obj.put("isPinned", note.isPinned);
                     obj.put("isEphemeral", note.isEphemeral);
@@ -194,17 +201,29 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                         obj.put("blocks", blocksArray);
+
+                        // Notta kullanılan görsel dosyaları da yedeğe eklenir (ad -> base64)
+                        org.json.JSONObject imagesObj = new org.json.JSONObject();
+                        for (NoteBlockModel b : note.blocks) {
+                            if (b == null || b.getType() != NoteBlockModel.BlockType.DRAWING) continue;
+                            for (String imageName : NoteImageStore.collectImageNames(b.getContent())) {
+                                String base64 = NoteImageStore.readAsBase64(getApplicationContext(), imageName);
+                                if (base64 != null) imagesObj.put(imageName, base64);
+                            }
+                        }
+                        if (imagesObj.length() > 0) {
+                            obj.put("images", imagesObj);
+                        }
                     }
                     array.put(obj);
                 }
 
-                java.io.OutputStream os = getContentResolver().openOutputStream(uri);
-                if (os != null) {
+                try (java.io.OutputStream os = getContentResolver().openOutputStream(uri)) {
+                    if (os == null) throw new java.io.IOException("Dosya açılamadı");
                     os.write(array.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8));
                     os.flush();
-                    os.close();
-                    runOnUiThread(() -> Toast.makeText(this, allNotes.size() + " adet not başarıyla yedeklendi", Toast.LENGTH_SHORT).show());
                 }
+                runOnUiThread(() -> Toast.makeText(this, allNotes.size() + " adet not başarıyla yedeklendi", Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this, "Yedekleme başarısız oldu", Toast.LENGTH_SHORT).show());
             }
@@ -224,21 +243,21 @@ public class MainActivity extends AppCompatActivity {
         if (noteDao == null) return;
         DB_EXECUTOR.execute(() -> {
             try {
-                java.io.InputStream is = getContentResolver().openInputStream(uri);
-                if (is == null) return;
-
-                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-                int nRead;
-                byte[] data = new byte[1024];
-                while ((nRead = is.read(data, 0, data.length)) != -1) {
-                    buffer.write(data, 0, nRead);
+                String jsonStr;
+                try (java.io.InputStream is = getContentResolver().openInputStream(uri)) {
+                    if (is == null) throw new java.io.IOException("Dosya açılamadı");
+                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                    byte[] data = new byte[4096];
+                    int nRead;
+                    while ((nRead = is.read(data, 0, data.length)) != -1) {
+                        buffer.write(data, 0, nRead);
+                    }
+                    jsonStr = new String(buffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
                 }
-                buffer.flush();
-                is.close();
 
-                String jsonStr = new String(buffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+                // Önce dosyanın tamamı okunur; hatalı dosyada yarım içe aktarma olmaz
                 org.json.JSONArray array = new org.json.JSONArray(jsonStr);
-                int importedCount = 0;
+                List<notentity> notesToImport = new ArrayList<>();
 
                 for (int i = 0; i < array.length(); i++) {
                     org.json.JSONObject obj = array.getJSONObject(i);
@@ -254,20 +273,26 @@ public class MainActivity extends AppCompatActivity {
                     newNote.expireTimestamp = obj.optLong("expireTimestamp", 0L);
                     newNote.isLocked = obj.optBoolean("isLocked", false);
                     newNote.inVault = obj.optBoolean("inVault", false);
-
-                    if (obj.has("blocks")) {
-                        String blocksJson = obj.getString("blocks");
-                        java.lang.reflect.Type blockListType = new com.google.gson.reflect.TypeToken<List<NoteBlockModel>>(){}.getType();
-                        newNote.blocks = new com.google.gson.Gson().fromJson(blocksJson, blockListType);
+                    restoreBackupImages(obj.optJSONObject("images"));
+                    newNote.blocks = parseBackupBlocks(obj.opt("blocks"));
+                    for (NoteBlockModel block : newNote.blocks) {
+                        if (block.getType() == NoteBlockModel.BlockType.DRAWING) {
+                            block.setContent(NoteImageStore.rewriteImageUris(getApplicationContext(), block.getContent()));
+                        }
                     }
 
-                    noteDao.insertNote(newNote);
-                    importedCount++;
+                    notesToImport.add(newNote);
                 }
 
-                final int finalCount = importedCount;
+                not_app_database.getInstance(getApplicationContext()).runInTransaction(() -> {
+                    for (notentity note : notesToImport) {
+                        noteDao.insertNote(note);
+                    }
+                });
+
+                final int finalCount = notesToImport.size();
                 runOnUiThread(() -> {
-                    refreshAllNotesFromDb();
+                    loadNotes();
                     Toast.makeText(this, finalCount + " adet not başarıyla geri yüklendi", Toast.LENGTH_SHORT).show();
                 });
             } catch (Exception e) {
@@ -276,30 +301,82 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void refreshAllNotesFromDb() {
+    private void restoreBackupImages(org.json.JSONObject imagesObj) throws java.io.IOException {
+        if (imagesObj == null) return;
+        java.util.Iterator<String> names = imagesObj.keys();
+        while (names.hasNext()) {
+            String name = names.next();
+            NoteImageStore.writeFromBase64(getApplicationContext(), name, imagesObj.optString(name, null));
+        }
+    }
+
+    // Yedekteki "blocks" alanı: dışa aktarmanın yazdığı JSON dizisi veya eski biçimdeki JSON metni
+    private List<NoteBlockModel> parseBackupBlocks(Object blocksValue) {
+        List<NoteBlockModel> blocks = new ArrayList<>();
+        if (blocksValue instanceof org.json.JSONArray) {
+            org.json.JSONArray blocksArray = (org.json.JSONArray) blocksValue;
+            for (int i = 0; i < blocksArray.length(); i++) {
+                org.json.JSONObject bObj = blocksArray.optJSONObject(i);
+                if (bObj == null) continue;
+                NoteBlockModel.BlockType type;
+                try {
+                    type = NoteBlockModel.BlockType.valueOf(bObj.optString("type", "DRAWING"));
+                } catch (IllegalArgumentException e) {
+                    type = NoteBlockModel.BlockType.DRAWING;
+                }
+                blocks.add(new NoteBlockModel(type, bObj.optString("content", "")));
+            }
+        } else if (blocksValue instanceof String && !((String) blocksValue).trim().isEmpty()) {
+            try {
+                java.lang.reflect.Type blockListType = new com.google.gson.reflect.TypeToken<List<NoteBlockModel>>(){}.getType();
+                List<NoteBlockModel> parsed = new com.google.gson.Gson().fromJson((String) blocksValue, blockListType);
+                if (parsed != null) blocks.addAll(parsed);
+            } catch (Exception ignored) {}
+        }
+        return blocks;
+    }
+
+    // Notları; kasa modu, seçili kategori ve arama metnini birlikte uygulayarak yükler
+    private void loadNotes() {
         if (noteDao == null) return;
 
+        final boolean vaultMode = isVaultMode;
+        final String category = selectedCategory;
+        final String query = NoteSearchHelper.normalizeQuery(
+                etSearch != null && etSearch.getText() != null ? etSearch.getText().toString() : "");
+
         DB_EXECUTOR.execute(() -> {
-            long now = System.currentTimeMillis();
-            noteDao.moveExpiredNotesToTrash(now);
+            noteDao.moveExpiredNotesToTrash(System.currentTimeMillis());
 
-            List<notentity> dbEntities = noteDao.getAllNotes();
-            List<notentity> filteredEntities = new ArrayList<>();
-
-            for (notentity entity : dbEntities) {
-                if (entity != null) {
-                    if (isVaultMode && entity.inVault) {
-                        filteredEntities.add(entity);
-                    } else if (!isVaultMode && !entity.inVault) {
-                        filteredEntities.add(entity);
-                    }
+            List<notentity> scopeEntities = new ArrayList<>();
+            for (notentity entity : noteDao.getAllNotes()) {
+                if (entity != null && entity.inVault == vaultMode) {
+                    scopeEntities.add(entity);
                 }
             }
 
-            List<NoteModel> updatedList = mapEntitiesToModels(filteredEntities);
-            List<String> dynamicCategories = extractDynamicCategories(filteredEntities);
+            List<String> dynamicCategories = extractDynamicCategories(scopeEntities);
+            // Seçili kategoride hiç not kalmadıysa "Tümü"ne dön
+            final String effectiveCategory = dynamicCategories.contains(category) ? category : CATEGORY_ALL;
+
+            List<notentity> visibleEntities = new ArrayList<>();
+            for (notentity entity : scopeEntities) {
+                boolean matchesCategory = CATEGORY_ALL.equals(effectiveCategory)
+                        || (entity.category != null && entity.category.trim().equals(effectiveCategory));
+                if (matchesCategory && NoteSearchHelper.matches(entity, query)) {
+                    visibleEntities.add(entity);
+                }
+            }
+
+            List<NoteModel> updatedList = mapEntitiesToModels(visibleEntities);
 
             runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                // Bu sırada kullanıcı başka bir kategori/kasa seçtiyse, onun yüklemesi zaten sırada
+                if (vaultMode != isVaultMode || !category.equals(selectedCategory)) return;
+
+                selectedCategory = effectiveCategory;
+
                 if (titleView instanceof TextView) {
                     ((TextView) titleView).setText(isVaultMode ? "Gizli Kasa" : "Notlarım");
                 }
@@ -331,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
             params.setMargins(0, 0, dpToPx(6), 0);
             chip.setLayoutParams(params);
 
-            if (categoryName.equalsIgnoreCase("Tümü")) {
+            if (categoryName.equals(selectedCategory)) {
                 chip.setBackgroundResource(R.drawable.bg_chip_active);
                 chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
             } else {
@@ -344,11 +421,8 @@ public class MainActivity extends AppCompatActivity {
                 chip.setBackgroundResource(R.drawable.bg_chip_active);
                 chip.setTextColor(ContextCompat.getColor(this, android.R.color.white));
 
-                if (categoryName.equalsIgnoreCase("Tümü")) {
-                    refreshAllNotesFromDb();
-                } else {
-                    filterNotesByCategory(categoryName);
-                }
+                selectedCategory = categoryName;
+                loadNotes();
             });
 
             categoryChipContainer.addView(chip);
@@ -478,7 +552,7 @@ public class MainActivity extends AppCompatActivity {
                 entity.isLocked = lock;
                 noteDao.updateNote(entity);
             }
-            runOnUiThread(this::refreshAllNotesFromDb);
+            runOnUiThread(this::loadNotes);
         });
     }
 
@@ -489,7 +563,7 @@ public class MainActivity extends AppCompatActivity {
             noteDao.moveToTrash(noteId, System.currentTimeMillis());
 
             runOnUiThread(() -> {
-                refreshAllNotesFromDb();
+                loadNotes();
 
                 if (rvNotes != null) {
                     Snackbar.make(rvNotes, "Not çöp kutusuna taşındı", Snackbar.LENGTH_LONG)
@@ -506,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
 
         DB_EXECUTOR.execute(() -> {
             noteDao.restoreNoteFromTrash(noteId);
-            runOnUiThread(this::refreshAllNotesFromDb);
+            runOnUiThread(this::loadNotes);
         });
     }
 
@@ -518,7 +592,7 @@ public class MainActivity extends AppCompatActivity {
                 noteDao.updatePinStatus(noteId, isPinned);
             } catch (Exception ignored) {}
 
-            runOnUiThread(this::refreshAllNotesFromDb);
+            runOnUiThread(this::loadNotes);
         });
     }
 
@@ -572,6 +646,7 @@ public class MainActivity extends AppCompatActivity {
                 String defaultTitle = "Hızlı Not (" + timeStamp + ")";
 
                 intent.putExtra("EXTRA_NOTE_TITLE", defaultTitle);
+                intent.putExtra("EXTRA_TITLE_IS_AUTO", true);
                 intent.putExtra("EXTRA_NOTE_CATEGORY", isVaultMode ? "Gizli Kasa" : "Hızlı Not");
                 intent.putExtra("EXTRA_NOTE_ID", -1);
                 intent.putExtra("EXTRA_IN_VAULT", isVaultMode);
@@ -590,14 +665,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void exitVaultMode() {
         isVaultMode = false;
-        refreshAllNotesFromDb();
+        selectedCategory = CATEGORY_ALL;
+        loadNotes();
         Toast.makeText(this, "Gizli Kasa kilitlendi", Toast.LENGTH_SHORT).show();
     }
 
     private void openVaultWithAuth() {
         promptForPassword(() -> {
             isVaultMode = true;
-            refreshAllNotesFromDb();
+            selectedCategory = CATEGORY_ALL;
+            loadNotes();
             Toast.makeText(this, "Gizli Kasa Açıldı", Toast.LENGTH_SHORT).show();
         });
     }
@@ -644,7 +721,7 @@ public class MainActivity extends AppCompatActivity {
         if (rowImportBackup != null) {
             rowImportBackup.setOnClickListener(v -> {
                 dialog.dismiss();
-                backupImportLauncher.launch("application/json");
+                backupImportLauncher.launch(new String[]{"application/json", "text/plain", "application/octet-stream"});
             });
         }
 
@@ -657,11 +734,11 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        boolean isDarkMode = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_DARK_MODE, false);
+        boolean isDarkMode = getSharedPreferences(THEME_PREFS_NAME, MODE_PRIVATE).getInt(KEY_THEME_POSITION, 0) == 1;
         if (switchDarkMode != null) {
             switchDarkMode.setChecked(isDarkMode);
             switchDarkMode.setOnCheckedChangeListener((btn, isChecked) -> {
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_DARK_MODE, isChecked).apply();
+                getSharedPreferences(THEME_PREFS_NAME, MODE_PRIVATE).edit().putInt(KEY_THEME_POSITION, isChecked ? 1 : 0).apply();
                 AppCompatDelegate.setDefaultNightMode(isChecked ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
             });
         }
@@ -771,6 +848,7 @@ public class MainActivity extends AppCompatActivity {
 
         final EditText etPass = new EditText(this);
         etPass.setHint("Yeni Kasa Parolası");
+        etPass.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(etPass);
 
         final EditText etQuestion = new EditText(this);
@@ -828,6 +906,7 @@ public class MainActivity extends AppCompatActivity {
     private void showNewPasswordOnlyDialog(Runnable onSuccess) {
         final EditText etNewPass = new EditText(this);
         etNewPass.setHint("Yeni Parolanızı Girin");
+        etNewPass.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         etNewPass.setPadding(48, 32, 48, 32);
 
         new AlertDialog.Builder(this)
@@ -851,7 +930,7 @@ public class MainActivity extends AppCompatActivity {
             noteDao.emptyTrash();
             runOnUiThread(() -> {
                 Toast.makeText(this, "Çöp kutusu tamamen boşaltıldı", Toast.LENGTH_SHORT).show();
-                refreshAllNotesFromDb();
+                loadNotes();
             });
         });
     }
@@ -1077,8 +1156,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String query = (s != null) ? s.toString() : "";
-                filterNotesFromDatabase(query);
+                loadNotes();
             }
 
             @Override
@@ -1086,36 +1164,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void filterNotesFromDatabase(String query) {
-        if (noteDao == null) return;
-
-        DB_EXECUTOR.execute(() -> {
-            List<notentity> dbEntities;
-            if (query.trim().isEmpty()) {
-                dbEntities = noteDao.getAllNotes();
-            } else {
-                dbEntities = noteDao.searchNotes(query);
-            }
-
-            List<notentity> filtered = new ArrayList<>();
-            for (notentity entity : dbEntities) {
-                if (entity != null) {
-                    if (isVaultMode && entity.inVault) {
-                        filtered.add(entity);
-                    } else if (!isVaultMode && !entity.inVault) {
-                        filtered.add(entity);
-                    }
-                }
-            }
-
-            List<NoteModel> filteredList = mapEntitiesToModels(filtered);
-            runOnUiThread(() -> applyListUpdate(filteredList));
-        });
-    }
-
     private List<String> extractDynamicCategories(List<notentity> allNotes) {
         List<String> dynamicCategories = new ArrayList<>();
-        dynamicCategories.add("Tümü");
+        dynamicCategories.add(CATEGORY_ALL);
         dynamicCategories.add("Kişisel");
         dynamicCategories.add("Geçici");
 
@@ -1130,27 +1181,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return dynamicCategories;
-    }
-
-    private void filterNotesByCategory(String category) {
-        if (noteDao == null) return;
-
-        DB_EXECUTOR.execute(() -> {
-            List<notentity> dbEntities = noteDao.getNotesByCategory(category);
-            List<notentity> filtered = new ArrayList<>();
-            for (notentity entity : dbEntities) {
-                if (entity != null) {
-                    if (isVaultMode && entity.inVault) {
-                        filtered.add(entity);
-                    } else if (!isVaultMode && !entity.inVault) {
-                        filtered.add(entity);
-                    }
-                }
-            }
-            List<NoteModel> filteredList = mapEntitiesToModels(filtered);
-
-            runOnUiThread(() -> applyListUpdate(filteredList));
-        });
     }
 
     private List<NoteModel> mapEntitiesToModels(List<notentity> dbEntities) {

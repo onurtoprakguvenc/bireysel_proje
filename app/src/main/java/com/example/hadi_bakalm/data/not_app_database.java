@@ -24,8 +24,10 @@ public abstract class not_app_database extends RoomDatabase {
                                     not_app_database.class,
                                     "not_veritabani"
                             )
-                            // 2. Şema değişimlerinde çökmesini engeller:
-                            .fallbackToDestructiveMigration()
+                            // Sürüm yükseltmelerinde notlar SİLİNMEZ: şema değiştiğinde
+                            // version artırılmalı ve .addMigrations(...) ile Migration eklenmelidir.
+                            // Sadece sürüm düşürmede (downgrade) veritabanı sıfırlanır.
+                            .fallbackToDestructiveMigrationOnDowngrade()
                             .build();
                 }
             }
